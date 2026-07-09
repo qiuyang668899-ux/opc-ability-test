@@ -1,0 +1,25 @@
+{
+  "name": "OPC能力测试 - 人类操作系统",
+  "short_name": "OPC能力测试",
+  "description": "AI 陪伴成长教练、心境音乐、视觉诊断、启动序列与自我进化训练闭环。",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0a0e1a",
+  "theme_color": "#0a0e1a",
+  "icons": [
+    {
+      "src": "./app-icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "./app-icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

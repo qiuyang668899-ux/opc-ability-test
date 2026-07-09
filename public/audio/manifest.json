@@ -1,0 +1,80 @@
+{
+  "generatedAt": "2026-07-08T11:05:29.884Z",
+  "format": "wav",
+  "sampleRate": 44100,
+  "channels": 2,
+  "durationSec": 45,
+  "source": "Local AI-style procedural sound-field generator",
+  "tracks": [
+    {
+      "id": "morning-boot",
+      "file": "./audio/morning-boot.wav",
+      "durationSec": 45
+    },
+    {
+      "id": "alpha",
+      "file": "./audio/alpha.wav",
+      "durationSec": 45
+    },
+    {
+      "id": "gamma-spark",
+      "file": "./audio/gamma-spark.wav",
+      "durationSec": 45
+    },
+    {
+      "id": "pressure-release",
+      "file": "./audio/pressure-release.wav",
+      "durationSec": 45
+    },
+    {
+      "id": "rain",
+      "file": "./audio/rain.wav",
+      "durationSec": 45
+    },
+    {
+      "id": "theta",
+      "file": "./audio/theta.wav",
+      "durationSec": 45
+    },
+    {
+      "id": "heart-coherence",
+      "file": "./audio/heart-coherence.wav",
+      "durationSec": 45
+    },
+    {
+      "id": "sleep-repair",
+      "file": "./audio/sleep-repair.wav",
+      "durationSec": 45
+    },
+    {
+      "id": "cafe",
+      "file": "./audio/cafe.wav",
+      "durationSec": 45
+    },
+    {
+      "id": "wind",
+      "file": "./audio/wind.wav",
+      "durationSec": 45
+    },
+    {
+      "id": "ritual-drum",
+      "file": "./audio/ritual-drum.wav",
+      "durationSec": 45
+    },
+    {
+      "id": "deep-reading",
+      "file": "./audio/deep-reading.wav",
+      "durationSec": 45
+    },
+    {
+      "id": "compassion",
+      "file": "./audio/compassion.wav",
+      "durationSec": 45
+    },
+    {
+      "id": "source-return",
+      "file": "./audio/source-return.wav",
+      "durationSec": 45
+    }
+  ]
+}

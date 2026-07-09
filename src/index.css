@@ -1,0 +1,245 @@
+@import "tailwindcss";
+
+@theme {
+  --color-hos-bg: #07080b;
+  --color-hos-surface: #0d1016;
+  --color-hos-card: #121720;
+  --color-hos-card-hover: #171d28;
+  --color-hos-border: #263040;
+  --color-hos-border-light: #3a485c;
+  --color-hos-cyan: #00d4f5;
+  --color-hos-cyan-dim: #0097b0;
+  --color-hos-red: #ff3d71;
+  --color-hos-green: #00e676;
+  --color-hos-purple: #a78bfa;
+  --color-hos-orange: #fb923c;
+  --color-hos-teal: #5eead4;
+  --color-hos-gold: #fbbf24;
+  --color-hos-text: #e2e8f0;
+  --color-hos-text-dim: #64748b;
+  --color-hos-text-muted: #475569;
+  --font-family-mono: 'SF Mono', 'Fira Code', 'JetBrains Mono', ui-monospace, monospace;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+html, body, #root {
+  height: 100%; width: 100%;
+  background:
+    linear-gradient(180deg, #0a0d12 0%, var(--color-hos-bg) 42%, #050608 100%);
+  color: var(--color-hos-text);
+  font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Helvetica Neue', 'Microsoft YaHei', sans-serif;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+::-webkit-scrollbar { width: 3px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--color-hos-border); border-radius: 4px; }
+
+/* ========== Glow Effects ========== */
+.glow-cyan {
+  text-shadow: 0 0 8px rgba(0, 212, 245, 0.6), 0 0 24px rgba(0, 212, 245, 0.2);
+}
+.glow-red {
+  text-shadow: 0 0 8px rgba(255, 61, 113, 0.6), 0 0 24px rgba(255, 61, 113, 0.2);
+  filter: drop-shadow(0 0 6px rgba(255, 61, 113, 0.4));
+}
+
+/* ========== Card Styles ========== */
+.hos-page {
+  width: 100%;
+  padding: 28px 24px 112px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.hos-card {
+  background: linear-gradient(135deg, rgba(18, 23, 32, 0.98) 0%, rgba(15, 19, 27, 0.9) 100%);
+  border: 1px solid var(--color-hos-border);
+  border-radius: 14px;
+  backdrop-filter: blur(12px);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.16);
+  transition: all 0.25s ease;
+}
+.hos-card:hover {
+  border-color: var(--color-hos-border-light);
+  background: linear-gradient(135deg, var(--color-hos-card-hover) 0%, rgba(18, 23, 32, 0.94) 100%);
+}
+.hos-card:active {
+  transform: scale(0.98);
+}
+
+.hos-card-accent {
+  background:
+    linear-gradient(135deg, rgba(18, 23, 32, 0.98) 0%, rgba(14, 18, 25, 0.94) 100%);
+  border: 1px solid var(--color-hos-border);
+  border-radius: 16px;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 18px 44px rgba(0, 0, 0, 0.24);
+}
+.hos-card-accent::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--color-hos-cyan), transparent);
+  opacity: 0.4;
+}
+
+/* ========== Glass Effect ========== */
+.hos-glass {
+  background: rgba(10, 13, 18, 0.9);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(38, 48, 64, 0.72);
+}
+
+/* ========== Tag/Badge ========== */
+.hos-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  border: 1px solid var(--color-hos-border);
+  color: var(--color-hos-text-dim);
+  background: rgba(17, 26, 46, 0.5);
+}
+
+/* ========== Module Icon ========== */
+.hos-icon-box {
+  width: 46px; height: 46px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+/* ========== Progress Bar ========== */
+.hos-progress {
+  height: 4px;
+  border-radius: 4px;
+  background: var(--color-hos-border);
+  overflow: hidden;
+  margin-top: 8px;
+}
+.hos-progress-fill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.6s ease;
+}
+
+/* ========== Breathing Animations ========== */
+@keyframes breathe-in {
+  0% { transform: scale(0.82); opacity: 0.5; }
+  100% { transform: scale(1.12); opacity: 1; }
+}
+@keyframes breathe-out {
+  0% { transform: scale(1.12); opacity: 1; }
+  100% { transform: scale(0.82); opacity: 0.5; }
+}
+@keyframes hold-breath {
+  0%, 100% { transform: scale(1.12); opacity: 1; }
+}
+@keyframes pulse-ring {
+  0% { transform: scale(1); opacity: 0.4; }
+  50% { transform: scale(1.06); opacity: 0.15; }
+  100% { transform: scale(1); opacity: 0.4; }
+}
+.animate-breathe-in { animation: breathe-in 4s ease-in-out forwards; }
+.animate-breathe-out { animation: breathe-out 4s ease-in-out forwards; }
+.animate-hold { animation: hold-breath 2s ease-in-out; }
+.animate-pulse-ring { animation: pulse-ring 4s ease-in-out infinite; }
+
+@keyframes coherence {
+  0%, 100% { transform: scale(0.55); opacity: 0.35; }
+  50% { transform: scale(1); opacity: 1; }
+}
+.animate-coherence { animation: coherence 11s ease-in-out infinite; }
+
+/* ========== Scan Line ========== */
+@keyframes scan {
+  0% { top: -2px; }
+  100% { top: 100%; }
+}
+.scan-line {
+  position: absolute; left: 0; width: 100%; height: 2px;
+  background: linear-gradient(90deg, transparent, var(--color-hos-cyan), transparent);
+  animation: scan 2s linear infinite;
+  opacity: 0.7;
+}
+
+/* ========== Float Animation ========== */
+@keyframes float-up {
+  0% { opacity: 0; transform: translateY(16px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+.animate-float-up { animation: float-up 0.4s ease-out forwards; }
+
+/* ========== Music Waves ========== */
+@keyframes wave {
+  0%, 100% { height: 6px; }
+  50% { height: 20px; }
+}
+
+/* ========== Blink Cursor ========== */
+@keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+.cursor-blink::after {
+  content: '▌'; animation: blink 1s infinite; color: var(--color-hos-cyan);
+}
+
+/* ========== Dot Pulse ========== */
+@keyframes dot-pulse {
+  0%, 80%, 100% { opacity: 0.3; transform: scale(0.8); }
+  40% { opacity: 1; transform: scale(1.2); }
+}
+
+/* ========== Text helpers ========== */
+.text-en { font-size: 10.5px; color: var(--color-hos-text-muted); line-height: 1.45; }
+.text-label { font-size: 11px; color: var(--color-hos-text-dim); }
+
+.hos-section-title {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+.hos-section-title h2 {
+  color: white;
+  font-size: 14px;
+  line-height: 1.2;
+  font-weight: 700;
+}
+.hos-section-title p {
+  color: var(--color-hos-text-muted);
+  font-size: 10.5px;
+  line-height: 1.4;
+  margin-top: 3px;
+}
+
+.hos-metric {
+  min-height: 78px;
+  border: 1px solid var(--color-hos-border);
+  border-radius: 14px;
+  background: rgba(18, 23, 32, 0.72);
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+.hos-metric span {
+  color: white;
+  font-size: 16px;
+  line-height: 1;
+  font-weight: 800;
+}
+.hos-metric small {
+  color: var(--color-hos-text-muted);
+  font-size: 10.5px;
+  line-height: 1;
+}
