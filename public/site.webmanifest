@@ -1,6 +1,6 @@
 {
-  "name": "OPC能力测试 - 人类操作系统",
-  "short_name": "OPC能力测试",
+  "name": "HOS-人类操作系统",
+  "short_name": "HOS",
   "description": "AI 陪伴成长教练、心境音乐、视觉诊断、启动序列与自我进化训练闭环。",
   "start_url": "./",
   "scope": "./",
