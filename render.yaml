@@ -1,0 +1,23 @@
+services:
+  - type: web
+    name: mai-brand-diagnosis-tool
+    runtime: node
+    plan: free
+    rootDir: mai-brand-diagnosis-tool
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: HOST
+        value: 0.0.0.0
+      - key: DEEPSEEK_BASE_URL
+        value: https://api.deepseek.com
+      - key: DEEPSEEK_MODEL
+        value: deepseek-v4-flash
+      - key: TARGET_SOURCE_COUNT
+        value: "100"
+      - key: AI_SOURCE_COUNT
+        value: "100"
+      - key: DEEPSEEK_API_KEY
+        sync: false
