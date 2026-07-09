@@ -8,7 +8,7 @@
 - 尽量构建约 100 条来源池，用于品牌、行业和竞品分析。
 - 将来源分为品牌精确来源、品牌疑似来源、行业/竞品发现、行业候选来源，避免把无关来源误写成品牌证据。
 - 接入 DeepSeek API，输出更完整的行业判断、竞品筛选和策略建议。
-- 支持 Render、Railway、Vercel Node 服务、Docker 等后端部署方式。
+- 支持阿里云 ECS、Render、Railway、Vercel Node 服务、Docker 等后端部署方式。
 
 ## 本地运行
 
@@ -45,6 +45,35 @@ TARGET_SOURCE_COUNT=100
 AI_SOURCE_COUNT=100
 ```
 
+## 阿里云正式部署
+
+正式域名：
+
+```text
+https://www.mineaibd.com
+```
+
+阿里云部署文件：
+
+```text
+deploy/
+docker-compose.aliyun.yml
+```
+
+推荐方式是 ECS + Docker Compose + Caddy：
+
+- Caddy 自动申请和续期 HTTPS 证书。
+- AI品牌诊断系统运行在独立容器内。
+- 后续官网、内容系统、AI品牌增长系统模块可以继续加到同一台服务器的反向代理中。
+
+详细步骤见：
+
+```text
+deploy/ALIYUN_DEPLOY.md
+```
+
+中国内地 ECS 需要先做 ICP 备案；如果想先快速上线，可先选中国香港或海外地域。
+
 ## Render 在线部署
 
 GitHub Pages 只能托管静态网页，不能安全运行搜索后端和 DeepSeek 密钥。本工具需要 Node.js 后端，所以推荐使用 Render。
@@ -69,6 +98,6 @@ AI_SOURCE_COUNT=100
 
 ## 重要说明
 
-真实 DeepSeek 密钥不要提交到 GitHub。本仓库只保留 `.env.example` 占位模板，线上服务在 Render 环境变量中读取真实密钥。
+真实 DeepSeek 密钥不要提交到 GitHub。本仓库只保留 `.env.example` 占位模板，线上服务在服务器环境变量中读取真实密钥。
 
 如果线上页面提示搜索服务未启动，通常是后端没有部署成功、环境变量缺失，或部署平台没有把 Root Directory 设置为 `mai-brand-diagnosis-tool`。
