@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI品牌诊断系统</title>
+  <style>
+    *{box-sizing:border-box}body{margin:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif;background:#f6f7fb;color:#15161a}.shell{max-width:1180px;margin:0 auto;padding:28px 18px 56px}.top{display:flex;justify-content:space-between;gap:18px;align-items:center;margin-bottom:18px}.brand{display:flex;gap:12px;align-items:center}.logo{width:42px;height:42px;border-radius:12px;background:#ff5a1f;color:#fff;display:grid;place-items:center;font-weight:900}.badge{padding:8px 12px;border-radius:999px;background:#fff;border:1px solid #e5e7ef;color:#667085}.grid{display:grid;grid-template-columns:360px 1fr;gap:18px}.panel{background:#fff;border:1px solid #e7e9f1;border-radius:16px;padding:18px;box-shadow:0 10px 30px rgba(21,22,26,.05)}h1{font-size:28px;margin:0}h2{font-size:18px;margin:0 0 14px}label{display:block;font-size:13px;color:#667085;margin:14px 0 6px}input,textarea,select{width:100%;border:1px solid #d8dce8;border-radius:10px;padding:11px 12px;font:inherit;background:#fff}textarea{min-height:130px;resize:vertical}.chips{display:grid;grid-template-columns:1fr 1fr;gap:8px}.chip{border:1px solid #e2e5ee;border-radius:10px;padding:9px;background:#fafbff;font-size:13px}button{width:100%;border:0;border-radius:12px;background:#ff5a1f;color:#fff;font-weight:700;font-size:16px;padding:13px;margin-top:16px;cursor:pointer}button:disabled{opacity:.65;cursor:wait}.hint{font-size:13px;color:#667085;line-height:1.6;margin-top:10px}.hero{display:grid;grid-template-columns:1.2fr .8fr;gap:16px;align-items:stretch}.score{background:#15161a;color:#fff;border-radius:16px;padding:20px}.score strong{display:block;font-size:54px;line-height:1}.cards{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:14px}.card{border:1px solid #e7e9f1;border-radius:12px;padding:13px;background:#fff}.card b{display:flex;justify-content:space-between;gap:8px;font-size:14px;margin-bottom:8px}.card p{margin:0;color:#333;line-height:1.55}.conf{font-size:12px;color:#ff5a1f}.wide{grid-column:1/-1}.list{margin:0;padding-left:18px;line-height:1.8}.bars{display:grid;gap:8px}.bar{display:grid;grid-template-columns:120px 1fr 46px;gap:10px;align-items:center}.track{height:10px;background:#edf0f7;border-radius:999px;overflow:hidden}.fill{height:100%;background:#ff5a1f}.sources{display:grid;gap:10px;max-height:520px;overflow:auto}.source{border:1px solid #e7e9f1;border-radius:10px;padding:10px}.source a{display:block;color:#315bdc;word-break:break-all;font-size:12px;margin-top:4px}.tag{display:inline-block;padding:3px 7px;border-radius:999px;background:#fff0e9;color:#d9480f;font-size:12px;margin-right:6px}@media(max-width:900px){.grid,.hero{grid-template-columns:1fr}.cards{grid-template-columns:1fr}.top{align-items:flex-start;flex-direction:column}}
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <div class="top">
+      <div class="brand"><div class="logo">M</div><div><h1>AI品牌诊断系统</h1><div class="hint">麦一联盟 · 品牌声量 / GEO可见性 / 竞品差距 / 品宣方案</div></div></div>
+      <div id="status" class="badge">检查服务中...</div>
+    </div>
+    <section class="grid">
+      <form id="form" class="panel">
+        <h2>诊断入口</h2>
+        <label>品牌名 / 公司名</label>
+        <input id="brandName" placeholder="例如：光谷金控集团、麦一联盟" required />
+        <label>品牌年度预算</label>
+        <select id="budget"><option>1w</option><option>3-6w</option><option>6-12w</option><option>12-25w</option><option>25-36w</option><option>36-50w</option><option>50-100w</option></select>
+        <label>补充材料文本</label>
+        <textarea id="material" placeholder="粘贴品牌介绍、产品服务、投放数据、媒体稿、客户画像等。信息越多，结果越准。"></textarea>
+        <label>已有渠道</label>
+        <div class="chips" id="channels"></div>
+        <button id="runBtn">开始AI诊断</button>
+        <div id="msg" class="hint">会自动收集约100条来源，并调用 DeepSeek 增强分析。</div>
+      </form>
+      <section class="panel">
+        <div class="hero">
+          <div><h2 id="title">等待诊断</h2><p id="summary" class="hint">输入品牌名后生成报告。</p></div>
+          <div class="score"><span>品牌声量指数</span><strong id="score">--</strong><small>基于来源量、品牌证据、媒体/社媒可见度综合估算</small></div>
+        </div>
+        <div class="cards" id="profile"></div>
+      </section>
+    </section>
+    <section class="grid" style="margin-top:18px">
+      <div class="panel"><h2>竞品差距</h2><div id="competitors" class="bars"></div></div>
+      <div class="panel"><h2>关键判断与方案</h2><ul id="insights" class="list"></ul></div>
+    </section>
+    <section class="panel" style="margin-top:18px"><h2>来源证据</h2><div id="sources" class="sources"></div></section>
+  </main>
+<script>
+const CHANNELS=['官网','公众号','视频号','抖音','小红书','媒体报道','电商/商城'];
+const $=s=>document.querySelector(s);
+const channels=$('#channels');
+channels.innerHTML=CHANNELS.map(c=>`<label class="chip"><input type="checkbox" value="${c}"> ${c}</label>`).join('');
+function esc(v){return String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]))}
+function splitNames(v){return String(v||'').split(/[、,，;]/).map(x=>x.trim()).filter(Boolean).slice(0,3)}
+function field(p,k,f='待确认'){return p?.[k]?.value||f}
+function conf(p,k){return p?.[k]?.confidence||40}
+function calcScore(data){const s=data.searchStats||{};let score=24+(s.brandResultCount||0)*3+(s.discoveryCount||0)*.25+(s.supplementalCount||0)*.12; if(field(data.profile,'website','').startsWith('http'))score+=14; return Math.max(8,Math.min(95,Math.round(score)))}
+function render(data){const p=data.profile||{};const score=calcScore(data);$('#title').textContent=`${data.brandName} 声量诊断`;$('#score').textContent=score;$('#summary').textContent=`${field(p,'industry')} · ${field(p,'stage')}。已收集${data.searchStats?.resultCount||0}条来源，其中品牌精确来源${data.searchStats?.brandResultCount||0}条。`;
+const cards=[['industry','所属行业'],['stage','发展阶段'],['market','主要市场'],['website','官网/商城'],['products','核心产品/服务','wide'],['audience','目标客户与优势','wide'],['voice','声量现状','wide'],['competitors','竞品与目标','wide']];
+$('#profile').innerHTML=cards.map(([k,l,w])=>`<div class="card ${w||''}"><b>${l}<span class="conf">${conf(p,k)}%</span></b><p>${field(p,k)}</p></div>`).join('');
+const names=splitNames(field(p,'competitors','待确认竞品1、待确认竞品2、待确认竞品3'));$('#competitors').innerHTML=[data.brandName,...names].map((n,i)=>{const v=i?Math.max(score+8+Math.random()*18,45):score;return`<div class="bar"><b>${esc(n)}</b><div class="track"><div class="fill" style="width:${Math.min(96,v)}%"></div></div><span>${Math.round(v)}</span></div>`}).join('');
+const hints=[...(data.strategyHints||[]),...(data.riskNotes||[])].slice(0,8);$('#insights').innerHTML=hints.length?hints.map(x=>`<li>${esc(x)}</li>`).join(''):'<li>暂无策略建议，请补充品牌资料后重试。</li>';
+$('#sources').innerHTML=(data.sources||[]).slice(0,100).map(s=>`<div class="source"><span class="tag">${esc(s.scope||'来源')}</span><b>${esc(s.title||'公开网页')}</b><a href="${esc(s.url)}" target="_blank">${esc(s.url)}</a><p class="hint">${esc(s.snippet||'')}</p></div>`).join('')||'<div class="source">暂无来源</div>'}
+async function health(){try{const r=await fetch('/api/health');const j=await r.json();$('#status').textContent=j.ai?.configured?'搜索+DeepSeek已连接':'搜索服务已连接，未配置AI';}catch{$('#status').textContent='服务未连接'}}
+$('#form').addEventListener('submit',async e=>{e.preventDefault();const brandName=$('#brandName').value.trim();if(!brandName)return;$('#runBtn').disabled=true;$('#msg').textContent='正在全网搜索并调用DeepSeek分析，请稍候...';try{const material=$('#material').value.trim();const r=await fetch('/api/enrich',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({brandName,material})});const data=await r.json();if(!r.ok)throw new Error(data.error||'诊断失败');render(data);$('#msg').textContent=`完成：${data.ai?.used?'DeepSeek已增强':'已用规则兜底'}，来源${data.searchStats?.resultCount||0}条。`;}catch(err){$('#msg').textContent=err.message||'诊断失败';}finally{$('#runBtn').disabled=false;}});
+health();
+</script>
+</body>
+</html>
