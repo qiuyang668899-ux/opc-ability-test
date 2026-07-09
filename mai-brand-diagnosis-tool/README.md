@@ -1,3 +1,74 @@
-# 麦一联盟品牌GEO声量诊断工具
+# 麦一联盟 AI 品牌诊断系统
 
-客户输入品牌名/公司名、预算、资料和已有渠道后，系统会进行多源公开信息检索，并结合 DeepSeek 对品牌画像、声量现状、竞品差距和品宣方案做结构化诊断。
+这是一个可在线部署的品牌诊断网页工具。客户输入品牌名/公司名、品牌年度预算、资料文本和已有渠道后，系统会实时检索公开网页来源，并结合 DeepSeek 生成品牌画像、声量诊断、行业竞品对标和可落地品宣方案。
+
+## 当前能力
+
+- 输入品牌名/公司名后自动检索公开信息。
+- 尽量构建约 100 条来源池，用于品牌、行业和竞品分析。
+- 将来源分为品牌精确来源、品牌疑似来源、行业/竞品发现、行业候选来源，避免把无关来源误写成品牌证据。
+- 接入 DeepSeek API，输出更完整的行业判断、竞品筛选和策略建议。
+- 支持 Render、Railway、Vercel Node 服务、Docker 等后端部署方式。
+
+## 本地运行
+
+```bash
+npm start
+```
+
+默认访问：
+
+```text
+http://127.0.0.1:4173
+```
+
+## 环境变量
+
+复制 `.env.example` 为 `.env`，并填写自己的 DeepSeek Key：
+
+```bash
+cp .env.example .env
+```
+
+必填：
+
+```text
+DEEPSEEK_API_KEY=sk-xxxx
+```
+
+推荐保留：
+
+```text
+DEEPSEEK_MODEL=deepseek-v4-flash
+DEEPSEEK_BASE_URL=https://api.deepseek.com
+TARGET_SOURCE_COUNT=100
+AI_SOURCE_COUNT=100
+```
+
+## Render 在线部署
+
+GitHub Pages 只能托管静态网页，不能安全运行搜索后端和 DeepSeek 密钥。本工具需要 Node.js 后端，所以推荐使用 Render。
+
+1. 打开 Render，选择 `New Web Service`。
+2. 连接 GitHub 仓库：`qiuyang668899-ux/opc-ability-test`。
+3. Root Directory 填：`mai-brand-diagnosis-tool`。
+4. Start Command 填：`npm start`。
+5. Environment Variables 添加：
+
+```text
+DEEPSEEK_API_KEY=你的 DeepSeek Key
+NODE_ENV=production
+HOST=0.0.0.0
+DEEPSEEK_BASE_URL=https://api.deepseek.com
+DEEPSEEK_MODEL=deepseek-v4-flash
+TARGET_SOURCE_COUNT=100
+AI_SOURCE_COUNT=100
+```
+
+6. 点击部署，完成后 Render 会生成一个可分享访问的网址。
+
+## 重要说明
+
+真实 DeepSeek 密钥不要提交到 GitHub。本仓库只保留 `.env.example` 占位模板，线上服务在 Render 环境变量中读取真实密钥。
+
+如果线上页面提示搜索服务未启动，通常是后端没有部署成功、环境变量缺失，或部署平台没有把 Root Directory 设置为 `mai-brand-diagnosis-tool`。
