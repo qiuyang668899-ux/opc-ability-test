@@ -202,17 +202,17 @@ export default function MusicPlayer() {
   }, [stopAudio])
 
   if (!expanded) {
+    if (!playing) return null
+
     return (
       <button
         onClick={() => setExpanded(true)}
-        className="fixed bottom-[88px] right-5 z-40 w-13 h-13 rounded-full border border-hos-border flex items-center justify-center shadow-lg hover:border-hos-cyan/30 transition-all"
-        style={{ background: 'rgba(18,23,32,0.94)', backdropFilter: 'blur(14px)', maxWidth: 'calc((100vw - 480px) / 2 + 480px - 20px)' }}
-        aria-label="打开心境音乐"
+        className="fixed bottom-[82px] right-3 z-40 w-11 h-11 rounded-full border border-hos-cyan/30 flex items-center justify-center shadow-lg hover:border-hos-cyan/50 transition-all"
+        style={{ background: 'rgba(14,17,17,0.96)', backdropFilter: 'blur(14px)', maxWidth: 'calc((100vw - 520px) / 2 + 520px - 12px)' }}
+        aria-label="展开正在播放的心境音乐"
       >
-        <Music size={18} className={playing ? 'text-hos-cyan' : 'text-hos-text-muted'} />
-        {playing && (
-          <span className="absolute -top-0.5 -right-0.5 w-3 h-3 bg-hos-green rounded-full animate-pulse" />
-        )}
+        <Music size={17} className="text-hos-cyan" />
+        <span className="absolute -top-0.5 -right-0.5 w-3 h-3 bg-hos-green rounded-full animate-pulse" />
       </button>
     )
   }

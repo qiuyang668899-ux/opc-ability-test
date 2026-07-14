@@ -119,6 +119,15 @@ export interface OnboardingState {
   completedAt?: number;
 }
 
+export interface DailyCheckIn {
+  date: string;
+  energy: number;
+  clarity: number;
+  pressure: number;
+  intention: string;
+  createdAt: number;
+}
+
 export const ACTIVATION_DAYS: ActivationDay[] = [
   {
     day: 1,
