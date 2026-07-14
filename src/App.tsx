@@ -10,6 +10,8 @@ import Activation from './pages/Activation'
 import Protocols from './pages/Protocols'
 import FlowLab from './pages/FlowLab'
 import MoodMusic from './pages/MoodMusic'
+import Support from './pages/Support'
+import About from './pages/About'
 
 export default function App() {
   return (
@@ -23,6 +25,8 @@ export default function App() {
         <Route path="protocols" element={<Protocols />} />
         <Route path="flow" element={<FlowLab />} />
         <Route path="music" element={<MoodMusic />} />
+        <Route path="support" element={<Support />} />
+        <Route path="about" element={<About />} />
       </Route>
       <Route path="reset/:protocol?" element={<SystemReset />} />
       <Route path="visual" element={<VisualDiag />} />

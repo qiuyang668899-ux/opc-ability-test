@@ -7,6 +7,7 @@ import {
   loadState,
   type ActivationDay,
   type ActivationTask,
+  type DailyCheckIn,
   type FlowSession,
   type HOSProtocol,
   type JournalEntry,
@@ -24,6 +25,7 @@ export interface CoachSnapshot {
   flowCount: number;
   latestJournal?: JournalEntry;
   latestFlow?: FlowSession;
+  checkIn?: DailyCheckIn;
 }
 
 export interface CoachPlan {
@@ -85,23 +87,26 @@ function getProtocol(mode: CoachMode): HOSProtocol {
 
 function buildHypothesis(mode: CoachMode, snapshot: CoachSnapshot) {
   const progressLine = `7日启动 ${snapshot.activationCompletion}%，日志 ${snapshot.journalCount} 条，心流闭环 ${snapshot.flowCount} 轮`
+  const checkInLine = snapshot.checkIn
+    ? `今日自检：能量 ${snapshot.checkIn.energy}/5、清晰 ${snapshot.checkIn.clarity}/5、压力 ${snapshot.checkIn.pressure}/5。`
+    : '今日还没有完成状态自检。'
 
   if (mode === 'stabilize') {
-    return `你现在最需要的不是继续分析，而是先把身体从高唤醒拉回可调度区。系统数据：${progressLine}。`
+    return `你现在最需要的不是继续分析，而是先把身体从高唤醒拉回可调度区。${checkInLine} 系统数据：${progressLine}。`
   }
   if (mode === 'execute') {
-    return `问题像是“启动成本过高”，不是能力不足。先把任务缩到 2 分钟，让行动系统重新上线。系统数据：${progressLine}。`
+    return `问题像是“启动成本过高”，不是能力不足。先把任务缩到 2 分钟，让行动系统重新上线。${checkInLine} 系统数据：${progressLine}。`
   }
   if (mode === 'recover') {
-    return `恢复系统正在提醒你减载。今晚目标不是更努力，而是清空缓存、降低刺激、恢复睡眠质量。系统数据：${progressLine}。`
+    return `恢复系统正在提醒你减载。今晚目标不是更努力，而是清空缓存、降低刺激、恢复睡眠质量。${checkInLine} 系统数据：${progressLine}。`
   }
   if (mode === 'learn') {
-    return `适合进入技能压缩训练：拆关键节点、心象预演、最小闭环、即时反馈。系统数据：${progressLine}。`
+    return `适合进入技能压缩训练：拆关键节点、心象预演、最小闭环、即时反馈。${checkInLine} 系统数据：${progressLine}。`
   }
   if (mode === 'reflect') {
-    return `情绪已经携带重要信息，但不适合直接让它接管语言和决策。先降级，再表达。系统数据：${progressLine}。`
+    return `情绪已经携带重要信息，但不适合直接让它接管语言和决策。先降级，再表达。${checkInLine} 系统数据：${progressLine}。`
   }
-  return `当前主要矛盾是输入过多、下一步不清。先清空外部任务，再圈出唯一推进点。系统数据：${progressLine}。`
+  return `当前主要矛盾是输入过多、下一步不清。先清空外部任务，再圈出唯一推进点。${checkInLine} 系统数据：${progressLine}。`
 }
 
 function buildSteps(mode: CoachMode, snapshot: CoachSnapshot) {
@@ -164,6 +169,7 @@ export function buildCoachSnapshot(): CoachSnapshot {
   const activation = loadState('activation', defaultActivationProgress)
   const journal = loadState<JournalEntry[]>('journal', [])
   const flow = loadState<FlowSession[]>('flowSessions', [])
+  const checkIn = loadState<DailyCheckIn | undefined>('dailyCheckIn', undefined)
   const activeDay = getActiveActivationDay(activation)
   const nextTask = activeDay.tasks.find((task) => !activation.completedTaskIds.includes(task.id))
 
@@ -176,6 +182,7 @@ export function buildCoachSnapshot(): CoachSnapshot {
     flowCount: flow.length,
     latestJournal: journal[0],
     latestFlow: flow[0],
+    checkIn,
   }
 }
 
@@ -254,6 +261,7 @@ export function buildCoachGreeting(snapshot: CoachSnapshot): string {
 7日启动 ${snapshot.activationCompletion}%
 模式日志 ${snapshot.journalCount} 条
 心流训练 ${snapshot.flowCount} 轮
+今日状态 ${snapshot.checkIn ? `能量 ${snapshot.checkIn.energy}/5 · 清晰 ${snapshot.checkIn.clarity}/5 · 压力 ${snapshot.checkIn.pressure}/5` : '等待自检'}
 
 今日建议：
 Day ${day.day}「${day.title.zh}」
