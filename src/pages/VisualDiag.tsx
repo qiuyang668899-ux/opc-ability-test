@@ -1,57 +1,37 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { AlertTriangle, Camera, Play, RefreshCcw, ScanFace, Video, X, Zap } from 'lucide-react'
+import { AlertTriangle, Camera, Check, Eye, RefreshCcw, ScanFace, ShieldCheck, Sparkles, Zap } from 'lucide-react'
 import { type EmotionState, BREATH_PROTOCOLS } from '../stores/useStore'
-import { UI, EMOTIONS, VISUAL_FEATURES } from '../utils/i18n'
+import { EMOTIONS } from '../utils/i18n'
 
-type DiagState = 'idle' | 'connecting' | 'preview' | 'analyzing' | 'complete' | 'error'
+type DiagState = 'idle' | 'connecting' | 'preview' | 'reflecting' | 'analyzing' | 'complete' | 'error'
 
-function simulateAnalysis(): { emotion: EmotionState; confidence: number } {
-  const emotions: EmotionState[] = ['calm', 'anxious', 'focused', 'fatigued', 'confused', 'stressed']
-  const weights = [30, 15, 25, 15, 5, 10]
-  const total = weights.reduce((a, b) => a + b, 0)
-  let r = Math.random() * total
-  let idx = 0
-  for (let i = 0; i < weights.length; i += 1) {
-    r -= weights[i]
-    if (r <= 0) { idx = i; break }
-  }
-  return { emotion: emotions[idx], confidence: 70 + Math.floor(Math.random() * 25) }
-}
+const emotionOptions: { id: EmotionState; label: string; hint: string }[] = [
+  { id: 'calm', label: '平静', hint: '呼吸平稳，面部放松' },
+  { id: 'focused', label: '专注', hint: '注意集中，准备行动' },
+  { id: 'anxious', label: '焦虑', hint: '紧绷、担心或坐立不安' },
+  { id: 'stressed', label: '压力高', hint: '身体发紧，急于应对' },
+  { id: 'fatigued', label: '疲惫', hint: '眼神倦怠，能量偏低' },
+  { id: 'confused', label: '混乱', hint: '思路打结，难以选择' },
+]
 
-function getProtocolForEmotion(emotion: EmotionState) {
-  const map: Record<EmotionState, { keyword: string; freq: string }> = {
-    calm: { keyword: 'OBSERVE', freq: '528' },
-    anxious: { keyword: 'VOID', freq: '417' },
-    focused: { keyword: 'FLOW', freq: '963' },
-    fatigued: { keyword: 'GATHER', freq: '528' },
-    excited: { keyword: 'FLOW', freq: '963' },
-    confused: { keyword: 'OBSERVE', freq: '528' },
-    stressed: { keyword: 'VOID', freq: '417' },
-  }
-  return map[emotion]
-}
-
-function getSystemDiag(emotion: EmotionState): { zh: string; en: string } {
-  const map: Record<EmotionState, { zh: string; en: string }> = {
-    calm: { zh: '情绪稳定', en: 'Emotional stability' },
-    anxious: { zh: '皮质醇过高', en: 'High cortisol levels' },
-    focused: { zh: '前额叶高度活跃', en: 'Prefrontal cortex highly active' },
-    fatigued: { zh: '疲劳迹象', en: 'Fatigue indicators' },
-    excited: { zh: '多巴胺活跃', en: 'Dopamine active' },
-    confused: { zh: '决策回路过载', en: 'Decision circuit overload' },
-    stressed: { zh: '战斗或逃跑模式', en: 'Fight-or-flight mode' },
-  }
-  return map[emotion]
+const guidance: Record<EmotionState, { observation: string; suggestion: string; keyword: string; freq: string }> = {
+  calm: { observation: '你观察到自己处在相对平稳、开放的状态。', suggestion: '适合做一次短复盘，或开始一件需要耐心的任务。', keyword: 'OBSERVE', freq: '528' },
+  focused: { observation: '你观察到注意力已经收束，行动准备度较好。', suggestion: '保护这段专注窗口，只推进一个清晰目标。', keyword: 'FLOW', freq: '963' },
+  anxious: { observation: '你观察到担忧或紧绷感正在占用注意力。', suggestion: '先延长呼气、降低输入，再处理具体问题。', keyword: 'VOID', freq: '417' },
+  stressed: { observation: '你观察到身体和情绪的负荷偏高。', suggestion: '暂停新增任务，用几分钟把身体带回可调节区。', keyword: 'VOID', freq: '417' },
+  fatigued: { observation: '你观察到疲劳或低能量的外显迹象。', suggestion: '优先补水、活动和短暂离屏，不建议继续硬撑。', keyword: 'GATHER', freq: '528' },
+  confused: { observation: '你观察到思路分散，暂时难以做出选择。', suggestion: '把所有事项写下来，只圈出一个最小下一步。', keyword: 'OBSERVE', freq: '528' },
+  excited: { observation: '你观察到能量和兴奋度较高。', suggestion: '把能量导向一个具体输出，并设置停止点。', keyword: 'FLOW', freq: '963' },
 }
 
 function cameraErrorText(error: unknown) {
   if (error instanceof DOMException) {
-    if (error.name === 'NotAllowedError') return '浏览器没有摄像头权限。请在地址栏或浏览器设置里允许摄像头，然后重试。'
-    if (error.name === 'NotFoundError') return '没有检测到可用摄像头。请确认设备摄像头已连接且没有被其他应用占用。'
-    if (error.name === 'NotReadableError') return '摄像头暂时不可读，可能正在被其他应用占用。关闭其他视频应用后重试。'
+    if (error.name === 'NotAllowedError') return '浏览器没有摄像头权限。请在地址栏或系统隐私设置中允许摄像头后重试。'
+    if (error.name === 'NotFoundError') return '没有检测到可用摄像头。你仍可以使用无摄像头觉察模式。'
+    if (error.name === 'NotReadableError') return '摄像头可能正被其他应用占用。关闭其他视频应用后再试。'
   }
-  return '摄像头启动失败。请检查浏览器权限、系统隐私设置，或刷新页面后重试。'
+  return '摄像头暂时无法启动。你可以检查权限，或直接使用无摄像头觉察模式。'
 }
 
 export default function VisualDiag() {
@@ -59,27 +39,23 @@ export default function VisualDiag() {
   const videoRef = useRef<HTMLVideoElement>(null)
   const streamRef = useRef<MediaStream | null>(null)
   const [state, setState] = useState<DiagState>('idle')
-  const [result, setResult] = useState<{ emotion: EmotionState; confidence: number } | null>(null)
+  const [selectedEmotion, setSelectedEmotion] = useState<EmotionState | null>(null)
+  const [result, setResult] = useState<EmotionState | null>(null)
   const [progress, setProgress] = useState(0)
   const [errorText, setErrorText] = useState('')
   const [hasCamera, setHasCamera] = useState(false)
-  const [cameraLabel, setCameraLabel] = useState('Camera')
   const [snapshotUrl, setSnapshotUrl] = useState('')
-  const [resolution, setResolution] = useState('1280x720')
 
   const stopCamera = useCallback(() => {
     streamRef.current?.getTracks().forEach((track) => track.stop())
     streamRef.current = null
-    if (videoRef.current) {
-      videoRef.current.srcObject = null
-    }
+    if (videoRef.current) videoRef.current.srcObject = null
     setHasCamera(false)
   }, [])
 
   const captureFrame = useCallback(() => {
     const video = videoRef.current
     if (!video || !video.videoWidth || !video.videoHeight) return
-
     const canvas = document.createElement('canvas')
     canvas.width = video.videoWidth
     canvas.height = video.videoHeight
@@ -94,38 +70,22 @@ export default function VisualDiag() {
   const startCamera = useCallback(async () => {
     setState('connecting')
     setErrorText('')
+    setSelectedEmotion(null)
     setResult(null)
-    setProgress(0)
     setSnapshotUrl('')
 
     try {
-      if (!navigator.mediaDevices?.getUserMedia) {
-        throw new DOMException('Camera API unavailable', 'NotFoundError')
-      }
-
+      if (!navigator.mediaDevices?.getUserMedia) throw new DOMException('Camera API unavailable', 'NotFoundError')
       stopCamera()
       const stream = await navigator.mediaDevices.getUserMedia({
         audio: false,
-        video: {
-          facingMode: 'user',
-          width: { ideal: 1280 },
-          height: { ideal: 720 },
-        },
+        video: { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 720 } },
       })
-
       streamRef.current = stream
-      const track = stream.getVideoTracks()[0]
-      const settings = track?.getSettings()
-      setCameraLabel(track?.label || 'Front Camera')
-      if (settings?.width && settings?.height) {
-        setResolution(`${settings.width}x${settings.height}`)
-      }
-
       if (videoRef.current) {
         videoRef.current.srcObject = stream
         await videoRef.current.play()
       }
-
       setHasCamera(true)
       setState('preview')
     } catch (error) {
@@ -135,262 +95,144 @@ export default function VisualDiag() {
     }
   }, [stopCamera])
 
-  const startAnalysis = useCallback(() => {
-    if (!hasCamera) {
-      void startCamera()
-      return
-    }
-    captureFrame()
-    setResult(null)
-    setProgress(0)
-    setState('analyzing')
-  }, [captureFrame, hasCamera, startCamera])
-
-  const runSimulation = useCallback(() => {
+  const useReflectionMode = useCallback(() => {
     stopCamera()
-    setSnapshotUrl('')
+    setSelectedEmotion(null)
     setResult(null)
+    setSnapshotUrl('')
+    setState('reflecting')
+  }, [stopCamera])
+
+  const completeReflection = useCallback(() => {
+    if (!selectedEmotion) return
+    if (hasCamera) captureFrame()
     setProgress(0)
-    setHasCamera(false)
     setState('analyzing')
-  }, [stopCamera])
+  }, [captureFrame, hasCamera, selectedEmotion])
+
+  useEffect(() => () => stopCamera(), [stopCamera])
 
   useEffect(() => {
-    return () => stopCamera()
-  }, [stopCamera])
-
-  useEffect(() => {
-    if (state !== 'analyzing') return undefined
+    if (state !== 'analyzing' || !selectedEmotion) return undefined
     const interval = window.setInterval(() => {
       setProgress((current) => {
         if (current >= 100) {
           window.clearInterval(interval)
-          setResult(simulateAnalysis())
+          setResult(selectedEmotion)
+          stopCamera()
           setState('complete')
           return 100
         }
-        return Math.min(100, current + 7 + Math.random() * 11)
+        return Math.min(100, current + 16)
       })
-    }, 180)
-
+    }, 120)
     return () => window.clearInterval(interval)
-  }, [state])
+  }, [selectedEmotion, state, stopCamera])
 
-  const protocol = result ? getProtocolForEmotion(result.emotion) : null
-  const diagText = result ? getSystemDiag(result.emotion) : null
-  const showVideo = hasCamera && state !== 'idle' && state !== 'error'
+  const resultGuidance = result ? guidance[result] : null
+  const showChoice = state === 'preview' || state === 'reflecting'
 
   return (
-    <div className="fixed inset-0 flex flex-col max-w-[480px] mx-auto bg-black z-50">
-      <div className="absolute top-0 left-0 right-0 z-20 px-5 pt-4 pb-3 bg-gradient-to-b from-black/90 to-transparent">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Video size={14} className={hasCamera ? 'text-hos-green' : 'text-hos-text-muted'} />
-            <span className={`text-[11px] font-mono tracking-wide ${hasCamera ? 'text-hos-green' : 'text-hos-text-muted'}`}>
-              {hasCamera ? 'CAMERA LIVE' : 'CAMERA STANDBY'} // {state.toUpperCase()}
-            </span>
-          </div>
-          <button onClick={() => navigate(-1)} className="w-8 h-8 rounded-lg border border-white/15 flex items-center justify-center text-white/55 hover:text-white hover:border-white/30 transition-colors">
-            <X size={16} />
-          </button>
-        </div>
-        <p className="text-[9px] text-white/35 font-mono mt-1.5 tracking-wider">
-          {UI.resolution.zh}: {resolution} // {UI.sensor.zh}: {hasCamera ? cameraLabel : '未连接'}
-        </p>
+    <div className="hos-page visual-page animate-float-up">
+      <header className="tools-header">
+        <p className="section-kicker">视觉觉察</p>
+        <h1>视觉状态诊断</h1>
+        <p>通过实时镜像、表情与身体感受的自我观察，看见此刻状态，并获得下一步练习建议。</p>
+      </header>
+
+      <div className="privacy-note">
+        <ShieldCheck size={17} />
+        <span><strong>隐私与边界：</strong>画面只在当前设备处理，不会上传。当前版本采用镜像觉察与自我标注，不自动推断疾病或心理诊断。</span>
       </div>
 
-      <div className="flex-1 relative flex items-center justify-center overflow-hidden">
-        {showVideo && (
-          <video
-            ref={videoRef}
-            className="absolute inset-0 w-full h-full object-cover"
-            playsInline
-            muted
-            autoPlay
-            style={{ transform: 'scaleX(-1)' }}
-          />
+      <section className={`visual-camera-card ${hasCamera ? 'is-live' : ''}`}>
+        <div className="camera-status">
+          <span className={hasCamera ? 'live' : ''}><i />{hasCamera ? '摄像头已连接' : '本地觉察模式'}</span>
+          <Eye size={17} />
+        </div>
+
+        {(state === 'connecting' || state === 'preview' || state === 'analyzing') && (
+          <video ref={videoRef} className={hasCamera ? 'visual-video' : 'hidden'} playsInline muted autoPlay style={{ transform: 'scaleX(-1)' }} />
         )}
 
-        {!showVideo && (
-          <div className="absolute inset-0 bg-[#070a11] flex items-center justify-center px-6">
-            {state === 'idle' && (
-              <div className="text-center max-w-[320px]">
-                <div className="w-24 h-24 mx-auto mb-5 rounded-full border border-hos-cyan/25 bg-hos-cyan/8 flex items-center justify-center text-hos-cyan">
-                  <Camera size={34} />
-                </div>
-                <h1 className="text-[23px] font-bold text-white mb-2">启动摄像头预览</h1>
-                <p className="text-[13px] text-hos-text-dim leading-relaxed mb-5">
-                  允许摄像头后，你会先看到自己的实时状态图像，再手动开始状态扫描。
-                </p>
-                <button
-                  onClick={() => void startCamera()}
-                  className="w-full rounded-2xl bg-hos-cyan/15 border border-hos-cyan/30 px-5 py-4 text-hos-cyan font-semibold text-[14px] flex items-center justify-center gap-2 active:scale-[0.98] transition-all"
-                >
-                  <Camera size={17} />
-                  <span>启动摄像头</span>
-                </button>
-              </div>
-            )}
+        {snapshotUrl && state === 'complete' && <img src={snapshotUrl} alt="本次状态快照" className="visual-video" />}
 
-            {state === 'connecting' && (
-              <div className="text-center">
-                <div className="w-28 h-28 mx-auto mb-5 rounded-full border border-hos-cyan/20 flex items-center justify-center">
-                  <div className="w-20 h-20 rounded-full border border-hos-cyan/12 flex items-center justify-center animate-pulse">
-                    <Camera size={26} className="text-hos-cyan" />
-                  </div>
-                </div>
-                <p className="text-[13px] text-hos-text-dim">正在请求摄像头权限...</p>
-                <p className="text-en mt-1">Waiting for camera permission</p>
-              </div>
-            )}
-
-            {state === 'error' && (
-              <div className="max-w-[330px] w-full">
-                <div className="hos-card p-5 text-center">
-                  <AlertTriangle size={30} className="mx-auto text-hos-orange mb-3" />
-                  <h1 className="text-[20px] font-bold text-white mb-2">没有看到摄像头画面</h1>
-                  <p className="text-[13px] text-hos-text-dim leading-relaxed mb-5">{errorText}</p>
-                  <div className="grid gap-2.5">
-                    <button
-                      onClick={() => void startCamera()}
-                      className="rounded-2xl bg-hos-cyan/15 border border-hos-cyan/30 px-5 py-3.5 text-hos-cyan font-semibold text-[13px] flex items-center justify-center gap-2 active:scale-[0.98] transition-all"
-                    >
-                      <RefreshCcw size={15} />
-                      <span>重新授权摄像头</span>
-                    </button>
-                    <button
-                      onClick={runSimulation}
-                      className="rounded-2xl border border-hos-border px-5 py-3.5 text-hos-text-dim font-semibold text-[13px] active:scale-[0.98] transition-all"
-                    >
-                      使用模拟数据体验流程
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {state === 'analyzing' && !hasCamera && (
-              <div className="text-center px-8">
-                <ScanFace size={38} className="mx-auto text-hos-cyan mb-4 animate-pulse" />
-                <p className="text-[12px] text-hos-cyan font-mono tracking-wider mb-2">
-                  SIMULATION PROCESSING... {Math.min(99, Math.floor(progress))}%
-                </p>
-                <div className="h-[3px] bg-white/8 rounded-full overflow-hidden">
-                  <div className="h-full bg-hos-cyan rounded-full transition-all" style={{ width: `${Math.min(99, progress)}%` }} />
-                </div>
-              </div>
-            )}
+        {!hasCamera && !snapshotUrl && (
+          <div className="camera-placeholder">
+            {state === 'idle' && <><span><Camera size={30} /></span><h2>先看一眼此刻的自己</h2><p>你可以打开摄像头，也可以不使用摄像头直接完成状态觉察。</p></>}
+            {state === 'connecting' && <><span className="soft-pulse"><Camera size={28} /></span><h2>正在等待摄像头权限</h2><p>请在浏览器提示中选择允许。</p></>}
+            {state === 'reflecting' && <><span><Eye size={30} /></span><h2>闭眼感受十秒也可以</h2><p>观察呼吸、面部、肩颈和脑中的速度，然后选择最接近的状态。</p></>}
+            {state === 'analyzing' && <><span className="soft-pulse"><ScanFace size={29} /></span><h2>正在整理你的观察</h2><p>把感受转化成温和、可执行的下一步。</p></>}
+            {state === 'error' && <><span className="warning"><AlertTriangle size={29} /></span><h2>暂时没有摄像头画面</h2><p>{errorText}</p></>}
           </div>
         )}
 
-        {showVideo && (state === 'preview' || state === 'analyzing' || state === 'complete') && (
-          <div className="absolute inset-0 pointer-events-none">
-            <div className="absolute top-[19%] left-[13%] right-[13%] bottom-[25%] border border-hos-cyan/45 rounded-2xl">
-              <div className="absolute -top-px -left-px w-6 h-6 border-t-2 border-l-2 border-hos-cyan rounded-tl-xl" />
-              <div className="absolute -top-px -right-px w-6 h-6 border-t-2 border-r-2 border-hos-cyan rounded-tr-xl" />
-              <div className="absolute -bottom-px -left-px w-6 h-6 border-b-2 border-l-2 border-hos-cyan rounded-bl-xl" />
-              <div className="absolute -bottom-px -right-px w-6 h-6 border-b-2 border-r-2 border-hos-cyan rounded-br-xl" />
-              {state === 'analyzing' && <div className="scan-line" />}
-              <div className="absolute top-[8%] left-1/2 -translate-x-1/2 px-2.5 py-1 bg-black/70 backdrop-blur-sm rounded-lg text-[9px] text-hos-cyan font-mono border border-hos-cyan/20">
-                FACE REGION
-              </div>
-            </div>
-
-            {state === 'analyzing' && (
-              <div className="absolute bottom-[27%] left-0 right-0 text-center px-12">
-                <p className="text-[11px] text-hos-cyan font-mono tracking-wider mb-2">
-                  PROCESSING LIVE FRAME... {Math.min(99, Math.floor(progress))}%
-                </p>
-                <div className="h-[3px] bg-white/10 rounded-full overflow-hidden">
-                  <div className="h-full bg-hos-cyan rounded-full transition-all" style={{ width: `${Math.min(99, progress)}%` }} />
-                </div>
-              </div>
-            )}
+        {state === 'idle' && (
+          <div className="camera-actions">
+            <button onClick={() => void startCamera()} className="primary-action"><Camera size={17} />打开摄像头</button>
+            <button onClick={useReflectionMode} className="secondary-action"><Eye size={17} />不使用摄像头</button>
           </div>
         )}
 
-        {state === 'preview' && hasCamera && (
-          <div className="absolute bottom-0 left-0 right-0 z-30 bg-gradient-to-t from-black via-black/90 to-transparent px-5 pb-6 pt-12">
-            <div className="hos-card p-4 mb-3">
-              <p className="text-[12px] text-white font-semibold mb-1">实时摄像头已连接</p>
-              <p className="text-[12px] text-hos-text-dim leading-relaxed">
-                如果你现在能看到自己的画面，就可以开始扫描。分析结果用于状态训练提示，不作为医学或心理诊断。
-              </p>
-            </div>
+        {state === 'error' && (
+          <div className="camera-actions">
+            <button onClick={() => void startCamera()} className="secondary-action"><RefreshCcw size={16} />重试</button>
+            <button onClick={useReflectionMode} className="primary-action"><Eye size={16} />继续觉察</button>
+          </div>
+        )}
+
+        {state === 'analyzing' && (
+          <div className="visual-progress"><div style={{ width: `${progress}%` }} /><span>{Math.min(100, progress)}%</span></div>
+        )}
+      </section>
+
+      {showChoice && (
+        <section className="reflection-panel animate-float-up">
+          <div className="hos-section-title"><div><p className="section-kicker">自我观察</p><h2>此刻更接近哪种状态？</h2><p>没有标准答案，选择你真实感受到的即可。</p></div></div>
+          <div className="emotion-choice-grid">
+            {emotionOptions.map((option) => (
+              <button
+                key={option.id}
+                onClick={() => setSelectedEmotion(option.id)}
+                className={selectedEmotion === option.id ? 'selected' : ''}
+                aria-pressed={selectedEmotion === option.id}
+              >
+                <span>{selectedEmotion === option.id && <Check size={13} />}</span>
+                <strong>{option.label}</strong>
+                <small>{option.hint}</small>
+              </button>
+            ))}
+          </div>
+          <button onClick={completeReflection} disabled={!selectedEmotion} className="primary-action w-full">
+            <Sparkles size={17} />生成我的状态建议
+          </button>
+        </section>
+      )}
+
+      {state === 'complete' && result && resultGuidance && (
+        <section className="visual-result animate-float-up">
+          <div className="result-heading">
+            <span className="shortcut-icon sage"><Check size={20} /></span>
+            <div><p className="section-kicker">本次觉察</p><h2>{EMOTIONS[result]?.zh}</h2></div>
+          </div>
+          <p className="result-observation">{resultGuidance.observation}</p>
+          <div className="result-suggestion"><Sparkles size={18} /><p><strong>现在可以这样做</strong><span>{resultGuidance.suggestion}</span></p></div>
+          <div className="result-actions">
             <button
-              onClick={startAnalysis}
-              className="w-full rounded-2xl bg-hos-cyan/15 border border-hos-cyan/30 px-5 py-4 text-hos-cyan font-semibold text-[14px] flex items-center justify-center gap-2 active:scale-[0.98] transition-all"
+              onClick={() => {
+                const protocol = BREATH_PROTOCOLS.find((item) => item.keyword === resultGuidance.keyword)
+                navigate(protocol ? `/reset/${protocol.keyword.toLowerCase()}` : '/reset')
+              }}
+              className="primary-action"
             >
-              <Play size={16} />
-              <span>开始状态扫描</span>
+              <Zap size={16} />开始建议练习
+            </button>
+            <button onClick={() => { setResult(null); setSelectedEmotion(null); setSnapshotUrl(''); setState('idle') }} className="secondary-action">
+              <RefreshCcw size={16} />重新觉察
             </button>
           </div>
-        )}
-      </div>
-
-      {state === 'complete' && result && protocol && diagText && (
-        <div className="absolute bottom-0 left-0 right-0 z-30 bg-gradient-to-t from-black via-black/95 to-transparent px-5 pb-5 pt-8 animate-float-up">
-          <div className="flex items-start justify-between mb-3">
-            <div>
-              <div className="flex items-center gap-1.5 mb-1">
-                <span className="w-2 h-2 rounded-full bg-hos-green animate-pulse" />
-                <span className="text-[10px] text-hos-text-muted">
-                  {UI.diagComplete.zh} / {UI.diagComplete.en}
-                </span>
-              </div>
-              <h2 className="text-[24px] font-bold text-white leading-tight">
-                {EMOTIONS[result.emotion]?.zh}
-                <span className="text-[13px] text-white/40 ml-2 font-normal">{EMOTIONS[result.emotion]?.en}</span>
-              </h2>
-            </div>
-            {snapshotUrl ? (
-              <img src={snapshotUrl} alt="状态截图" className="w-16 h-16 rounded-xl border border-white/15 object-cover" />
-            ) : (
-              <div className="text-right">
-                <p className="text-[9px] text-hos-text-muted mb-1">{UI.bioFeature.zh}</p>
-                <span className="inline-block px-2.5 py-1 rounded-lg bg-hos-cyan/12 border border-hos-cyan/20 text-[10px] text-hos-cyan font-medium">
-                  {VISUAL_FEATURES[result.emotion]?.zh}
-                </span>
-              </div>
-            )}
-          </div>
-
-          <div className="hos-card p-3.5 mb-3">
-            <p className="text-[9px] text-hos-text-muted uppercase tracking-wider mb-1">{UI.systemDiag.zh} / {UI.systemDiag.en}</p>
-            <p className="text-[13px] text-white font-medium">{diagText.zh} / {diagText.en}</p>
-            <p className="text-[11px] text-hos-text-muted mt-1">置信度：{result.confidence}% · 训练提示版本</p>
-          </div>
-
-          <div className="flex items-center justify-between gap-3">
-            <div>
-              <p className="text-[9px] text-hos-text-muted uppercase tracking-wider">{UI.recommendProtocol.zh}</p>
-              <p className="text-[15px] font-mono font-bold text-hos-cyan mt-0.5">
-                {protocol.keyword} | {protocol.freq}Hz
-              </p>
-            </div>
-            <div className="flex gap-2">
-              <button
-                onClick={startAnalysis}
-                className="w-10 h-10 rounded-xl border border-hos-border text-hos-text-dim flex items-center justify-center active:scale-95 transition-all"
-                aria-label="重新扫描"
-              >
-                <RefreshCcw size={15} />
-              </button>
-              <button
-                onClick={() => {
-                  const bp = BREATH_PROTOCOLS.find((item) => item.keyword === protocol.keyword)
-                  if (bp) navigate(`/reset/${bp.keyword.toLowerCase()}`)
-                  else navigate('/reset')
-                }}
-                className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-[13px] font-semibold transition-all active:scale-95"
-                style={{ background: 'linear-gradient(135deg, rgba(0,212,245,0.8), rgba(167,139,250,0.6))' }}
-              >
-                <Zap size={15} className="text-white" />
-                <span className="text-white">{UI.execute.zh}</span>
-              </button>
-            </div>
-          </div>
-        </div>
+          <small className="result-boundary">此结果来自你的自我标注，用于日常觉察与训练，不替代医疗或心理专业判断。</small>
+        </section>
       )}
     </div>
   )
