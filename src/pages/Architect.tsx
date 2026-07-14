@@ -33,12 +33,14 @@ export default function Architect() {
     const snapshot = buildCoachSnapshot()
     return createCoachPlan('我需要一个清晰的下一步', snapshot)
   })
-  const scrollRef = useRef<HTMLDivElement>(null)
+  const endRef = useRef<HTMLDivElement>(null)
+  const initialMessageCountRef = useRef(messages.length)
 
   const snapshot = buildCoachSnapshot()
 
   useEffect(() => {
-    scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' })
+    if (messages.length === initialMessageCountRef.current && !isTyping) return
+    endRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
   }, [messages, isTyping])
 
   useEffect(() => { saveState('chat', messages) }, [messages])
@@ -56,7 +58,7 @@ export default function Architect() {
     const currentSnapshot = buildCoachSnapshot()
     const nextPlan = createCoachPlan(content, currentSnapshot)
 
-    setMessages((prev) => [...prev, userMsg])
+    setMessages((previous) => [...previous, userMsg])
     setInput('')
     setCoachPlan(nextPlan)
     setIsTyping(true)
@@ -69,45 +71,40 @@ export default function Architect() {
         timestamp: Date.now(),
       }
       recomputeUserState()
-      setMessages((prev) => [...prev, aiMsg])
+      setMessages((previous) => [...previous, aiMsg])
       setIsTyping(false)
     }, 520)
   }, [input, isTyping])
 
   return (
-    <div className="hos-page flex flex-col h-[calc(100vh-88px)] animate-float-up">
-      <header className="shrink-0 space-y-4">
-        <div className="flex items-start justify-between gap-4">
+    <div className="hos-page coach-page animate-float-up">
+      <header className="coach-header">
+        <div className="coach-title-row">
           <div>
-            <div className="flex items-center gap-2 mb-2">
-              <Bot size={18} className="text-hos-cyan" />
-              <span className="text-[11px] text-hos-cyan font-mono tracking-wider">AI COACH ENGINE</span>
+            <div className="coach-kicker">
+              <span><Bot size={17} /></span>
+              <p>AI COACH ENGINE</p>
             </div>
-            <h1 className="text-[26px] font-bold text-white leading-tight">AI 架构师</h1>
-            <p className="text-en mt-1">State-aware coaching, not scripted replies</p>
+            <h1>AI 架构师</h1>
+            <p>理解当前状态，给出一个可执行的下一步</p>
           </div>
-          <button
-            onClick={() => navigate(coachPlan.route)}
-            className="rounded-2xl border border-hos-cyan/25 bg-hos-cyan/10 px-3.5 py-2.5 text-hos-cyan text-[12px] font-semibold flex items-center gap-2 active:scale-[0.98] transition-all"
-          >
+          <button onClick={() => navigate(coachPlan.route)} className="coach-execute">
             <span>执行</span>
             <ChevronRight size={15} />
           </button>
         </div>
 
-        <section className="hos-card-accent p-4">
-          <div className="flex items-start justify-between gap-4 mb-4">
+        <section className="coach-overview hos-card-accent">
+          <div className="coach-read">
             <div>
-              <p className="text-[11px] text-hos-text-muted mb-1">当前判断 / Current Read</p>
-              <h2 className="text-[17px] font-bold text-white">{coachPlan.stateLabel}</h2>
-              <p className="text-[12px] text-hos-text-dim mt-1 leading-relaxed">{coachPlan.protocol.title.zh}</p>
+              <p>当前判断 <span>Current Read</span></p>
+              <h2>{coachPlan.stateLabel}</h2>
+              <small>{coachPlan.protocol.title.zh}</small>
             </div>
-            <div className="w-12 h-12 rounded-2xl border border-hos-purple/25 bg-hos-purple/10 flex items-center justify-center text-hos-purple">
-              <BrainCircuit size={23} />
-            </div>
+            <div className="coach-brain"><BrainCircuit size={23} /></div>
           </div>
 
-          <div className="grid grid-cols-3 gap-2.5">
+          <div className="coach-metrics">
             <div className="hos-metric">
               <Gauge size={14} className="text-hos-cyan" />
               <span>{snapshot.user.integration}%</span>
@@ -127,25 +124,29 @@ export default function Architect() {
         </section>
       </header>
 
-      <div ref={scrollRef} className="flex-1 min-h-0 overflow-y-auto py-5 space-y-5">
-        {messages.map((msg) => (
-          <div key={msg.id} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-            {msg.role === 'assistant' && (
-              <div className="max-w-[92%]">
-                <div className="flex items-center gap-1.5 mb-2 text-[10px] text-hos-text-muted">
+      <section className="coach-thread" aria-label="教练对话">
+        <div className="coach-thread-heading">
+          <div>
+            <p className="section-kicker">COACHING NOTE</p>
+            <h2>此刻的行动处方</h2>
+          </div>
+          <MessageCircle size={18} />
+        </div>
+
+        {messages.map((message) => (
+          <div key={message.id} className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+            {message.role === 'assistant' && (
+              <div className="coach-message assistant">
+                <div className="coach-message-label">
                   <Sparkles size={12} className="text-hos-cyan" />
                   <span>HOS Coach Kernel</span>
                 </div>
-                <div className="hos-card px-4 py-4 !rounded-tl-md">
-                  <pre className="whitespace-pre-wrap text-[13px] leading-[1.75] font-sans text-hos-text">{msg.content}</pre>
-                </div>
+                <div className="coach-bubble"><pre>{message.content}</pre></div>
               </div>
             )}
-            {msg.role === 'user' && (
-              <div className="max-w-[86%]">
-                <div className="bg-hos-cyan/10 border border-hos-cyan/20 rounded-2xl rounded-tr-md px-4 py-3">
-                  <p className="text-[13px] text-white leading-relaxed">{msg.content}</p>
-                </div>
+            {message.role === 'user' && (
+              <div className="coach-message user">
+                <div className="coach-bubble"><p>{message.content}</p></div>
               </div>
             )}
           </div>
@@ -153,7 +154,7 @@ export default function Architect() {
 
         {isTyping && (
           <div className="flex justify-start">
-            <div className="hos-card px-4 py-3">
+            <div className="coach-typing">
               <div className="flex gap-1.5">
                 {[0, 1, 2].map((item) => (
                   <span key={item} className="w-[6px] h-[6px] bg-hos-cyan/60 rounded-full" style={{ animation: `dot-pulse 1.4s ease-in-out ${item * 0.2}s infinite` }} />
@@ -162,38 +163,37 @@ export default function Architect() {
             </div>
           </div>
         )}
-      </div>
+        <div ref={endRef} />
+      </section>
 
-      <footer className="shrink-0 pt-3 border-t border-hos-border/70">
-        <div className="grid grid-cols-2 gap-2 mb-3">
+      <footer className="coach-compose">
+        <div className="coach-compose-heading">
+          <div>
+            <p className="section-kicker">START HERE</p>
+            <h2>你现在最需要处理什么？</h2>
+          </div>
+          <span>选择或直接输入</span>
+        </div>
+
+        <div className="coach-prompts">
           {quickPrompts.map((prompt) => (
-            <button
-              key={prompt.label}
-              onClick={() => sendMessage(prompt.text)}
-              className="rounded-xl border border-hos-border bg-hos-card/70 px-3 py-2.5 text-left text-[12px] text-hos-text-dim hover:text-white hover:border-hos-border-light transition-colors"
-            >
+            <button key={prompt.label} onClick={() => sendMessage(prompt.text)} className="coach-prompt">
               {prompt.label}
             </button>
           ))}
         </div>
 
-        <div className="flex items-center gap-2">
-          <div className="flex-1 flex items-center hos-card !rounded-2xl px-4 py-3 focus-within:!border-hos-cyan/35 transition-colors">
-            <MessageCircle size={16} className="text-hos-text-muted mr-2.5 shrink-0" />
+        <div className="coach-input-row">
+          <div className="coach-input">
+            <MessageCircle size={17} />
             <input
               value={input}
               onChange={(event) => setInput(event.target.value)}
               onKeyDown={(event) => event.key === 'Enter' && sendMessage()}
               placeholder="告诉我：你现在最卡住的是什么？"
-              className="flex-1 bg-transparent text-[14px] outline-none text-white placeholder-hos-text-muted"
             />
           </div>
-          <button
-            onClick={() => sendMessage()}
-            disabled={!input.trim() || isTyping}
-            className="w-12 h-12 rounded-2xl bg-hos-cyan/15 border border-hos-cyan/25 flex items-center justify-center text-hos-cyan disabled:opacity-25 hover:bg-hos-cyan/25 active:scale-[0.96] transition-all"
-            aria-label="发送"
-          >
+          <button onClick={() => sendMessage()} disabled={!input.trim() || isTyping} className="coach-send" aria-label="发送">
             <Send size={17} />
           </button>
         </div>
