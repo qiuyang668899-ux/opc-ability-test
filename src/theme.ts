@@ -1,4 +1,4 @@
-export type HOSTheme = 'warm-jade' | 'morning-mist' | 'apricot-sun'
+export type HOSTheme = 'art-bloom' | 'clear-order' | 'apricot-sun'
 
 export interface ThemeOption {
   id: HOSTheme
@@ -9,22 +9,28 @@ export interface ThemeOption {
 }
 
 export const THEME_STORAGE_KEY = 'hos_visual_theme'
-export const DEFAULT_THEME: HOSTheme = 'warm-jade'
+export const DEFAULT_THEME: HOSTheme = 'apricot-sun'
+
+const THEME_META_COLORS: Record<HOSTheme, string> = {
+  'art-bloom': '#f4effd',
+  'clear-order': '#eef0f2',
+  'apricot-sun': '#faf2e7',
+}
 
 export const THEME_OPTIONS: ThemeOption[] = [
   {
-    id: 'warm-jade',
-    name: '暖玉原版',
-    en: 'Warm Jade',
-    description: '米白纸感与沉静玉绿，温和、耐看，适合长时间使用。',
-    swatches: ['#f7f3ec', '#527d70', '#d9b68f'],
+    id: 'art-bloom',
+    name: '流光艺境',
+    en: 'Art Bloom',
+    description: '紫罗兰、珊瑚与湖蓝碰撞，造型跳脱，像一本流动的艺术画册。',
+    swatches: ['#f4effd', '#7054d6', '#e06a78'],
   },
   {
-    id: 'morning-mist',
-    name: '晨雾青绿',
-    en: 'Morning Mist',
-    description: '清透雾白与湖水青，呼吸感更强，适合专注与晨间使用。',
-    swatches: ['#f2f8f6', '#3e817d', '#a9c9c1'],
+    id: 'clear-order',
+    name: '理性秩序',
+    en: 'Clear Order',
+    description: '中性灰白与深海军蓝，网格严谨、层级清楚，专注信息本身。',
+    swatches: ['#f1f3f4', '#294b5f', '#89949b'],
   },
   {
     id: 'apricot-sun',
@@ -53,6 +59,7 @@ export function applyTheme(theme: HOSTheme) {
   if (typeof document === 'undefined') return
   document.documentElement.dataset.hosTheme = theme
   document.documentElement.style.colorScheme = 'light'
+  document.querySelector<HTMLMetaElement>('meta[name="theme-color"]')?.setAttribute('content', THEME_META_COLORS[theme])
 }
 
 export function saveTheme(theme: HOSTheme) {

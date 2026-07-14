@@ -22,71 +22,88 @@
 }
 
 :root,
-:root[data-hos-theme='warm-jade'] {
-  --hos-body-bg: linear-gradient(180deg, #f3eee5 0%, #f7f3ec 42%, #f8f5ef 100%);
-  --hos-shell-bg: rgba(250, 247, 241, 0.98);
-  --hos-card-bg: #fffdf9;
-  --hos-card-glass: rgba(255, 253, 249, 0.96);
-  --hos-surface-bg: #fcfaf6;
-  --hos-neutral-soft: #f1ece4;
-  --hos-accent-soft: #edf4ee;
-  --hos-accent-faint: #eaf2eb;
-  --hos-accent-panel: #f2f6f1;
-  --hos-warm-soft: #fff8ef;
-  --hos-warning-soft: #fff7e8;
-  --hos-danger-soft: #fff8f3;
-  --hos-card-accent-bg: linear-gradient(135deg, #fffdf9 0%, #f2f6f1 100%);
-  --hos-hero-bg: radial-gradient(circle at 88% 18%, rgba(219, 177, 133, 0.26), transparent 34%), linear-gradient(145deg, #edf4ed 0%, #f8f3e9 55%, #f8e9dc 100%);
-  --hos-feature-bg: linear-gradient(135deg, #fff8ef, #fffdf9);
-  --hos-reading-bg: linear-gradient(155deg, #fffdf9, #faf5eb);
-  --hos-player-bg: rgba(255, 253, 249, 0.97);
-  --hos-shadow-color: rgba(92, 74, 52, 0.08);
-  --hos-shadow-soft: 0 12px 34px rgba(92, 74, 52, 0.07);
-  --hos-radius-core: 8px;
-  --hos-radius-panel: 22px;
-  --hos-backdrop: rgba(49, 45, 39, 0.2);
+:root[data-hos-theme='art-bloom'] {
+  --color-hos-bg: #f4effd;
+  --color-hos-surface: #fbf8ff;
+  --color-hos-card: #fffdfd;
+  --color-hos-card-hover: #faf5ff;
+  --color-hos-border: #ddd2ef;
+  --color-hos-border-light: #bea9df;
+  --color-hos-cyan: #7054d6;
+  --color-hos-cyan-dim: #5940b8;
+  --color-hos-red: #d95672;
+  --color-hos-green: #26998e;
+  --color-hos-purple: #9a4fc4;
+  --color-hos-orange: #df7448;
+  --color-hos-teal: #2c91a8;
+  --color-hos-gold: #bd8736;
+  --color-hos-text: #302741;
+  --color-hos-text-dim: #685d78;
+  --color-hos-text-muted: #9a8da9;
+  --hos-body-bg: radial-gradient(circle at 7% 0%, rgba(147, 104, 229, 0.2), transparent 31%), radial-gradient(circle at 96% 30%, rgba(40, 162, 153, 0.16), transparent 30%), linear-gradient(160deg, #f5efff 0%, #fff7f4 55%, #edf9f8 100%);
+  --hos-shell-bg: rgba(253, 249, 255, 0.96);
+  --hos-card-bg: #fffdfd;
+  --hos-card-glass: rgba(255, 253, 255, 0.93);
+  --hos-surface-bg: #faf6ff;
+  --hos-neutral-soft: #f0e9fa;
+  --hos-accent-soft: #eee7ff;
+  --hos-accent-faint: #f1ebff;
+  --hos-accent-panel: #f5efff;
+  --hos-warm-soft: #fff0e9;
+  --hos-warning-soft: #fff3df;
+  --hos-danger-soft: #fff0f3;
+  --hos-card-accent-bg: linear-gradient(135deg, rgba(255, 253, 255, 0.98) 0%, #f0e8ff 54%, #e8f8f5 100%);
+  --hos-hero-bg: radial-gradient(circle at 84% 16%, rgba(230, 99, 120, 0.28), transparent 34%), radial-gradient(circle at 20% 100%, rgba(43, 153, 166, 0.22), transparent 40%), linear-gradient(135deg, #ece2ff 0%, #fff0ec 58%, #e8f6f4 100%);
+  --hos-feature-bg: linear-gradient(125deg, #f2e9ff 0%, #fff1ec 62%, #ecf9f7 100%);
+  --hos-reading-bg: linear-gradient(145deg, #fff9fc, #f1eaff 58%, #eaf8f6);
+  --hos-player-bg: rgba(255, 251, 255, 0.96);
+  --hos-shadow-color: rgba(101, 69, 148, 0.13);
+  --hos-shadow-soft: 0 18px 48px rgba(101, 69, 148, 0.14);
+  --hos-radius-core: 22px;
+  --hos-radius-panel: 34px;
+  --hos-backdrop: rgba(52, 35, 73, 0.25);
 }
 
-:root[data-hos-theme='morning-mist'] {
-  --color-hos-bg: #eef6f4;
-  --color-hos-surface: #f7fbfa;
-  --color-hos-card: #fbfefd;
-  --color-hos-card-hover: #f3faf8;
-  --color-hos-border: #d8e5e1;
-  --color-hos-border-light: #bdd3cd;
-  --color-hos-cyan: #3e817d;
-  --color-hos-cyan-dim: #2f6864;
-  --color-hos-red: #c66f6b;
-  --color-hos-green: #5d8f77;
-  --color-hos-purple: #7776a4;
-  --color-hos-orange: #c98562;
-  --color-hos-teal: #548d91;
-  --color-hos-gold: #aa824e;
-  --color-hos-text: #263835;
-  --color-hos-text-dim: #617572;
-  --color-hos-text-muted: #8b9d99;
-  --hos-body-bg: linear-gradient(180deg, #e9f3f1 0%, #f2f8f6 45%, #f8fbfa 100%);
-  --hos-shell-bg: rgba(247, 251, 250, 0.98);
-  --hos-card-bg: #fbfefd;
-  --hos-card-glass: rgba(251, 254, 253, 0.95);
-  --hos-surface-bg: #f5faf8;
-  --hos-neutral-soft: #e8f1ef;
-  --hos-accent-soft: #e3f1ed;
-  --hos-accent-faint: #e8f4f1;
-  --hos-accent-panel: #edf7f4;
-  --hos-warm-soft: #f8f5ed;
-  --hos-warning-soft: #fbf5e8;
-  --hos-danger-soft: #fbf1ef;
-  --hos-card-accent-bg: linear-gradient(140deg, #fbfefd 0%, #eaf5f2 100%);
-  --hos-hero-bg: radial-gradient(circle at 86% 16%, rgba(111, 170, 163, 0.2), transparent 34%), linear-gradient(145deg, #e2f1ed 0%, #f3f8f6 58%, #edf5f5 100%);
-  --hos-feature-bg: linear-gradient(135deg, #eef8f5, #fbfefd);
-  --hos-reading-bg: linear-gradient(155deg, #fbfefd, #f0f7f4);
-  --hos-player-bg: rgba(248, 253, 251, 0.97);
-  --hos-shadow-color: rgba(48, 92, 84, 0.08);
-  --hos-shadow-soft: 0 14px 38px rgba(48, 92, 84, 0.08);
-  --hos-radius-core: 16px;
-  --hos-radius-panel: 26px;
-  --hos-backdrop: rgba(30, 57, 54, 0.18);
+:root[data-hos-theme='clear-order'] {
+  --color-hos-bg: #eef0f2;
+  --color-hos-surface: #f7f8f9;
+  --color-hos-card: #ffffff;
+  --color-hos-card-hover: #f5f7f8;
+  --color-hos-border: #d5dade;
+  --color-hos-border-light: #aeb7bd;
+  --color-hos-cyan: #294b5f;
+  --color-hos-cyan-dim: #1f3948;
+  --color-hos-red: #a94e4e;
+  --color-hos-green: #4f7062;
+  --color-hos-purple: #5d617b;
+  --color-hos-orange: #9d6747;
+  --color-hos-teal: #4f7478;
+  --color-hos-gold: #8a6b37;
+  --color-hos-text: #20292f;
+  --color-hos-text-dim: #59656d;
+  --color-hos-text-muted: #89939a;
+  --hos-body-bg: linear-gradient(180deg, #e6e9eb 0%, #f1f3f4 52%, #f6f7f8 100%);
+  --hos-shell-bg: #f7f8f9;
+  --hos-card-bg: #ffffff;
+  --hos-card-glass: rgba(255, 255, 255, 0.97);
+  --hos-surface-bg: #f5f7f8;
+  --hos-neutral-soft: #e8ebed;
+  --hos-accent-soft: #e8eef1;
+  --hos-accent-faint: #edf2f4;
+  --hos-accent-panel: #f0f3f5;
+  --hos-warm-soft: #f5f2ed;
+  --hos-warning-soft: #f6f2e8;
+  --hos-danger-soft: #f7eeee;
+  --hos-card-accent-bg: linear-gradient(180deg, #ffffff 0%, #f4f6f7 100%);
+  --hos-hero-bg: linear-gradient(180deg, #ffffff 0%, #f1f4f5 100%);
+  --hos-feature-bg: linear-gradient(90deg, #eef2f4 0%, #ffffff 100%);
+  --hos-reading-bg: linear-gradient(180deg, #ffffff, #f7f8f8);
+  --hos-player-bg: rgba(255, 255, 255, 0.98);
+  --hos-shadow-color: rgba(32, 41, 47, 0.055);
+  --hos-shadow-soft: 0 3px 10px rgba(32, 41, 47, 0.06);
+  --hos-radius-core: 4px;
+  --hos-radius-panel: 7px;
+  --hos-backdrop: rgba(27, 34, 39, 0.22);
 }
 
 :root[data-hos-theme='apricot-sun'] {
@@ -1111,6 +1128,95 @@ html, body, #root, .app-shell, .hos-card, .hos-card-accent, .hos-glass {
 .theme-option-check { width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; border-radius: 50%; color: var(--hos-card-bg); background: var(--color-hos-cyan); }
 .theme-option:not(.active) .theme-option-check { border: 1px solid var(--color-hos-border); background: transparent; }
 .theme-done { width: 100%; min-height: 48px; margin-top: 16px; border-radius: 14px; color: var(--hos-card-bg); background: var(--color-hos-cyan); font-size: 12.5px; font-weight: 750; }
+
+/* Art Bloom: expressive editorial composition */
+:root[data-hos-theme='art-bloom'] .app-shell::before {
+  height: 340px;
+  background:
+    radial-gradient(circle at 10% 12%, rgba(112, 84, 214, 0.19), transparent 24%),
+    radial-gradient(circle at 92% 34%, rgba(224, 106, 120, 0.18), transparent 28%),
+    radial-gradient(circle at 62% 0%, rgba(38, 153, 142, 0.13), transparent 25%);
+  opacity: 1;
+}
+:root[data-hos-theme='art-bloom'] :is(.brand-lockup h1, .warm-hero h2, .music-header h1, .coach-title-row h1, .tools-header h1, .support-hero h1, .about-hero h1) {
+  font-family: 'Songti SC', 'STSong', 'Noto Serif SC', serif;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+:root[data-hos-theme='art-bloom'] :is(.warm-hero, .status-hero, .hos-card-accent) {
+  border-radius: 34px 12px 34px 12px;
+  border-color: color-mix(in srgb, var(--color-hos-cyan) 34%, var(--color-hos-border));
+}
+:root[data-hos-theme='art-bloom'] .warm-hero { position: relative; overflow: hidden; }
+:root[data-hos-theme='art-bloom'] .warm-hero::after {
+  content: '';
+  position: absolute;
+  width: 112px;
+  height: 112px;
+  right: -30px;
+  top: -38px;
+  border: 18px solid rgba(112, 84, 214, 0.11);
+  border-radius: 42% 58% 38% 62%;
+  transform: rotate(24deg);
+}
+:root[data-hos-theme='art-bloom'] .hos-card-accent::before {
+  height: 4px;
+  opacity: 0.85;
+  background: linear-gradient(90deg, var(--color-hos-purple), var(--color-hos-red), var(--color-hos-teal));
+}
+:root[data-hos-theme='art-bloom'] .home-shortcut:nth-child(odd) { border-radius: 26px 11px 26px 11px; }
+:root[data-hos-theme='art-bloom'] .home-shortcut:nth-child(even) { border-radius: 11px 26px 11px 26px; }
+:root[data-hos-theme='art-bloom'] .home-shortcut.featured {
+  border-left: 4px solid var(--color-hos-red);
+  box-shadow: 0 14px 34px rgba(112, 84, 214, 0.1);
+}
+:root[data-hos-theme='art-bloom'] :is(.shortcut-icon, .journal-mark, .music-kicker > span, .coach-kicker > span) { border-radius: 48% 52% 42% 58%; }
+:root[data-hos-theme='art-bloom'] .nav-item[aria-current='page'] {
+  background: linear-gradient(145deg, rgba(112, 84, 214, 0.14), rgba(38, 153, 142, 0.1));
+  transform: translateY(-2px);
+}
+:root[data-hos-theme='art-bloom'] .theme-fab {
+  border-color: rgba(112, 84, 214, 0.35);
+  background: linear-gradient(135deg, rgba(255, 253, 255, 0.98), rgba(240, 232, 255, 0.96));
+}
+:root[data-hos-theme='art-bloom'] :is(.theme-sheet, .theme-option) { border-radius: 30px 12px 30px 12px; }
+:root[data-hos-theme='art-bloom'] .theme-done { background: linear-gradient(110deg, var(--color-hos-purple), var(--color-hos-cyan), var(--color-hos-teal)); }
+
+/* Clear Order: restrained, structured and information-first */
+:root[data-hos-theme='clear-order'] .app-shell::before { display: none; }
+:root[data-hos-theme='clear-order'] :is(.hos-card, .hos-card-accent, .warm-hero, .status-hero, .checkin-panel, .home-shortcut, .all-tools-entry, .support-entry, .tool-list, .journal-form, .journal-entry, .coach-overview, .coach-thread, .coach-compose, .music-library-switch button, .music-scene-panel, .music-scene, .music-track-card, .frequency-guide-panel, .frequency-guide-grid article, .reading-card, .theme-sheet, .theme-option) {
+  border-radius: 6px;
+  box-shadow: none;
+}
+:root[data-hos-theme='clear-order'] :is(.warm-hero, .status-hero) {
+  min-height: 184px;
+  border-left: 5px solid var(--color-hos-cyan);
+  background: var(--hos-hero-bg);
+}
+:root[data-hos-theme='clear-order'] .hos-card-accent::before {
+  height: 3px;
+  opacity: 1;
+  background: var(--color-hos-cyan);
+}
+:root[data-hos-theme='clear-order'] :is(.shortcut-icon, .hos-icon-box, .journal-mark, .music-kicker > span, .coach-kicker > span, .music-track-icon, .music-scene-icon) { border-radius: 4px; }
+:root[data-hos-theme='clear-order'] :is(.icon-action, .journal-toggle, .coach-execute, .coach-input, .coach-send, .music-play-button, .theme-fab, .theme-sheet-close, .theme-done) { border-radius: 4px; box-shadow: none; }
+:root[data-hos-theme='clear-order'] :is(.classic-categories button, .music-categories button, .journal-chip, .theme-option-check) { border-radius: 4px; }
+:root[data-hos-theme='clear-order'] .nav-item { border-radius: 2px; }
+:root[data-hos-theme='clear-order'] .nav-item[aria-current='page'] {
+  color: var(--color-hos-cyan);
+  background: #e4eaed;
+  box-shadow: inset 0 -2px 0 var(--color-hos-cyan);
+}
+:root[data-hos-theme='clear-order'] :is(.brand-kicker, .section-kicker, .music-kicker p, .coach-kicker p) {
+  letter-spacing: 0.11em;
+  font-weight: 700;
+}
+:root[data-hos-theme='clear-order'] :is(.warm-hero h2, .brand-lockup h1, .music-header h1, .coach-title-row h1, .tools-header h1) {
+  letter-spacing: -0.035em;
+  font-weight: 780;
+}
+:root[data-hos-theme='clear-order'] .theme-option-preview { border-radius: 3px; }
+:root[data-hos-theme='clear-order'] .theme-option-preview i { border-radius: 1px; }
 
 @media (max-width: 360px) {
   .theme-fab { min-width: 42px; width: 42px; padding: 0; }
