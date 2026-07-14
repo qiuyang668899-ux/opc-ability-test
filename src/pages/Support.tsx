@@ -93,7 +93,7 @@ export default function Support() {
       <section className="section-block">
         <div className="hos-section-title">
           <div><p className="section-kicker">CHOOSE SUPPORT</p><h2>选择赞赏心意</h2></div>
-          <strong className="text-[22px] text-white">¥{finalAmount}</strong>
+          <strong className="text-[22px] text-hos-text">¥{finalAmount}</strong>
         </div>
         <div className="amount-grid">
           {amountOptions.map((option) => (

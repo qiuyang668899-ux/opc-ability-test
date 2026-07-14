@@ -40,7 +40,7 @@ export default function BioSync() {
       <div className="flex items-center gap-2.5 mb-6">
         <Activity size={18} className="text-hos-orange" />
         <div>
-          <h1 className="text-[15px] font-bold text-white">{UI.bioSyncModule.zh}</h1>
+          <h1 className="text-[15px] font-bold text-hos-text">{UI.bioSyncModule.zh}</h1>
           <p className="text-en">{UI.bioSyncModule.en}</p>
         </div>
       </div>
@@ -50,7 +50,7 @@ export default function BioSync() {
         <div className="flex items-start justify-between">
           <div>
             <p className="text-[10px] text-hos-text-muted uppercase tracking-wider mb-1">{UI.currentPhase.zh} / {UI.currentPhase.en}</p>
-            <h2 className="text-[22px] font-bold text-white leading-tight">{phase.name.zh}</h2>
+            <h2 className="text-[22px] font-bold text-hos-text leading-tight">{phase.name.zh}</h2>
             <p className="text-en">{phase.name.en}</p>
             <p className="text-[12px] text-hos-text-dim mt-2">{phase.description.zh}</p>
             <p className="text-en">{phase.description.en}</p>
@@ -67,7 +67,7 @@ export default function BioSync() {
         <div className="flex items-center justify-between mb-4">
           <p className="text-[11px] text-hos-text-dim">{UI.energyState.zh} / {UI.energyState.en}</p>
           <div className="flex items-baseline gap-1">
-            <span className="text-[24px] font-bold text-white">{energy}</span>
+            <span className="text-[24px] font-bold text-hos-text">{energy}</span>
             <span className="text-[12px] text-hos-text-muted">/ {user.maxEnergy}</span>
           </div>
         </div>
@@ -90,7 +90,7 @@ export default function BioSync() {
       {/* Diagnosis & Protocol */}
       <div className="hos-card p-5 mb-4">
         <p className="text-[10px] text-hos-text-muted uppercase tracking-wider mb-2">{UI.systemDiag.zh} / {UI.systemDiag.en}</p>
-        <p className="text-[13px] text-white leading-relaxed mb-1">能量与节律匹配。保持当前心流状态。</p>
+        <p className="text-[13px] text-hos-text leading-relaxed mb-1">能量与节律匹配。保持当前心流状态。</p>
         <p className="text-en mb-4">Energy aligned with rhythm. Maintain flow state.</p>
 
         <div className="flex items-center justify-between bg-hos-bg/60 rounded-xl p-3.5 border border-hos-border/50">
@@ -119,7 +119,7 @@ export default function BioSync() {
             <Heart size={18} className="text-rose-400" />
           </div>
           <div className="flex-1 text-left">
-            <p className="text-[13px] font-semibold text-white">{UI.heartBrain.zh}</p>
+            <p className="text-[13px] font-semibold text-hos-text">{UI.heartBrain.zh}</p>
             <p className="text-en">{UI.heartBrain.en}</p>
             <p className="text-[11px] text-hos-text-dim mt-0.5">心率变异性 · 平衡 ANS</p>
           </div>

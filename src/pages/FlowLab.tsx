@@ -95,7 +95,7 @@ export default function FlowLab() {
           <Focus size={18} className="text-hos-purple" />
           <span className="text-[11px] text-hos-purple font-mono tracking-wider">FLOW LEARNING CABIN</span>
         </div>
-        <h1 className="text-[24px] font-bold text-white leading-tight">心流学习舱</h1>
+        <h1 className="text-[24px] font-bold text-hos-text leading-tight">心流学习舱</h1>
         <p className="text-en mt-1">Skill compression through deliberate loops</p>
       </div>
 
@@ -121,7 +121,7 @@ export default function FlowLab() {
                 {index + 1}
               </span>
               <div>
-                <p className="text-[13px] font-semibold text-white">{stage.title}</p>
+                <p className="text-[13px] font-semibold text-hos-text">{stage.title}</p>
                 <p className="text-en">{stage.en}</p>
               </div>
             </div>
@@ -137,7 +137,7 @@ export default function FlowLab() {
             value={skill}
             onChange={(event) => setSkill(event.target.value)}
             placeholder="例如：短视频脚本、演讲、网球正手、英语口语..."
-            className="w-full bg-hos-bg/70 border border-hos-border rounded-xl px-3.5 py-2.5 text-[13px] outline-none focus:border-hos-purple/40 text-white placeholder-hos-text-muted transition-colors"
+            className="w-full bg-hos-bg/70 border border-hos-border rounded-xl px-3.5 py-2.5 text-[13px] outline-none focus:border-hos-purple/40 text-hos-text placeholder-hos-text-muted transition-colors"
           />
         </div>
 
@@ -147,7 +147,7 @@ export default function FlowLab() {
             value={target}
             onChange={(event) => setTarget(event.target.value)}
             placeholder="90分钟内，我只要推进..."
-            className="w-full bg-hos-bg/70 border border-hos-border rounded-xl px-3.5 py-2.5 text-[13px] outline-none focus:border-hos-cyan/40 text-white placeholder-hos-text-muted transition-colors"
+            className="w-full bg-hos-bg/70 border border-hos-border rounded-xl px-3.5 py-2.5 text-[13px] outline-none focus:border-hos-cyan/40 text-hos-text placeholder-hos-text-muted transition-colors"
           />
         </div>
 
@@ -158,7 +158,7 @@ export default function FlowLab() {
             onChange={(event) => setKeyNode(event.target.value)}
             rows={2}
             placeholder="把动作或任务拆成4帧，然后选最重要的一帧..."
-            className="w-full bg-hos-bg/70 border border-hos-border rounded-xl px-3.5 py-2.5 text-[13px] outline-none focus:border-hos-orange/40 text-white placeholder-hos-text-muted resize-none transition-colors"
+            className="w-full bg-hos-bg/70 border border-hos-border rounded-xl px-3.5 py-2.5 text-[13px] outline-none focus:border-hos-orange/40 text-hos-text placeholder-hos-text-muted resize-none transition-colors"
           />
         </div>
 
@@ -169,7 +169,7 @@ export default function FlowLab() {
             onChange={(event) => setRehearsal(event.target.value)}
             rows={2}
             placeholder="闭眼时要看到什么画面？身体先做什么？"
-            className="w-full bg-hos-bg/70 border border-hos-border rounded-xl px-3.5 py-2.5 text-[13px] outline-none focus:border-hos-green/40 text-white placeholder-hos-text-muted resize-none transition-colors"
+            className="w-full bg-hos-bg/70 border border-hos-border rounded-xl px-3.5 py-2.5 text-[13px] outline-none focus:border-hos-green/40 text-hos-text placeholder-hos-text-muted resize-none transition-colors"
           />
         </div>
 
@@ -177,7 +177,7 @@ export default function FlowLab() {
           <div className="flex items-center justify-between mb-3">
             <div>
               <p className="text-[11px] text-hos-text-dim">最小闭环计时 / Practice Loop</p>
-              <p className="text-[24px] font-mono font-bold text-white mt-1">
+              <p className="text-[24px] font-mono font-bold text-hos-text mt-1">
                 {remaining > 0 ? `${minutes}:${seconds}` : `${practiceMinutes}:00`}
               </p>
             </div>
@@ -209,7 +209,7 @@ export default function FlowLab() {
             </button>
             <button
               onClick={resetTimer}
-              className="w-11 rounded-xl border border-hos-border text-hos-text-muted flex items-center justify-center hover:border-hos-border-light hover:text-white transition-colors"
+              className="w-11 rounded-xl border border-hos-border text-hos-text-muted flex items-center justify-center hover:border-hos-border-light hover:text-hos-text transition-colors"
             >
               <RotateCcw size={15} />
             </button>
@@ -223,7 +223,7 @@ export default function FlowLab() {
             onChange={(event) => setFeedback(event.target.value)}
             rows={2}
             placeholder="这一轮发现了什么？下一轮只改哪一个点？"
-            className="w-full bg-hos-bg/70 border border-hos-border rounded-xl px-3.5 py-2.5 text-[13px] outline-none focus:border-hos-cyan/40 text-white placeholder-hos-text-muted resize-none transition-colors"
+            className="w-full bg-hos-bg/70 border border-hos-border rounded-xl px-3.5 py-2.5 text-[13px] outline-none focus:border-hos-cyan/40 text-hos-text placeholder-hos-text-muted resize-none transition-colors"
           />
         </div>
 
@@ -240,8 +240,8 @@ export default function FlowLab() {
         <button
           onClick={saveSession}
           disabled={!skill.trim() || !target.trim() || !keyNode.trim()}
-          className="w-full rounded-xl px-4 py-3 text-white font-semibold text-[13px] flex items-center justify-center gap-2 disabled:opacity-25 active:scale-[0.97] transition-all"
-          style={{ background: 'linear-gradient(135deg, rgba(167,139,250,0.85), rgba(0,212,245,0.75))' }}
+          className="w-full rounded-xl px-4 py-3 text-[#fffdf9] font-semibold text-[13px] flex items-center justify-center gap-2 disabled:opacity-25 active:scale-[0.97] transition-all"
+          style={{ background: 'linear-gradient(135deg, var(--color-hos-purple), var(--color-hos-cyan))' }}
         >
           <Save size={15} />
           保存训练闭环
@@ -250,7 +250,7 @@ export default function FlowLab() {
 
       <section>
         <div className="flex items-center justify-between mb-2.5">
-          <p className="text-[12px] font-semibold text-white">训练记录</p>
+          <p className="text-[12px] font-semibold text-hos-text">训练记录</p>
           <span className="text-[10px] text-hos-text-muted font-mono">{sessions.length} loops</span>
         </div>
         {sessions.length === 0 ? (
@@ -267,7 +267,7 @@ export default function FlowLab() {
                   <CheckCircle2 size={17} className="text-hos-green mt-0.5 flex-shrink-0" />
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between gap-3">
-                      <h3 className="text-[14px] font-semibold text-white truncate">{session.skill}</h3>
+                      <h3 className="text-[14px] font-semibold text-hos-text truncate">{session.skill}</h3>
                       <span className="text-[10px] text-hos-text-muted font-mono whitespace-nowrap">{session.practiceMinutes}m</span>
                     </div>
                     <p className="text-[12px] text-hos-text-dim mt-1 leading-relaxed">{session.target}</p>

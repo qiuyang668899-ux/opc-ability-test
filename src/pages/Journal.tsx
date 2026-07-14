@@ -184,7 +184,7 @@ export default function Journal() {
             >
               <div className="w-[3px] h-9 rounded-full flex-shrink-0" style={{ background: 'linear-gradient(180deg, var(--color-hos-purple), var(--color-hos-cyan))' }} />
               <div className="flex-1 min-w-0">
-                <p className="text-[14px] font-medium text-white truncate">{entry.trigger}</p>
+                <p className="text-[14px] font-medium text-hos-text truncate">{entry.trigger}</p>
                 <p className="text-[10.5px] text-hos-text-muted mt-1">{new Date(entry.timestamp).toLocaleString('zh-CN')}</p>
               </div>
               {entry.distortion && (

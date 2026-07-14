@@ -63,7 +63,7 @@ export default function Activation() {
             <Sparkles size={18} className="text-hos-cyan" />
             <span className="text-[11px] text-hos-cyan font-mono tracking-wider">GENESIS PROTOCOL</span>
           </div>
-          <h1 className="text-[24px] font-bold text-white leading-tight">7 日系统启动序列</h1>
+          <h1 className="text-[24px] font-bold text-hos-text leading-tight">7 日系统启动序列</h1>
           <p className="text-en mt-1">Seven-Day Human OS Installation</p>
         </div>
         <button
@@ -79,7 +79,7 @@ export default function Activation() {
         <div className="flex items-center justify-between mb-3">
           <div>
             <p className="text-[11px] text-hos-text-dim">系统安装进度 / Installation</p>
-            <p className="text-[22px] font-bold text-white mt-0.5">{completion}%</p>
+            <p className="text-[22px] font-bold text-hos-text mt-0.5">{completion}%</p>
           </div>
           <div className="text-right">
             <p className="text-[11px] text-hos-text-dim">当前建议 / Next Step</p>
@@ -104,7 +104,7 @@ export default function Activation() {
               onClick={() => setSelectedDay(item.day)}
               className={`min-w-[58px] rounded-2xl border px-3 py-2 text-left transition-all ${
                 isSelected
-                  ? 'border-hos-cyan/50 bg-hos-cyan/12 text-white'
+                  ? 'border-hos-cyan/50 bg-hos-cyan/12 text-hos-cyan'
                   : isDone
                   ? 'border-hos-green/25 bg-hos-green/8 text-hos-green'
                   : 'border-hos-border text-hos-text-dim hover:border-hos-border-light'
@@ -121,7 +121,7 @@ export default function Activation() {
         <div className="flex items-start justify-between gap-4">
           <div>
             <p className="text-[11px] text-hos-cyan font-mono mb-1">DAY {day.day} · {day.subtitle.zh}</p>
-            <h2 className="text-[20px] font-bold text-white leading-tight">{day.title.zh}</h2>
+            <h2 className="text-[20px] font-bold text-hos-text leading-tight">{day.title.zh}</h2>
             <p className="text-en mt-1">{day.title.en}</p>
           </div>
           <div className="w-16 h-16 rounded-full border border-hos-cyan/25 bg-hos-cyan/8 flex flex-col items-center justify-center">
@@ -137,7 +137,7 @@ export default function Activation() {
           </div>
           <div className="rounded-xl border border-hos-border/60 bg-hos-bg/50 p-3">
             <p className="text-[10px] text-hos-text-muted">任务 / Tasks</p>
-            <p className="text-[14px] font-mono font-bold text-white mt-1">{completedTasks}/{day.tasks.length}</p>
+            <p className="text-[14px] font-mono font-bold text-hos-text mt-1">{completedTasks}/{day.tasks.length}</p>
           </div>
         </div>
 
@@ -170,7 +170,7 @@ export default function Activation() {
               </span>
               <span className="flex-1 min-w-0">
                 <span className="flex items-center justify-between gap-3">
-                  <span className="text-[14px] font-semibold text-white">{task.title.zh}</span>
+                  <span className="text-[14px] font-semibold text-hos-text">{task.title.zh}</span>
                   <span className="text-[10px] font-mono text-hos-cyan whitespace-nowrap">{task.metric.zh}</span>
                 </span>
                 <span className="block text-[12px] text-hos-text-dim leading-relaxed mt-1">{task.detail.zh}</span>
@@ -193,7 +193,7 @@ export default function Activation() {
           onChange={(event) => updateNote(event.target.value)}
           rows={3}
           placeholder="记录今天的系统日志..."
-          className="w-full bg-hos-bg/70 border border-hos-border rounded-xl px-3.5 py-3 text-[13px] outline-none focus:border-hos-cyan/35 text-white placeholder-hos-text-muted resize-none transition-colors"
+          className="w-full bg-hos-bg/70 border border-hos-border rounded-xl px-3.5 py-3 text-[13px] outline-none focus:border-hos-cyan/35 text-hos-text placeholder-hos-text-muted resize-none transition-colors"
         />
       </section>
 
@@ -207,7 +207,7 @@ export default function Activation() {
         </button>
         <button
           onClick={() => setSelectedDay(Math.min(7, day.day + 1))}
-          className="w-12 rounded-2xl border border-hos-border text-hos-text-dim flex items-center justify-center hover:border-hos-border-light hover:text-white transition-colors"
+          className="w-12 rounded-2xl border border-hos-border text-hos-text-dim flex items-center justify-center hover:border-hos-border-light hover:text-hos-text transition-colors"
         >
           <ChevronRight size={18} />
         </button>

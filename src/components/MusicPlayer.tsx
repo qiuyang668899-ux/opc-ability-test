@@ -212,7 +212,7 @@ export default function MusicPlayer() {
       <button
         onClick={() => setExpanded(true)}
         className="fixed bottom-[82px] right-3 z-40 w-11 h-11 rounded-full border border-hos-cyan/30 flex items-center justify-center shadow-lg hover:border-hos-cyan/50 transition-all"
-        style={{ background: 'rgba(255,253,249,0.96)', backdropFilter: 'blur(14px)', maxWidth: 'calc((100vw - 520px) / 2 + 520px - 12px)' }}
+        style={{ background: 'var(--hos-player-bg)', backdropFilter: 'blur(14px)', maxWidth: 'calc((100vw - 520px) / 2 + 520px - 12px)' }}
         aria-label="展开正在播放的心境音乐"
       >
         <Music size={17} className="text-hos-cyan" />
@@ -223,16 +223,16 @@ export default function MusicPlayer() {
 
   return (
     <div className="fixed bottom-[88px] right-3 left-3 z-40 max-w-[452px] mx-auto">
-      <div className="border border-hos-border rounded-2xl p-4 shadow-2xl" style={{ background: 'rgba(255,253,249,0.98)', backdropFilter: 'blur(22px)' }}>
+      <div className="border border-hos-border rounded-2xl p-4 shadow-2xl" style={{ background: 'var(--hos-player-bg)', backdropFilter: 'blur(22px)' }}>
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
             <Music size={16} className="text-hos-cyan" />
             <div>
-              <p className="text-[14px] font-semibold text-white leading-tight">{UI.musicPlayer.zh}</p>
+              <p className="text-[14px] font-semibold text-hos-text leading-tight">{UI.musicPlayer.zh}</p>
               <p className="text-en">{UI.musicPlayer.en}</p>
             </div>
           </div>
-          <button onClick={() => setExpanded(false)} className="w-8 h-8 rounded-xl border border-hos-border flex items-center justify-center text-hos-text-muted hover:text-white hover:border-hos-border-light transition-colors">
+          <button onClick={() => setExpanded(false)} className="w-8 h-8 rounded-xl border border-hos-border flex items-center justify-center text-hos-text-muted hover:text-hos-text hover:border-hos-border-light transition-colors">
             <X size={15} />
           </button>
         </div>
@@ -244,7 +244,7 @@ export default function MusicPlayer() {
             </span>
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 mb-1">
-                <p className="text-[15px] font-semibold text-white truncate">{currentTrack.name.zh}</p>
+                <p className="text-[15px] font-semibold text-hos-text truncate">{currentTrack.name.zh}</p>
                 <span className="text-[10px] px-2 py-0.5 rounded-full border border-hos-border text-hos-text-muted shrink-0">{currentTrack.intensity}</span>
               </div>
               <p className="text-en truncate">{currentTrack.name.en} · {currentTrack.category.zh}</p>
@@ -290,7 +290,7 @@ export default function MusicPlayer() {
 
           <div className="flex items-center justify-between gap-4">
             <div className="flex items-center gap-4">
-              <button onClick={() => skipTrack(-1)} className="text-hos-text-muted hover:text-white transition-colors" aria-label="上一首">
+              <button onClick={() => skipTrack(-1)} className="text-hos-text-muted hover:text-hos-text transition-colors" aria-label="上一首">
                 <SkipBack size={20} />
               </button>
               <button
@@ -300,7 +300,7 @@ export default function MusicPlayer() {
               >
                 {playing ? <Pause size={19} className="text-hos-cyan" /> : <Play size={19} className="text-hos-cyan ml-0.5" />}
               </button>
-              <button onClick={() => skipTrack(1)} className="text-hos-text-muted hover:text-white transition-colors" aria-label="下一首">
+              <button onClick={() => skipTrack(1)} className="text-hos-text-muted hover:text-hos-text transition-colors" aria-label="下一首">
                 <SkipForward size={20} />
               </button>
             </div>

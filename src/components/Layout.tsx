@@ -1,7 +1,9 @@
-import { useEffect, useRef } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { Outlet, NavLink, useLocation } from 'react-router-dom'
 import { BookOpen, BrainCircuit, Grid3X3, Home, Music2 } from 'lucide-react'
 import MusicPlayer from './MusicPlayer'
+import ThemeSwitcher from './ThemeSwitcher'
+import { getStoredTheme, saveTheme, type HOSTheme } from '../theme'
 
 const navItems = [
   { to: '/', icon: Home, label: '首页' },
@@ -14,6 +16,13 @@ const navItems = [
 export default function Layout() {
   const location = useLocation()
   const mainRef = useRef<HTMLElement>(null)
+  const [theme, setTheme] = useState<HOSTheme>(getStoredTheme)
+  const [themeOpen, setThemeOpen] = useState(false)
+
+  const changeTheme = useCallback((nextTheme: HOSTheme) => {
+    setTheme(nextTheme)
+    saveTheme(nextTheme)
+  }, [])
 
   useEffect(() => {
     mainRef.current?.scrollTo({ top: 0, behavior: 'auto' })
@@ -26,6 +35,7 @@ export default function Layout() {
       </main>
 
       <MusicPlayer />
+      <ThemeSwitcher theme={theme} open={themeOpen} onOpenChange={setThemeOpen} onThemeChange={changeTheme} />
 
       <nav className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[520px] hos-glass z-50">
         <div className="flex justify-around items-center h-[68px] px-1 pb-1">

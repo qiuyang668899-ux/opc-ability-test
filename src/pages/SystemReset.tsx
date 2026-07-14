@@ -151,7 +151,7 @@ export default function SystemReset() {
     <div className="flex flex-col max-w-[430px] mx-auto bg-hos-bg" style={{ height: '100dvh' }}>
       {/* Header */}
       <div className="flex items-center justify-between px-5 pt-4 pb-2">
-        <button onClick={() => navigate(-1)} className="w-9 h-9 rounded-xl border border-hos-border flex items-center justify-center text-hos-text-dim hover:text-white hover:border-hos-border-light transition-colors">
+        <button onClick={() => navigate(-1)} className="w-9 h-9 rounded-xl border border-hos-border flex items-center justify-center text-hos-text-dim hover:text-hos-text hover:border-hos-border-light transition-colors">
           <ArrowLeft size={18} />
         </button>
         {!isCoherenceMode && (
@@ -204,7 +204,7 @@ export default function SystemReset() {
           {/* Phase label */}
           {running && phase !== 'idle' && (
             <div className="text-center animate-float-up">
-              <p className={`text-[18px] font-medium ${isCoherenceMode ? 'text-hos-gold/80' : 'text-white/80'}`}>{phaseLabels[phase].zh}</p>
+              <p className={`text-[18px] font-medium ${isCoherenceMode ? 'text-hos-gold/80' : 'text-hos-text/80'}`}>{phaseLabels[phase].zh}</p>
               <p className="text-[11px] text-hos-text-dim">{phaseLabels[phase].en}</p>
             </div>
           )}
@@ -286,7 +286,7 @@ export default function SystemReset() {
           {running && (
             <button
               onClick={() => { stop(); setSeconds(totalSeconds) }}
-              className="w-12 h-12 rounded-full flex items-center justify-center border border-hos-border text-hos-text-muted hover:text-white hover:border-hos-border-light transition-colors self-center"
+              className="w-12 h-12 rounded-full flex items-center justify-center border border-hos-border text-hos-text-muted hover:text-hos-text hover:border-hos-border-light transition-colors self-center"
             >
               <RotateCcw size={18} />
             </button>
