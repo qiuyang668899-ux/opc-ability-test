@@ -48,7 +48,7 @@ export default function About() {
       <section className="section-block">
         <div className="hos-section-title"><div><p className="section-kicker">CURRENT VERSION</p><h2>当前已开放</h2></div></div>
         <div className="release-grid">
-          <span>7 日启动序列</span><span>状态感知 AI 教练</span><span>压力与睡眠协议</span><span>心流学习训练</span><span>模式重写日志</span><span>AI 心境音频库</span><span>摄像头视觉自检</span><span>本机成长记录</span>
+          <span>7 日启动序列</span><span>状态感知 AI 教练</span><span>压力与睡眠协议</span><span>心流学习训练</span><span>模式重写日志</span><span>AI 心境音频库</span><span>视觉状态诊断</span><span>经典阅读修习</span><span>生物节律建议</span><span>本机成长记录</span>
         </div>
       </section>
 

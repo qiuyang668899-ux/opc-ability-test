@@ -1,15 +1,14 @@
 import { useEffect, useRef } from 'react'
 import { Outlet, NavLink, useLocation } from 'react-router-dom'
-import { LayoutGrid, MessageSquare, BookOpen, HeartHandshake, Music } from 'lucide-react'
-import { UI } from '../utils/i18n'
+import { BookOpen, BrainCircuit, Grid3X3, Home, Music2 } from 'lucide-react'
 import MusicPlayer from './MusicPlayer'
 
 const navItems = [
-  { to: '/', icon: LayoutGrid, label: UI.home },
-  { to: '/architect', icon: MessageSquare, label: UI.architect },
-  { to: '/journal', icon: BookOpen, label: UI.journal },
-  { to: '/music', icon: Music, label: { zh: '音乐', en: 'Sound' } },
-  { to: '/support', icon: HeartHandshake, label: { zh: '共建', en: 'Support' } },
+  { to: '/', icon: Home, label: '首页' },
+  { to: '/architect', icon: BrainCircuit, label: '教练' },
+  { to: '/tools', icon: Grid3X3, label: '全部工具' },
+  { to: '/journal', icon: BookOpen, label: '日志' },
+  { to: '/music', icon: Music2, label: '音乐' },
 ]
 
 export default function Layout() {
@@ -29,7 +28,7 @@ export default function Layout() {
       <MusicPlayer />
 
       <nav className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[520px] hos-glass z-50">
-        <div className="flex justify-around items-center h-[72px] px-1 pb-1">
+        <div className="flex justify-around items-center h-[68px] px-1 pb-1">
           {navItems.map(({ to, icon: Icon, label }) => (
             <NavLink
               key={to}
@@ -51,8 +50,7 @@ export default function Layout() {
                       <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-hos-cyan shadow-[0_0_6px_rgba(0,212,245,0.6)]" />
                     )}
                   </div>
-                  <span className="text-[10.5px] font-medium leading-tight mt-0.5">{label.zh}</span>
-                  <span className="text-[8px] leading-none opacity-50">{label.en}</span>
+                  <span className="text-[10.5px] font-medium leading-tight mt-0.5">{label}</span>
                 </>
               )}
             </NavLink>

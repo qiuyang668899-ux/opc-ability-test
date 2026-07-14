@@ -12,6 +12,8 @@ import FlowLab from './pages/FlowLab'
 import MoodMusic from './pages/MoodMusic'
 import Support from './pages/Support'
 import About from './pages/About'
+import Tools from './pages/Tools'
+import Classics from './pages/Classics'
 
 export default function App() {
   return (
@@ -25,11 +27,13 @@ export default function App() {
         <Route path="protocols" element={<Protocols />} />
         <Route path="flow" element={<FlowLab />} />
         <Route path="music" element={<MoodMusic />} />
+        <Route path="tools" element={<Tools />} />
+        <Route path="classics" element={<Classics />} />
         <Route path="support" element={<Support />} />
         <Route path="about" element={<About />} />
+        <Route path="visual" element={<VisualDiag />} />
       </Route>
       <Route path="reset/:protocol?" element={<SystemReset />} />
-      <Route path="visual" element={<VisualDiag />} />
     </Routes>
   )
 }

@@ -208,7 +208,7 @@ export default function MusicPlayer() {
       <button
         onClick={() => setExpanded(true)}
         className="fixed bottom-[82px] right-3 z-40 w-11 h-11 rounded-full border border-hos-cyan/30 flex items-center justify-center shadow-lg hover:border-hos-cyan/50 transition-all"
-        style={{ background: 'rgba(14,17,17,0.96)', backdropFilter: 'blur(14px)', maxWidth: 'calc((100vw - 520px) / 2 + 520px - 12px)' }}
+        style={{ background: 'rgba(255,253,249,0.96)', backdropFilter: 'blur(14px)', maxWidth: 'calc((100vw - 520px) / 2 + 520px - 12px)' }}
         aria-label="展开正在播放的心境音乐"
       >
         <Music size={17} className="text-hos-cyan" />
@@ -219,7 +219,7 @@ export default function MusicPlayer() {
 
   return (
     <div className="fixed bottom-[88px] right-3 left-3 z-40 max-w-[452px] mx-auto">
-      <div className="border border-hos-border rounded-2xl p-4 shadow-2xl" style={{ background: 'rgba(10,13,18,0.96)', backdropFilter: 'blur(22px)' }}>
+      <div className="border border-hos-border rounded-2xl p-4 shadow-2xl" style={{ background: 'rgba(255,253,249,0.98)', backdropFilter: 'blur(22px)' }}>
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
             <Music size={16} className="text-hos-cyan" />
@@ -338,8 +338,8 @@ export default function MusicPlayer() {
               onClick={() => playing ? playTrack(track) : setCurrentTrack(track)}
               className={`w-full flex items-center gap-3 px-3 py-3 rounded-2xl text-left transition-all ${
                 currentTrack.id === track.id
-                  ? 'bg-white/[0.07] text-white'
-                  : 'text-hos-text-dim hover:bg-white/[0.035] hover:text-hos-text'
+                  ? 'bg-hos-cyan/10 text-hos-text'
+                  : 'text-hos-text-dim hover:bg-hos-bg hover:text-hos-text'
               }`}
             >
               <span className="w-8 h-8 rounded-xl border border-hos-border flex items-center justify-center text-[13px] shrink-0" style={{ color: track.color, background: `${track.color}14` }}>
