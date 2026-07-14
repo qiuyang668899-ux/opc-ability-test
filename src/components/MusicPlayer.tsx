@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react'
 import { X, Play, Pause, SkipBack, SkipForward, Music, Volume2, Sparkles, Waves } from 'lucide-react'
-import { MUSIC_TRACKS, type MusicTrack } from '../stores/useStore'
+import { DAILY_AUDIO_TRACKS, FREQUENCY_TRACKS, MUSIC_TRACKS, type MusicTrack } from '../stores/useStore'
 import { UI } from '../utils/i18n'
 
 const WAVE_HEIGHTS = [8, 15, 11, 18]
@@ -15,6 +15,7 @@ type StoppableNode = {
 }
 
 type PlaybackMode = 'audio' | 'synth';
+type LibraryMode = 'daily' | 'frequency';
 
 function createNoiseSource(ctx: AudioContext) {
   const bufferSize = ctx.sampleRate * 2
@@ -81,6 +82,7 @@ export default function MusicPlayer() {
   const [expanded, setExpanded] = useState(false)
   const [playing, setPlaying] = useState(false)
   const [currentTrack, setCurrentTrack] = useState<MusicTrack>(MUSIC_TRACKS[0])
+  const [library, setLibrary] = useState<LibraryMode>('daily')
   const [category, setCategory] = useState('全部')
   const [volume, setVolume] = useState(0.58)
   const audioCtxRef = useRef<AudioContext | null>(null)
@@ -89,10 +91,11 @@ export default function MusicPlayer() {
   const masterRef = useRef<GainNode | null>(null)
   const [playbackMode, setPlaybackMode] = useState<PlaybackMode>('audio')
 
-  const categories = useMemo(() => ['全部', ...Array.from(new Set(MUSIC_TRACKS.map((track) => track.category.zh)))], [])
+  const libraryTracks = library === 'daily' ? DAILY_AUDIO_TRACKS : FREQUENCY_TRACKS
+  const categories = useMemo(() => ['全部', ...Array.from(new Set(libraryTracks.map((track) => track.category.zh)))], [libraryTracks])
   const visibleTracks = useMemo(
-    () => (category === '全部' ? MUSIC_TRACKS : MUSIC_TRACKS.filter((track) => track.category.zh === category)),
-    [category],
+    () => (category === '全部' ? libraryTracks : libraryTracks.filter((track) => track.category.zh === category)),
+    [category, libraryTracks],
   )
 
   const stopAudio = useCallback(() => {
@@ -185,6 +188,7 @@ export default function MusicPlayer() {
       const autoPlay = (event as CustomEvent<{ trackId?: string; autoPlay?: boolean }>).detail?.autoPlay
       const track = MUSIC_TRACKS.find((item) => item.id === trackId) ?? currentTrack
       setExpanded(true)
+      setLibrary(track.kind === 'frequency' ? 'frequency' : 'daily')
       setCategory(track.category.zh)
       if (autoPlay) {
         playTrack(track)
@@ -243,9 +247,11 @@ export default function MusicPlayer() {
                 <p className="text-[15px] font-semibold text-white truncate">{currentTrack.name.zh}</p>
                 <span className="text-[10px] px-2 py-0.5 rounded-full border border-hos-border text-hos-text-muted shrink-0">{currentTrack.intensity}</span>
               </div>
-              <p className="text-en truncate">{currentTrack.name.en} · {currentTrack.frequency}</p>
+              <p className="text-en truncate">{currentTrack.name.en} · {currentTrack.category.zh}</p>
               <p className="text-[10px] text-hos-cyan/80 mt-1">
-                {playbackMode === 'audio' ? 'WAV 素材库' : '实时合成兜底'} · {currentTrack.durationSec ?? 45}s
+                {playbackMode === 'audio'
+                  ? currentTrack.kind === 'frequency' ? 'HOS 频率音场' : currentTrack.kind === 'instrumental' ? '冥想纯音乐' : '真实场景音'
+                  : '实时合成兜底'} · {Math.floor((currentTrack.durationSec ?? 45) / 60)}:{String((currentTrack.durationSec ?? 45) % 60).padStart(2, '0')}
               </p>
               <p className="text-[12px] text-hos-text-dim leading-relaxed mt-2">{currentTrack.target.zh}</p>
             </div>
@@ -315,6 +321,21 @@ export default function MusicPlayer() {
           </div>
         </section>
 
+        <div className="player-library-tabs">
+          <button
+            onClick={() => { setLibrary('daily'); setCategory('全部') }}
+            className={library === 'daily' ? 'active' : ''}
+          >
+            日常聆听 · {DAILY_AUDIO_TRACKS.length}
+          </button>
+          <button
+            onClick={() => { setLibrary('frequency'); setCategory('全部') }}
+            className={library === 'frequency' ? 'active' : ''}
+          >
+            频率合集 · {FREQUENCY_TRACKS.length}
+          </button>
+        </div>
+
         <div className="flex gap-2 overflow-x-auto pb-2 mb-3">
           {categories.map((item) => (
             <button
@@ -347,7 +368,9 @@ export default function MusicPlayer() {
               </span>
               <span className="flex-1 min-w-0">
                 <span className="block text-[12.5px] font-semibold truncate">{track.name.zh}</span>
-                <span className="block text-[10px] text-hos-text-muted truncate mt-0.5">{track.category.zh} · {track.frequency}</span>
+                <span className="block text-[10px] text-hos-text-muted truncate mt-0.5">
+                  {track.category.zh} · {track.kind === 'frequency' ? track.frequency : track.kind === 'instrumental' ? '纯音乐' : '场景音'}
+                </span>
               </span>
               <span className="text-[10px] text-hos-text-muted shrink-0">{track.intensity}</span>
               {currentTrack.id === track.id && playing && (

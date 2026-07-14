@@ -790,3 +790,46 @@ html, body, #root {
   .music-track-card { padding: 16px; }
   .music-track-details { grid-template-columns: 1fr; }
 }
+
+/* ========== Daily audio & frequency collection ========== */
+.music-library-switch { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 11px; }
+.music-library-switch button {
+  min-height: 104px; padding: 15px; display: grid; grid-template-columns: 38px minmax(0, 1fr) auto; align-items: center; gap: 11px;
+  border: 1px solid var(--color-hos-border); border-radius: 18px; color: var(--color-hos-text-dim); background: #fffdf9;
+  text-align: left; box-shadow: 0 8px 22px rgba(92, 74, 52, 0.04); transition: 180ms ease;
+}
+.music-library-switch button > span { width: 38px; height: 38px; display: flex; align-items: center; justify-content: center; border-radius: 13px; color: var(--color-hos-text-muted); background: #f2eee7; }
+.music-library-switch strong, .music-library-switch small { display: block; }
+.music-library-switch strong { color: var(--color-hos-text); font-size: 13px; line-height: 1.35; }
+.music-library-switch small { margin-top: 5px; color: var(--color-hos-text-muted); font-size: 9.5px; line-height: 1.4; }
+.music-library-switch em { min-width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; border-radius: 999px; color: var(--color-hos-text-muted); background: #f2eee7; font-family: var(--font-family-mono); font-size: 9px; font-style: normal; }
+.music-library-switch button.active { border-color: rgba(82, 125, 112, 0.4); background: linear-gradient(145deg, #edf4ee, #fffdf9); box-shadow: 0 10px 26px rgba(82, 125, 112, 0.08); }
+.music-library-switch button.active > span { color: var(--color-hos-cyan); background: rgba(255, 255, 255, 0.82); }
+.music-library-switch button.active em { color: #fffdf9; background: var(--color-hos-cyan); }
+.music-result-count { color: var(--color-hos-text-muted); font-family: var(--font-family-mono); font-size: 9.5px; }
+
+.frequency-guide-panel { padding: 22px; border-radius: 22px; }
+.frequency-guide-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 18px; color: var(--color-hos-purple); }
+.frequency-guide-heading h2 { margin-top: 7px; color: var(--color-hos-text); font-size: 20px; line-height: 1.4; }
+.frequency-guide-heading span { margin-top: 6px; display: block; color: var(--color-hos-text-muted); font-size: 10.5px; line-height: 1.55; }
+.frequency-guide-grid { margin-top: 21px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.frequency-guide-grid article { min-height: 130px; padding: 14px; border: 1px solid var(--color-hos-border); border-radius: 16px; background: rgba(255, 253, 249, 0.88); }
+.frequency-guide-grid strong { color: var(--color-hos-purple); font-family: var(--font-family-mono); font-size: 11px; }
+.frequency-guide-grid h3 { margin-top: 10px; color: var(--color-hos-text); font-size: 12.5px; line-height: 1.45; }
+.frequency-guide-grid p { margin-top: 7px; color: var(--color-hos-text-muted); font-size: 10px; line-height: 1.6; }
+.frequency-boundary { margin-top: 14px; padding: 12px 13px; display: flex; align-items: flex-start; gap: 9px; border-radius: 13px; color: var(--color-hos-gold); background: #fff7e8; }
+.frequency-boundary p { color: var(--color-hos-text-dim); font-size: 10px; line-height: 1.65; }
+.music-track-kind { width: fit-content; margin-bottom: 7px; padding: 4px 7px; border-radius: 999px; color: var(--color-hos-cyan); background: #eaf2eb; font-size: 8.5px; line-height: 1; }
+.music-source-note { padding: 14px 15px; display: flex; align-items: flex-start; gap: 9px; border: 1px solid var(--color-hos-border); border-radius: 15px; color: var(--color-hos-cyan); background: rgba(255, 253, 249, 0.72); }
+.music-source-note p { color: var(--color-hos-text-muted); font-size: 10px; line-height: 1.65; }
+.player-library-tabs { margin-bottom: 11px; padding: 4px; display: grid; grid-template-columns: 1fr 1fr; gap: 4px; border-radius: 13px; background: #f1ece4; }
+.player-library-tabs button { min-height: 36px; border-radius: 10px; color: var(--color-hos-text-muted); font-size: 10.5px; transition: 160ms ease; }
+.player-library-tabs button.active { color: var(--color-hos-cyan); background: #fffdf9; box-shadow: 0 5px 14px rgba(92, 74, 52, 0.05); }
+
+@media (max-width: 360px) {
+  .music-library-switch { grid-template-columns: 1fr; }
+  .music-library-switch button { min-height: 82px; }
+  .frequency-guide-panel { padding-left: 17px; padding-right: 17px; }
+  .frequency-guide-grid { grid-template-columns: 1fr; }
+  .frequency-guide-grid article { min-height: 112px; }
+}

@@ -35,7 +35,7 @@ export const UI = {
   bioSyncModule: { zh: '生物同步 V2.0', en: 'Bio-Sync V2.0' },
   bioSyncDesc: { zh: '昼夜节律 & 能量管理', en: 'Circadian Rhythm & Energy' },
   moodMusic: { zh: '心境音乐', en: 'Mood Music' },
-  moodMusicDesc: { zh: '专注、修复、睡眠、创造状态音场', en: 'Focus, repair, sleep, creative sound fields' },
+  moodMusicDesc: { zh: '场景音、纯音乐与频率音场', en: 'Scenes, instrumentals and frequency fields' },
   integration: { zh: '系统整合度', en: 'System Integration' },
   inputPlaceholder: { zh: '输入认知数据...', en: 'Enter cognitive data...' },
   triggerStress: { zh: '触发：压力过载', en: 'Trigger: Stress Overload' },

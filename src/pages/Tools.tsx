@@ -40,7 +40,7 @@ const groups: { title: string; desc: string; items: ToolItem[] }[] = [
     items: [
       { title: '系统重置', desc: '呼吸、着陆与即时稳态练习', path: '/reset', icon: RotateCcw, tone: 'sage' },
       { title: '协议库', desc: '覆盖压力、冲突、过载、失眠等场景', path: '/protocols', icon: ShieldCheck, tone: 'sand' },
-      { title: '心境音乐', desc: '真实 WAV 音场与实时合成兜底', path: '/music', icon: Music2, tone: 'peach' },
+      { title: '心境音乐', desc: '真实场景音、冥想纯音乐与频率合集', path: '/music', icon: Music2, tone: 'peach' },
     ],
   },
   {

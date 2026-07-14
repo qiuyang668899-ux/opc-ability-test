@@ -1,0 +1,163 @@
+{
+  "library": "HOS daily listening library",
+  "addedAt": "2026-07-14",
+  "license": {
+    "name": "Mixkit Free License",
+    "url": "https://mixkit.co/license/",
+    "note": "The assets are embedded as part of the HOS wellbeing application. Attribution is retained in the product even when not required by the source license."
+  },
+  "tracks": [
+    {
+      "id": "rain-long-loop",
+      "title": "Rain long loop",
+      "type": "sound-effect",
+      "sourcePage": "https://mixkit.co/free-sound-effects/nature/",
+      "assetSource": "https://assets.mixkit.co/active_storage/sfx/2394/2394-preview.mp3",
+      "localFile": "./rain-long-loop.mp3"
+    },
+    {
+      "id": "morning-forest",
+      "title": "Morning birds",
+      "type": "sound-effect",
+      "sourcePage": "https://mixkit.co/free-sound-effects/nature/",
+      "assetSource": "https://assets.mixkit.co/active_storage/sfx/2472/2472-preview.mp3",
+      "localFile": "./morning-forest.mp3"
+    },
+    {
+      "id": "ocean-birds",
+      "title": "Sea waves with birds loop",
+      "type": "sound-effect",
+      "sourcePage": "https://mixkit.co/free-sound-effects/sea/",
+      "assetSource": "https://assets.mixkit.co/active_storage/sfx/1185/1185-preview.mp3",
+      "localFile": "./ocean-birds.mp3"
+    },
+    {
+      "id": "quiet-cafe",
+      "title": "Restaurant crowd talking ambience",
+      "type": "sound-effect",
+      "sourcePage": "https://mixkit.co/free-sound-effects/restaurant/",
+      "assetSource": "https://assets.mixkit.co/active_storage/sfx/444/444-preview.mp3",
+      "localFile": "./quiet-cafe.mp3"
+    },
+    {
+      "id": "wind-ambience",
+      "title": "Wind blowing ambience",
+      "type": "sound-effect",
+      "sourcePage": "https://mixkit.co/free-sound-effects/nature/",
+      "assetSource": "https://assets.mixkit.co/active_storage/sfx/2658/2658-preview.mp3",
+      "localFile": "./wind-ambience.mp3"
+    },
+    {
+      "id": "flowing-water",
+      "title": "Water flowing ambience loop",
+      "type": "sound-effect",
+      "sourcePage": "https://mixkit.co/free-sound-effects/nature/",
+      "assetSource": "https://assets.mixkit.co/active_storage/sfx/3126/3126-preview.mp3",
+      "localFile": "./flowing-water.mp3"
+    },
+    {
+      "id": "night-forest",
+      "title": "Night forest with insects",
+      "type": "sound-effect",
+      "sourcePage": "https://mixkit.co/free-sound-effects/nature/",
+      "assetSource": "https://assets.mixkit.co/active_storage/sfx/2414/2414-preview.mp3",
+      "localFile": "./night-forest.mp3"
+    },
+    {
+      "id": "harbor-waves",
+      "title": "Small waves harbor rocks",
+      "type": "sound-effect",
+      "sourcePage": "https://mixkit.co/free-sound-effects/sea/",
+      "assetSource": "https://assets.mixkit.co/active_storage/sfx/1208/1208-preview.mp3",
+      "localFile": "./harbor-waves.mp3"
+    },
+    {
+      "id": "woodland-waterfall",
+      "title": "Waterfall in the woods",
+      "type": "sound-effect",
+      "sourcePage": "https://mixkit.co/free-sound-effects/waterfall/",
+      "assetSource": "https://assets.mixkit.co/active_storage/sfx/2517/2517-preview.mp3",
+      "localFile": "./woodland-waterfall.mp3"
+    },
+    {
+      "id": "campfire-night",
+      "title": "Campfire night wind",
+      "type": "sound-effect",
+      "sourcePage": "https://mixkit.co/free-sound-effects/fire/",
+      "assetSource": "https://assets.mixkit.co/active_storage/sfx/1736/1736-preview.mp3",
+      "localFile": "./campfire-night.mp3"
+    },
+    {
+      "id": "valley-sunset",
+      "title": "Valley Sunset",
+      "creator": "Alejandro Magaña (A. M.)",
+      "type": "music",
+      "sourcePage": "https://mixkit.co/free-stock-music/tag/meditation/",
+      "assetSource": "https://assets.mixkit.co/music/127/127.mp3",
+      "localFile": "./valley-sunset.mp3"
+    },
+    {
+      "id": "relaxation-flute",
+      "title": "Relaxation 05",
+      "creator": "Lily J",
+      "type": "music",
+      "sourcePage": "https://mixkit.co/free-stock-music/tag/meditation/",
+      "assetSource": "https://assets.mixkit.co/music/749/749.mp3",
+      "localFile": "./relaxation-flute.mp3"
+    },
+    {
+      "id": "relax-beat",
+      "title": "Relax Beat",
+      "creator": "Arulo",
+      "type": "music",
+      "sourcePage": "https://mixkit.co/free-stock-music/tag/meditation/",
+      "assetSource": "https://assets.mixkit.co/music/292/292.mp3",
+      "localFile": "./relax-beat.mp3"
+    },
+    {
+      "id": "spirit-in-woods",
+      "title": "Spirit in the Woods",
+      "creator": "Alejandro Magaña (A. M.)",
+      "type": "music",
+      "sourcePage": "https://mixkit.co/free-stock-music/tag/meditation/",
+      "assetSource": "https://assets.mixkit.co/music/139/139.mp3",
+      "localFile": "./spirit-in-woods.mp3"
+    },
+    {
+      "id": "forest-treasure",
+      "title": "Forest Treasure",
+      "creator": "Alejandro Magaña (A. M.)",
+      "type": "music",
+      "sourcePage": "https://mixkit.co/free-stock-music/tag/meditation/",
+      "assetSource": "https://assets.mixkit.co/music/138/138.mp3",
+      "localFile": "./forest-treasure.mp3"
+    },
+    {
+      "id": "meditation",
+      "title": "Meditation",
+      "creator": "Arulo",
+      "type": "music",
+      "sourcePage": "https://mixkit.co/free-stock-music/tag/meditation/",
+      "assetSource": "https://assets.mixkit.co/music/441/441.mp3",
+      "localFile": "./meditation.mp3"
+    },
+    {
+      "id": "smooth-meditation",
+      "title": "Smooth Meditation",
+      "creator": "Arulo",
+      "type": "music",
+      "sourcePage": "https://mixkit.co/free-stock-music/tag/meditation/",
+      "assetSource": "https://assets.mixkit.co/music/324/324.mp3",
+      "localFile": "./smooth-meditation.mp3"
+    },
+    {
+      "id": "yoga-tune",
+      "title": "Yoga Tune",
+      "creator": "Arulo",
+      "type": "music",
+      "sourcePage": "https://mixkit.co/free-stock-music/tag/meditation/",
+      "assetSource": "https://assets.mixkit.co/music/325/325.mp3",
+      "localFile": "./yoga-tune.mp3"
+    }
+  ]
+}
