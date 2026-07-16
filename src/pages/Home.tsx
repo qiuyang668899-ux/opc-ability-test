@@ -11,6 +11,7 @@ import {
   HeartHandshake,
   Info,
   Leaf,
+  Play,
   RotateCcw,
   Sparkles,
 } from 'lucide-react'
@@ -23,6 +24,7 @@ import {
   type DailyCheckIn,
 } from '../stores/useStore'
 import { buildEvolutionSnapshot } from '../engines/evolutionEngine'
+import { getTodayRitualRecord, loadRitualProfile } from '../engines/ritualEngine'
 
 const stateLabels = {
   energy: ['耗尽', '偏低', '平稳', '充足', '饱满'],
@@ -87,7 +89,10 @@ export default function Home() {
   const activeDay = getActiveActivationDay(activation)
   const nextTask = activeDay.tasks.find((task) => !activation.completedTaskIds.includes(task.id))
   const prescription = useMemo(() => getPrescription(energy, clarity, pressure), [energy, clarity, pressure])
-  const evolution = useMemo(() => buildEvolutionSnapshot(), [checkedIn, energy, clarity, pressure])
+  const evolution = buildEvolutionSnapshot()
+  const ritualProfile = loadRitualProfile()
+  const ritualRecord = getTodayRitualRecord()
+  const ritualWord = ritualRecord?.keyword ?? ritualProfile?.word ?? '始'
 
   const saveCheckIn = () => {
     const next: DailyCheckIn = {
@@ -120,12 +125,22 @@ export default function Home() {
         </button>
       </header>
 
-      <section className="warm-hero">
-        <div>
-          <span className="warm-hero-icon"><Leaf size={18} /></span>
-          <h2>先照顾好此刻的自己，<br />再慢慢推动重要的事。</h2>
-          <p>这里不要求你时刻满格，只陪你更清楚地觉察、调节和行动。</p>
+      <section className={`home-ritual-hero ${ritualRecord ? 'complete' : ''}`}>
+        <div className="home-ritual-glow" aria-hidden="true"><i /><i /><i /></div>
+        <div className="home-ritual-copy">
+          <p className="section-kicker">HOS · DAILY ALIGNMENT</p>
+          <h2>{ritualRecord ? '今天，你已经重新取回了方向。' : ritualProfile ? `今天，先唤醒「${ritualWord}」。` : '不是更努力。是先回到自己。'}</h2>
+          <p>{ritualRecord ? `今日关键词「${ritualRecord.keyword}」 · 接下来只做：${ritualRecord.microAction}` : '用呼吸、声音、一个关键词和一个微小动作，在 3 分钟里完成一次真实的状态转换。'}</p>
+          <button onClick={() => navigate('/ritual')}>
+            {ritualRecord ? <RotateCcw size={16} /> : <Play size={16} />}
+            {ritualRecord ? '重温今日校准' : ritualProfile ? '开始 3 分钟校准' : '初始化我的 HOS'}
+            <ArrowRight size={15} />
+          </button>
         </div>
+        <div className="home-ritual-orbit" aria-label={`今日关键词 ${ritualWord}`}>
+          <i /><i /><span>{ritualWord}</span><small>{ritualRecord ? '已校准' : '今日入口'}</small>
+        </div>
+        <div className="home-ritual-meta"><span>视觉呼吸</span><span>真实音景</span><span>东方心法</span><span>微小行动</span></div>
       </section>
 
       <button className="evolution-entry" onClick={() => navigate('/evolution')}>

@@ -15,6 +15,7 @@ import About from './pages/About'
 import Tools from './pages/Tools'
 import Classics from './pages/Classics'
 import Evolution from './pages/Evolution'
+import DailyRitual from './pages/DailyRitual'
 
 export default function App() {
   return (
@@ -35,6 +36,7 @@ export default function App() {
         <Route path="about" element={<About />} />
         <Route path="visual" element={<VisualDiag />} />
       </Route>
+      <Route path="ritual" element={<DailyRitual />} />
       <Route path="reset/:protocol?" element={<SystemReset />} />
     </Routes>
   )

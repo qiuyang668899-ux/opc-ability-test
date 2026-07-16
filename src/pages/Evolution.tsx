@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   Activity,
@@ -53,11 +53,11 @@ export default function Evolution() {
   const [habitRecipe, setHabitRecipe] = useState<HabitRecipe>(() => loadState('evolutionHabitRecipe', defaultHabitRecipe))
   const [recipeSaved, setRecipeSaved] = useState(() => Boolean(loadState<HabitRecipe | undefined>('evolutionHabitRecipe', undefined)))
   const [celebrating, setCelebrating] = useState(false)
-  const [feedbackVersion, setFeedbackVersion] = useState(0)
+  const [, setFeedbackVersion] = useState(0)
   const [shareStatus, setShareStatus] = useState('')
   const feedback = loadState<EvolutionFeedback[]>('evolutionFeedback', [])
   const todayFeedback = feedback.find((item) => item.date === new Date().toLocaleDateString('en-CA'))?.difficulty
-  const snapshot = useMemo(() => buildEvolutionSnapshot(profile, progress), [profile, progress, feedbackVersion])
+  const snapshot = buildEvolutionSnapshot(profile, progress)
 
   const toggleStep = (stepId: string) => {
     const wasComplete = progress.completedStepIds.includes(stepId)
@@ -86,7 +86,7 @@ export default function Evolution() {
   const saveDifficulty = (difficulty: EvolutionFeedback['difficulty']) => {
     const current = loadState<EvolutionFeedback[]>('evolutionFeedback', [])
     const next = [
-      { date: snapshot.date, difficulty, createdAt: Date.now() },
+      { date: snapshot.date, difficulty, createdAt: Date.parse(`${snapshot.date}T12:00:00`) },
       ...current.filter((item) => item.date !== snapshot.date),
     ].slice(0, 90)
     saveState('evolutionFeedback', next)

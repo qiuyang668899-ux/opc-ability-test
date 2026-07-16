@@ -77,6 +77,7 @@ export interface EvolutionSnapshot {
 }
 
 type ClassicPracticeNote = { passageId: string; text: string; createdAt: number }
+type RitualRecordSignal = { date: string; completedAt: number }
 
 const DAY_MS = 86_400_000
 
@@ -111,6 +112,7 @@ function buildDimensions({
   journal,
   flow,
   classicNotes,
+  ritualRecords,
   profile,
 }: {
   checkIn?: DailyCheckIn
@@ -118,6 +120,7 @@ function buildDimensions({
   journal: JournalEntry[]
   flow: FlowSession[]
   classicNotes: ClassicPracticeNote[]
+  ritualRecords: RitualRecordSignal[]
   profile: EvolutionProfile
 }): EvolutionDimension[] {
   const energy = checkIn?.energy ?? 3
@@ -126,6 +129,7 @@ function buildDimensions({
   const recentJournal = journal.filter((entry) => isRecent(entry.timestamp)).length
   const recentFlow = flow.filter((entry) => isRecent(entry.timestamp)).length
   const recentClassic = classicNotes.filter((entry) => isRecent(entry.createdAt)).length
+  const recentRitual = ritualRecords.filter((entry) => isRecent(entry.completedAt)).length
   const activationCompletion = getActivationCompletion(activation)
 
   return [
@@ -133,35 +137,35 @@ function buildDimensions({
       id: 'body',
       label: '身体',
       en: 'Body',
-      score: clamp(energy * 17 + recentFlow * 2),
+      score: clamp(energy * 17 + recentFlow * 2 + recentRitual * 2),
       observation: energy <= 2 ? '能量偏低，先恢复再推进' : energy >= 4 ? '能量可用，适合稳步行动' : '能量平稳，注意节奏与间歇',
     },
     {
       id: 'emotion',
       label: '情绪',
       en: 'Emotion',
-      score: clamp((6 - pressure) * 17 + recentJournal * 2),
+      score: clamp((6 - pressure) * 17 + recentJournal * 2 + recentRitual * 2),
       observation: pressure >= 4 ? '压力信号较强，先降低唤醒' : pressure <= 2 ? '内在空间较充足' : '压力适中，保持觉察即可',
     },
     {
       id: 'clarity',
       label: '认知',
       en: 'Clarity',
-      score: clamp(clarity * 17 + recentJournal + recentFlow * 2),
+      score: clamp(clarity * 17 + recentJournal + recentFlow * 2 + recentRitual),
       observation: clarity <= 2 ? '信息尚未收束，需要明确下一步' : clarity >= 4 ? '思路清楚，适合处理关键问题' : '清晰度可用，避免同时推进太多',
     },
     {
       id: 'action',
       label: '行动',
       en: 'Action',
-      score: clamp(28 + activationCompletion * 0.5 + recentFlow * 8),
+      score: clamp(28 + activationCompletion * 0.5 + recentFlow * 8 + recentRitual * 3),
       observation: recentFlow > 0 ? '近期已有行动闭环' : '从一个 10 分钟动作开始',
     },
     {
       id: 'meaning',
       label: '意义',
       en: 'Meaning',
-      score: clamp(28 + (profile.direction.trim() ? 28 : 0) + recentClassic * 8 + recentJournal * 2),
+      score: clamp(28 + (profile.direction.trim() ? 28 : 0) + recentClassic * 8 + recentJournal * 2 + recentRitual * 3),
       observation: profile.direction.trim() ? '方向已建立，需要每日对齐' : '尚未写下阶段方向，容易只顾眼前',
     },
   ]
@@ -238,10 +242,11 @@ export function buildEvolutionSnapshot(
   const journal = loadState<JournalEntry[]>('journal', [])
   const flow = loadState<FlowSession[]>('flowSessions', [])
   const classicNotes = loadState<ClassicPracticeNote[]>('classicPracticeNotes', [])
+  const ritualRecords = loadState<RitualRecordSignal[]>('ritualRecords', [])
   const feedback = loadState<EvolutionFeedback[]>('evolutionFeedback', [])
   const latestFeedback = feedback[0]
   const abilityMode = latestFeedback?.difficulty === 'hard' ? 'tiny' : 'standard'
-  const dimensions = buildDimensions({ checkIn, activation, journal, flow, classicNotes, profile })
+  const dimensions = buildDimensions({ checkIn, activation, journal, flow, classicNotes, ritualRecords, profile })
   const focus = [...dimensions].sort((left, right) => left.score - right.score)[0]
   const path = pathForFocus(focus.id, checkIn)
   const steps: EvolutionStep[] = path.steps.map((step, index) => ({
@@ -276,9 +281,9 @@ export function buildEvolutionSnapshot(
     steps,
     stages,
     completedToday,
-    practiceDays: new Set(progress.completedDates).size,
+    practiceDays: new Set([...progress.completedDates, ...ritualRecords.map((record) => record.date)]).size,
     hasCheckIn: Boolean(checkIn),
-    evidenceLine: `依据：今日自检${checkIn ? '已完成' : '未完成'} · 7日启动 ${getActivationCompletion(activation)}% · 日志 ${journal.length} 条 · 心流 ${flow.length} 轮 · 经典笔记 ${classicNotes.length} 条`,
+    evidenceLine: `依据：今日自检${checkIn ? '已完成' : '未完成'} · 校准 ${ritualRecords.length} 次 · 7日启动 ${getActivationCompletion(activation)}% · 日志 ${journal.length} 条 · 心流 ${flow.length} 轮 · 经典笔记 ${classicNotes.length} 条`,
     abilityMode,
     abilityMessage: abilityMode === 'tiny'
       ? '上次反馈“有点难”，今日已自动切换为保底版。做得更小，反而更容易持续。'

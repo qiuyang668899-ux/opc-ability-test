@@ -15,6 +15,7 @@ import {
   Music2,
   RotateCcw,
   ShieldCheck,
+  WandSparkles,
 } from 'lucide-react'
 
 type ToolItem = {
@@ -26,6 +27,14 @@ type ToolItem = {
 }
 
 const groups: { title: string; desc: string; items: ToolItem[] }[] = [
+  {
+    title: '今日入口',
+    desc: '先完成一次状态转换，再决定今天需要什么',
+    items: [
+      { title: '每日校准仪式', desc: '呼吸、声音、关键词与微行动的 3 分钟沉浸体验', path: '/ritual', icon: WandSparkles, tone: 'peach' },
+      { title: '个人进化中枢', desc: '五维状态、今日路径与 21 天成长闭环', path: '/evolution', icon: Sparkles, tone: 'lavender' },
+    ],
+  },
   {
     title: '看见当下',
     desc: '从身体、表情和内在感受开始觉察',
@@ -48,7 +57,6 @@ const groups: { title: string; desc: string; items: ToolItem[] }[] = [
     title: '训练成长',
     desc: '把变化做成可以持续的小闭环',
     items: [
-      { title: '个人进化中枢', desc: '五维状态、今日路径与 21 天成长闭环', path: '/evolution', icon: Sparkles, tone: 'peach' },
       { title: '7 日启动', desc: '循序建立第一套个人操作系统', path: '/activation', icon: CalendarCheck, tone: 'sage' },
       { title: '心流学习舱', desc: '技能拆解、预演、练习与即时反馈', path: '/flow', icon: Focus, tone: 'lavender' },
       { title: '模式日志', desc: '记录触发、反应和新的选择', path: '/journal', icon: BookOpen, tone: 'sand' },
