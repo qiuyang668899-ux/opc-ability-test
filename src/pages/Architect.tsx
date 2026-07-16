@@ -5,6 +5,7 @@ import { type ChatMessage, recomputeUserState, saveState, loadState } from '../s
 import { buildCoachGreeting, buildCoachSnapshot, createCoachPlan, formatCoachMessage, type CoachPlan } from '../engines/coachEngine'
 
 const quickPrompts = [
+  { label: '今日路径', text: '请根据我今天的状态和已有记录，帮我确定今天最重要的一条成长路径。' },
   { label: '压力过载', text: '我现在压力很大，脑子很乱，马上要处理重要事情。' },
   { label: '无法开始', text: '我一直拖延，明明知道该做什么，但就是无法开始。' },
   { label: '学习加速', text: '我想快速学习一个新技能，希望进入高效训练状态。' },

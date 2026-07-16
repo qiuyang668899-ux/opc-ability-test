@@ -22,6 +22,7 @@ import {
   saveState,
   type DailyCheckIn,
 } from '../stores/useStore'
+import { buildEvolutionSnapshot } from '../engines/evolutionEngine'
 
 const stateLabels = {
   energy: ['耗尽', '偏低', '平稳', '充足', '饱满'],
@@ -86,6 +87,7 @@ export default function Home() {
   const activeDay = getActiveActivationDay(activation)
   const nextTask = activeDay.tasks.find((task) => !activation.completedTaskIds.includes(task.id))
   const prescription = useMemo(() => getPrescription(energy, clarity, pressure), [energy, clarity, pressure])
+  const evolution = useMemo(() => buildEvolutionSnapshot(), [checkedIn, energy, clarity, pressure])
 
   const saveCheckIn = () => {
     const next: DailyCheckIn = {
@@ -125,6 +127,20 @@ export default function Home() {
           <p>这里不要求你时刻满格，只陪你更清楚地觉察、调节和行动。</p>
         </div>
       </section>
+
+      <button className="evolution-entry" onClick={() => navigate('/evolution')}>
+        <div className="evolution-entry-top">
+          <span><Sparkles size={18} /></span>
+          <div><p>今日进化路径</p><strong>{evolution.headline}</strong></div>
+          <ArrowRight size={18} />
+        </div>
+        <div className="evolution-entry-meta">
+          <span>重点 · {evolution.focusLabel}</span>
+          <span>DAY {String(evolution.day).padStart(2, '0')}</span>
+          <span>{evolution.completedToday} / 3 已完成</span>
+        </div>
+        <div className="evolution-entry-progress"><i style={{ width: `${(evolution.completedToday / 3) * 100}%` }} /></div>
+      </button>
 
       <section className="section-block">
         <div className="hos-section-title">
