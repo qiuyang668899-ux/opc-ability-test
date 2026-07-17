@@ -2,29 +2,25 @@ import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   ArrowRight,
-  BrainCircuit,
   BookOpenText,
-  CalendarCheck,
-  Camera,
+  BrainCircuit,
   Check,
+  ChevronDown,
+  ChevronUp,
+  CircleHelp,
   Grid3X3,
-  HeartHandshake,
+  Headphones,
   Info,
   Leaf,
-  Play,
-  RotateCcw,
+  RefreshCw,
+  ScanFace,
+  ShieldCheck,
   Sparkles,
+  Target,
+  Waves,
 } from 'lucide-react'
-import {
-  defaultActivationProgress,
-  getActivationCompletion,
-  getActiveActivationDay,
-  loadState,
-  saveState,
-  type DailyCheckIn,
-} from '../stores/useStore'
-import { buildEvolutionSnapshot } from '../engines/evolutionEngine'
-import { getTodayRitualRecord, loadRitualProfile } from '../engines/ritualEngine'
+import { buildHomeIntelligence, type SmartAction } from '../engines/homeIntelligence'
+import { saveState, type DailyCheckIn } from '../stores/useStore'
 
 const stateLabels = {
   energy: ['耗尽', '偏低', '平稳', '充足', '饱满'],
@@ -32,21 +28,19 @@ const stateLabels = {
   pressure: ['放松', '轻微', '适中', '偏高', '过载'],
 } as const
 
+const actionIcons = {
+  initialize: Sparkles,
+  align: Waves,
+  stabilize: Waves,
+  restore: Headphones,
+  clarify: BrainCircuit,
+  focus: Target,
+  'close-day': BookOpenText,
+  evolve: Sparkles,
+} as const
+
 function todayKey() {
   return new Date().toLocaleDateString('en-CA')
-}
-
-function getPrescription(energy: number, clarity: number, pressure: number) {
-  if (pressure >= 4) {
-    return { title: '先让身体慢下来', desc: '减少输入，用 3 分钟呼吸把系统带回安全、可调节的区间。', route: '/reset/pressure', action: '开始放松', icon: RotateCcw }
-  }
-  if (energy <= 2) {
-    return { title: '今天先恢复，不必硬撑', desc: '降低任务强度，先补水、活动身体，再决定下一步。', route: '/biosync', action: '查看恢复建议', icon: Leaf }
-  }
-  if (clarity <= 2) {
-    return { title: '把混乱变成一个下一步', desc: '把脑中的事情说出来，让 AI 教练帮你收束成一件可执行的小事。', route: '/architect', action: '请 AI 帮我梳理', icon: BrainCircuit }
-  }
-  return { title: '状态不错，适合完成一个小闭环', desc: '选择最重要的一件事，专注完成 25 分钟，再回来记录反馈。', route: '/flow', action: '进入心流练习', icon: Sparkles }
 }
 
 function StateSlider({ label, value, type, onChange }: {
@@ -56,193 +50,146 @@ function StateSlider({ label, value, type, onChange }: {
   onChange: (value: number) => void
 }) {
   return (
-    <label className="state-slider">
-      <span className="flex items-center justify-between gap-3">
-        <span className="text-[13px] font-medium text-hos-text">{label}</span>
-        <span className="text-[12px] font-medium text-hos-cyan">{value} · {stateLabels[type][value - 1]}</span>
-      </span>
-      <input
-        type="range"
-        min="1"
-        max="5"
-        step="1"
-        value={value}
-        onChange={(event) => onChange(Number(event.target.value))}
-        aria-label={label}
-      />
+    <label className="state-slider apple-state-slider">
+      <span><strong>{label}</strong><em>{stateLabels[type][value - 1]}</em></span>
+      <input type="range" min="1" max="5" step="1" value={value} onChange={(event) => onChange(Number(event.target.value))} aria-label={label} />
     </label>
+  )
+}
+
+function SmartActionRow({ item, onOpen }: { item: SmartAction; onOpen: (route: string) => void }) {
+  const Icon = actionIcons[item.id]
+  return (
+    <button className="smart-action-row" onClick={() => onOpen(item.route)}>
+      <span><Icon size={19} /></span>
+      <span><strong>{item.cta}</strong><small>{item.reason} · {item.duration}</small></span>
+      <ArrowRight size={16} />
+    </button>
   )
 }
 
 export default function Home() {
   const navigate = useNavigate()
-  const savedCheckIn = loadState<DailyCheckIn | undefined>('dailyCheckIn', undefined)
-  const hasTodayCheckIn = savedCheckIn?.date === todayKey()
-  const [energy, setEnergy] = useState(hasTodayCheckIn ? savedCheckIn.energy : 3)
-  const [clarity, setClarity] = useState(hasTodayCheckIn ? savedCheckIn.clarity : 3)
-  const [pressure, setPressure] = useState(hasTodayCheckIn ? savedCheckIn.pressure : 3)
-  const [intention, setIntention] = useState(hasTodayCheckIn ? savedCheckIn.intention : '')
-  const [checkedIn, setCheckedIn] = useState(hasTodayCheckIn)
-
-  const activation = loadState('activation', defaultActivationProgress)
-  const activationCompletion = getActivationCompletion(activation)
-  const activeDay = getActiveActivationDay(activation)
-  const nextTask = activeDay.tasks.find((task) => !activation.completedTaskIds.includes(task.id))
-  const prescription = useMemo(() => getPrescription(energy, clarity, pressure), [energy, clarity, pressure])
-  const evolution = buildEvolutionSnapshot()
-  const ritualProfile = loadRitualProfile()
-  const ritualRecord = getTodayRitualRecord()
-  const ritualWord = ritualRecord?.keyword ?? ritualProfile?.word ?? '始'
-
-  const saveCheckIn = () => {
-    const next: DailyCheckIn = {
-      date: todayKey(),
-      energy,
-      clarity,
-      pressure,
-      intention: intention.trim(),
-      createdAt: Date.now(),
-    }
-    saveState('dailyCheckIn', next)
-    setCheckedIn(true)
-  }
-
+  const initial = useMemo(() => buildHomeIntelligence(), [])
+  const [intelligence, setIntelligence] = useState(initial)
+  const [recommendationIndex, setRecommendationIndex] = useState(0)
+  const [checkInOpen, setCheckInOpen] = useState(false)
+  const [savedMessage, setSavedMessage] = useState('')
+  const [energy, setEnergy] = useState(initial.checkIn?.energy ?? 3)
+  const [clarity, setClarity] = useState(initial.checkIn?.clarity ?? 3)
+  const [pressure, setPressure] = useState(initial.checkIn?.pressure ?? 3)
+  const [intention, setIntention] = useState(initial.checkIn?.intention ?? '')
+  const actions = [intelligence.primary, ...intelligence.alternatives]
+  const recommendation = actions[recommendationIndex % actions.length]
+  const RecommendationIcon = actionIcons[recommendation.id]
   const today = new Date().toLocaleDateString('zh-CN', { month: 'long', day: 'numeric', weekday: 'long' })
 
+  const cycleRecommendation = () => {
+    setRecommendationIndex((value) => (value + 1) % actions.length)
+    setSavedMessage('')
+    navigator.vibrate?.(18)
+  }
+
+  const saveCheckIn = () => {
+    const next: DailyCheckIn = { date: todayKey(), energy, clarity, pressure, intention: intention.trim(), createdAt: Date.now() }
+    saveState('dailyCheckIn', next)
+    const refreshed = buildHomeIntelligence()
+    setIntelligence(refreshed)
+    setRecommendationIndex(0)
+    setCheckInOpen(false)
+    setSavedMessage('已根据新状态更新建议')
+    navigator.vibrate?.([24, 32, 46])
+  }
+
   return (
-    <div className="hos-page animate-float-up">
-      <header className="home-header">
-        <div className="brand-lockup compact">
-          <img src={`${import.meta.env.BASE_URL}hos-icon-192-v2.png`} alt="HOS 标志" />
-          <div>
-            <p className="brand-kicker">HOS · 人类操作系统</p>
-            <h1>你好，今天辛苦了</h1>
-            <p>{today}</p>
-          </div>
+    <div className="hos-page home-intelligence-page animate-float-up">
+      <header className="intelligence-header">
+        <div>
+          <p>{today}</p>
+          <h1>{intelligence.greeting}</h1>
+          <span>{intelligence.moment}</span>
         </div>
-        <button onClick={() => navigate('/about')} className="icon-action" aria-label="了解 HOS">
-          <Info size={18} />
-        </button>
+        <button onClick={() => navigate('/about')} className="apple-icon-button" aria-label="了解 HOS"><Info size={18} /></button>
       </header>
 
-      <section className={`home-ritual-hero ${ritualRecord ? 'complete' : ''}`}>
-        <div className="home-ritual-glow" aria-hidden="true"><i /><i /><i /></div>
-        <div className="home-ritual-copy">
-          <p className="section-kicker">HOS · DAILY ALIGNMENT</p>
-          <h2>{ritualRecord ? '今天，你已经重新取回了方向。' : ritualProfile ? `今天，先唤醒「${ritualWord}」。` : '不是更努力。是先回到自己。'}</h2>
-          <p>{ritualRecord ? `今日关键词「${ritualRecord.keyword}」 · 接下来只做：${ritualRecord.microAction}` : '用呼吸、声音、一个关键词和一个微小动作，在 3 分钟里完成一次真实的状态转换。'}</p>
-          <button onClick={() => navigate('/ritual')}>
-            {ritualRecord ? <RotateCcw size={16} /> : <Play size={16} />}
-            {ritualRecord ? '重温今日校准' : ritualProfile ? '开始 3 分钟校准' : '初始化我的 HOS'}
-            <ArrowRight size={15} />
-          </button>
-        </div>
-        <div className="home-ritual-orbit" aria-label={`今日关键词 ${ritualWord}`}>
-          <i /><i /><span>{ritualWord}</span><small>{ritualRecord ? '已校准' : '今日入口'}</small>
-        </div>
-        <div className="home-ritual-meta"><span>视觉呼吸</span><span>真实音景</span><span>东方心法</span><span>微小行动</span></div>
-      </section>
+      <section className="intelligence-hero">
+        <div className="intelligence-material" aria-hidden="true"><i /><i /></div>
+        <header>
+          <div className="intelligence-brand"><span><Sparkles size={15} /></span><p>HOS INTELLIGENCE</p></div>
+          <button onClick={cycleRecommendation} aria-label="换一个建议"><RefreshCw size={14} /> 换一个</button>
+        </header>
 
-      <button className="evolution-entry" onClick={() => navigate('/evolution')}>
-        <div className="evolution-entry-top">
-          <span><Sparkles size={18} /></span>
-          <div><p>今日进化路径</p><strong>{evolution.headline}</strong></div>
-          <ArrowRight size={18} />
-        </div>
-        <div className="evolution-entry-meta">
-          <span>重点 · {evolution.focusLabel}</span>
-          <span>DAY {String(evolution.day).padStart(2, '0')}</span>
-          <span>{evolution.completedToday} / 3 已完成</span>
-        </div>
-        <div className="evolution-entry-progress"><i style={{ width: `${(evolution.completedToday / 3) * 100}%` }} /></div>
-      </button>
-
-      <section className="section-block">
-        <div className="hos-section-title">
-          <div><p className="section-kicker">每日状态</p><h2>用 30 秒听见自己</h2></div>
-          {checkedIn && <span className="check-badge"><Check size={12} /> 已记录</span>}
+        <div className="intelligence-score" aria-label={`系统整合度 ${intelligence.integration}`}>
+          <svg viewBox="0 0 72 72" aria-hidden="true">
+            <circle cx="36" cy="36" r="31" />
+            <circle cx="36" cy="36" r="31" pathLength="100" style={{ strokeDasharray: `${intelligence.integration} 100` }} />
+          </svg>
+          <span><strong>{intelligence.integration}</strong><small>整合度</small></span>
         </div>
 
-        <div className="checkin-panel">
-          <StateSlider label="身体能量" value={energy} type="energy" onChange={(value) => { setEnergy(value); setCheckedIn(false) }} />
-          <StateSlider label="思路清晰" value={clarity} type="clarity" onChange={(value) => { setClarity(value); setCheckedIn(false) }} />
-          <StateSlider label="内在压力" value={pressure} type="pressure" onChange={(value) => { setPressure(value); setCheckedIn(false) }} />
-          <label className="block">
-            <span className="mb-2 block text-[12px] text-hos-text-dim">今天最想守住的一件事</span>
-            <input
-              className="hos-input"
-              value={intention}
-              onChange={(event) => { setIntention(event.target.value.slice(0, 60)); setCheckedIn(false) }}
-              placeholder="例如：做完最重要的一页方案"
-            />
-          </label>
-          <button onClick={saveCheckIn} className="secondary-action w-full">
-            <Check size={16} /> 保存今日状态
-          </button>
+        <div className="intelligence-copy">
+          <p>{recommendation.eyebrow}</p>
+          <h2>{recommendation.title}</h2>
+          <span>{recommendation.description}</span>
         </div>
 
-        <div className="prescription-panel">
-          <prescription.icon size={20} className="shrink-0 text-hos-cyan" />
-          <div className="min-w-0 flex-1">
-            <p className="text-[15px] font-semibold text-hos-text">{prescription.title}</p>
-            <p className="mt-1 text-[12px] leading-relaxed text-hos-text-dim">{prescription.desc}</p>
-          </div>
-          <button onClick={() => navigate(prescription.route)} className="icon-action" aria-label={prescription.action}>
-            <ArrowRight size={17} />
-          </button>
-        </div>
-      </section>
-
-      <section className="section-block">
-        <div className="hos-section-title"><div><p className="section-kicker">快速开始</p><h2>你现在需要什么？</h2></div></div>
-        <div className="home-shortcuts">
-          <button className="home-shortcut featured" onClick={() => navigate('/visual')}>
-            <span className="shortcut-icon peach"><Camera size={22} /></span>
-            <span><strong>视觉状态诊断</strong><small>打开摄像头，看见此刻的外显状态</small></span>
-            <ArrowRight size={17} />
-          </button>
-          <button className="home-shortcut" onClick={() => navigate('/architect')}>
-            <span className="shortcut-icon lavender"><BrainCircuit size={20} /></span>
-            <span><strong>AI 成长教练</strong><small>梳理问题与下一步</small></span>
-          </button>
-          <button className="home-shortcut" onClick={() => navigate('/reset')}>
-            <span className="shortcut-icon sage"><RotateCcw size={20} /></span>
-            <span><strong>快速放松</strong><small>呼吸与稳态练习</small></span>
-          </button>
-          <button className="home-shortcut" onClick={() => navigate('/classics')}>
-            <span className="shortcut-icon sand"><BookOpenText size={20} /></span>
-            <span><strong>经典修习</strong><small>每日一段，阅读、静心与记录</small></span>
-          </button>
-        </div>
-      </section>
-
-      <section className="section-block">
-        <div className="hos-section-title">
-          <div><p className="section-kicker">今日成长</p><h2>7 日启动 · 第 {activeDay.day} 天</h2></div>
-          <strong className="text-[20px] text-hos-cyan">{activationCompletion}%</strong>
-        </div>
-        <button onClick={() => navigate('/activation')} className="training-strip">
-          <span className="step-index"><CalendarCheck size={15} /></span>
-          <span className="min-w-0 flex-1 text-left">
-            <strong>{activeDay.title.zh}</strong>
-            <small>{nextTask ? `下一步：${nextTask.title.zh}` : '今天的训练已完成，可以轻松复盘。'}</small>
-          </span>
-          <ArrowRight size={17} />
+        <div className="intelligence-reason"><CircleHelp size={14} /><span>{recommendation.reason}</span><em>{recommendation.duration}</em></div>
+        <button className="intelligence-primary" onClick={() => navigate(recommendation.route)}>
+          <RecommendationIcon size={18} />{recommendation.cta}<ArrowRight size={17} />
         </button>
-        <div className="hos-progress"><div className="hos-progress-fill bg-hos-cyan" style={{ width: `${activationCompletion}%` }} /></div>
+        {savedMessage && <p className="intelligence-updated"><Check size={13} />{savedMessage}</p>}
       </section>
 
-      <button onClick={() => navigate('/tools')} className="all-tools-entry">
-        <span className="shortcut-icon sage"><Grid3X3 size={21} /></span>
-        <span><strong>查看全部功能</strong><small>视觉诊断、经典修习、协议库、心流、日志等 10 个模块</small></span>
-        <ArrowRight size={18} />
-      </button>
+      <section className="system-glance">
+        <header>
+          <div><p>此刻状态</p><h2>{intelligence.isCheckedIn ? '系统已获得今日信号' : '告诉系统，你现在怎么样'}</h2></div>
+          <button onClick={() => setCheckInOpen((value) => !value)}>{checkInOpen ? '收起' : intelligence.isCheckedIn ? '调整' : '30 秒记录'}{checkInOpen ? <ChevronUp size={15} /> : <ChevronDown size={15} />}</button>
+        </header>
 
-      <button onClick={() => navigate('/support')} className="support-entry">
-        <HeartHandshake size={21} className="text-hos-red" />
-        <span className="min-w-0 flex-1 text-left"><strong>一起共建 HOS</strong><small>查看项目缘起、更新方向与真实支持记录</small></span>
-        <ArrowRight size={16} />
-      </button>
+        <div className="system-signals">
+          {intelligence.signals.map((signal) => <div key={signal.label} className={signal.level}><span>{signal.label}</span><strong>{signal.value}</strong></div>)}
+        </div>
+
+        {checkInOpen && (
+          <div className="apple-checkin-panel">
+            <StateSlider label="身体能量" value={energy} type="energy" onChange={setEnergy} />
+            <StateSlider label="思路清晰" value={clarity} type="clarity" onChange={setClarity} />
+            <StateSlider label="内在压力" value={pressure} type="pressure" onChange={setPressure} />
+            <label className="apple-intention"><span>今天最想守住的一件事</span><input value={intention} onChange={(event) => setIntention(event.target.value.slice(0, 60))} placeholder="例如：完成方案的第一页" /></label>
+            <button className="apple-save-state" onClick={saveCheckIn}><Check size={16} />更新我的状态</button>
+          </div>
+        )}
+
+        <div className="local-learning"><ShieldCheck size={14} /><span>{intelligence.insight}</span><small>仅在本机学习</small></div>
+      </section>
+
+      <section className="home-intelligence-section">
+        <header><div><p>FOR THIS MOMENT</p><h2>你也可以自己决定</h2></div></header>
+        <div className="smart-actions-list">
+          {intelligence.alternatives.slice(0, 3).map((item) => <SmartActionRow key={item.id} item={item} onOpen={navigate} />)}
+        </div>
+      </section>
+
+      <section className="home-intelligence-section">
+        <header><div><p>YOUR SYSTEM</p><h2>系统正在逐渐理解你</h2></div><button onClick={() => navigate('/evolution')}>查看进化 <ArrowRight size={14} /></button></header>
+        <div className="learning-card">
+          <div><strong>{intelligence.learnedSignals}<small>/6</small></strong><span>数据维度</span></div>
+          <div><strong>{intelligence.practiceDays}</strong><span>练习天数</span></div>
+          <div><strong>{intelligence.integration}</strong><span>整合度</span></div>
+        </div>
+      </section>
+
+      <section className="home-intelligence-section">
+        <header><div><p>EXPLORE</p><h2>需要时，它们一直在</h2></div></header>
+        <div className="minimal-tools">
+          <button onClick={() => navigate('/visual')}><span><ScanFace size={20} /></span><strong>视觉诊断</strong><small>看见当下</small></button>
+          <button onClick={() => navigate('/architect')}><span><BrainCircuit size={20} /></span><strong>AI 教练</strong><small>收束问题</small></button>
+          <button onClick={() => navigate('/music')}><span><Headphones size={20} /></span><strong>音景</strong><small>调节状态</small></button>
+          <button onClick={() => navigate('/classics')}><span><Leaf size={20} /></span><strong>经典</strong><small>阅读修习</small></button>
+        </div>
+      </section>
+
+      <button onClick={() => navigate('/tools')} className="minimal-all-tools"><Grid3X3 size={18} /><span><strong>全部功能</strong><small>所有模块完整保留</small></span><ArrowRight size={16} /></button>
     </div>
   )
 }
