@@ -10,6 +10,7 @@ import {
   saveState,
   type ActivationProgress,
 } from '../stores/useStore'
+import VoiceInputButton from '../components/VoiceInputButton'
 
 export default function Activation() {
   const navigate = useNavigate()
@@ -188,13 +189,16 @@ export default function Activation() {
             <p key={item.zh} className="text-[12px] text-hos-text-dim">• {item.zh}</p>
           ))}
         </div>
-        <textarea
-          value={progress.notes[String(day.day)] ?? ''}
-          onChange={(event) => updateNote(event.target.value)}
-          rows={3}
-          placeholder="记录今天的系统日志..."
-          className="w-full bg-hos-bg/70 border border-hos-border rounded-xl px-3.5 py-3 text-[13px] outline-none focus:border-hos-cyan/35 text-hos-text placeholder-hos-text-muted resize-none transition-colors"
-        />
+        <div className="voice-enabled-control textarea">
+          <textarea
+            value={progress.notes[String(day.day)] ?? ''}
+            onChange={(event) => updateNote(event.target.value)}
+            rows={3}
+            placeholder="点话筒，直接说今天的系统日志..."
+            className="w-full bg-hos-bg/70 border border-hos-border rounded-xl px-3.5 py-3 text-[13px] outline-none focus:border-hos-cyan/35 text-hos-text placeholder-hos-text-muted resize-none transition-colors"
+          />
+          <VoiceInputButton value={progress.notes[String(day.day)] ?? ''} onChange={updateNote} label="用语音完成今日复盘" />
+        </div>
       </section>
 
       <div className="grid grid-cols-[1fr_auto] gap-3">

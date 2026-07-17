@@ -1,6 +1,7 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
+  AudioLines,
   ArrowRight,
   BatteryLow,
   BookOpen,
@@ -9,17 +10,23 @@ import {
   ChevronRight,
   Compass,
   Heart,
+  LockKeyhole,
   MessageCircle,
+  Mic,
+  PencilLine,
   Play,
   RefreshCw,
+  RotateCcw,
+  Save,
   Send,
   ShieldCheck,
   Sparkles,
+  Square,
   Target,
   Volume2,
   Waves,
 } from 'lucide-react'
-import { type ChatMessage, loadState, recomputeUserState, saveState } from '../stores/useStore'
+import { type ChatMessage, type JournalEntry, loadState, recomputeUserState, saveState } from '../stores/useStore'
 import {
   buildCoachGreeting,
   buildCoachSnapshot,
@@ -29,6 +36,18 @@ import {
   type CoachPlan,
   type CoachReplyOption,
 } from '../engines/coachEngine'
+import {
+  analyzeVoiceJournal,
+  calibrateVoiceMemory,
+  loadVoiceMemory,
+  polishVoiceTranscript,
+  updateVoiceMemory,
+  voiceMemoryInsight,
+  type VoiceJournalRecord,
+  type VoiceMemory,
+} from '../engines/voiceJournalEngine'
+import { useVoiceCapture } from '../hooks/useVoiceCapture'
+import VoiceInputButton from '../components/VoiceInputButton'
 
 const starterPrompts = [
   { label: '脑子停不下来', desc: '压力、紧绷、想得太多', icon: Waves, text: '我现在压力很大，脑子停不下来，想先稳定状态。' },
@@ -47,6 +66,7 @@ function latestUserMessage(messages: ChatMessage[]) {
 
 export default function Architect() {
   const navigate = useNavigate()
+  const voice = useVoiceCapture()
   const initialMessages = useMemo(() => loadState<ChatMessage[]>('chat', []).slice(-12), [])
   const initialUser = latestUserMessage(initialMessages)
   const initialSnapshot = useMemo(() => buildCoachSnapshot(), [])
@@ -56,8 +76,13 @@ export default function Architect() {
   const [thinkingStage, setThinkingStage] = useState<number | null>(null)
   const [speaking, setSpeaking] = useState(false)
   const [feedbackStatus, setFeedbackStatus] = useState('')
+  const [voiceReviewText, setVoiceReviewText] = useState('')
+  const [voiceRecord, setVoiceRecord] = useState<VoiceJournalRecord | null>(null)
+  const [voiceCalibration, setVoiceCalibration] = useState('')
+  const [voiceMemory, setVoiceMemory] = useState<VoiceMemory>(() => loadVoiceMemory(loadState<VoiceMemory | undefined>('voiceMemory', undefined)))
   const [coachPlan, setCoachPlan] = useState<CoachPlan>(() => createCoachPlan(initialUser?.content ?? '我需要一个清晰的下一步', initialSnapshot))
   const timersRef = useRef<number[]>([])
+  const livePlanRef = useRef<HTMLElement>(null)
   const snapshot = buildCoachSnapshot()
   const userTrail = messages.filter((message) => message.role === 'user').slice(-3)
 
@@ -148,7 +173,112 @@ export default function Architect() {
     setThinkingStage(null)
     setSpeaking(false)
     setFeedbackStatus('')
+    setVoiceRecord(null)
+    setVoiceCalibration('')
+    voice.reset()
     setCoachPlan(createCoachPlan('我需要一个清晰的下一步', buildCoachSnapshot()))
+  }
+
+  const startVoiceJournal = () => {
+    setVoiceRecord(null)
+    setVoiceCalibration('')
+    void voice.start()
+  }
+
+  const stopVoiceJournal = () => {
+    const heard = `${voice.transcript}${voice.interimTranscript}`
+    setVoiceReviewText(polishVoiceTranscript(heard) || heard)
+    voice.stop()
+  }
+
+  const saveVoiceJournal = () => {
+    const transcript = polishVoiceTranscript(voiceReviewText)
+    if (!transcript) return
+    const currentMemory = loadVoiceMemory(loadState<VoiceMemory | undefined>('voiceMemory', voiceMemory))
+    const analysis = analyzeVoiceJournal(transcript, voice.metrics, currentMemory)
+    const now = Date.now()
+    const currentSnapshot = buildCoachSnapshot()
+    const inferredCheckIn = {
+      date: new Date().toLocaleDateString('en-CA'),
+      energy: analysis.energy,
+      clarity: analysis.clarity,
+      pressure: analysis.pressure,
+      intention: analysis.summary,
+      createdAt: now,
+      source: 'voice' as const,
+      confidence: analysis.confidence,
+    }
+    const nextPlan = createCoachPlan(transcript, { ...currentSnapshot, checkIn: inferredCheckIn }, coachPlan)
+    const record: VoiceJournalRecord = {
+      id: `vj-${now}`,
+      timestamp: now,
+      date: new Date().toLocaleDateString('en-CA'),
+      rawTranscript: voice.transcript,
+      transcript,
+      metrics: voice.metrics,
+      analysis,
+      coachMode: nextPlan.mode,
+      commitment: nextPlan.commitment,
+    }
+    const voiceRecords = loadState<VoiceJournalRecord[]>('voiceJournal', [])
+    saveState('voiceJournal', [record, ...voiceRecords].slice(0, 180))
+    const nextMemory = updateVoiceMemory(currentMemory, record)
+    saveState('voiceMemory', nextMemory)
+    setVoiceMemory(nextMemory)
+
+    const journal = loadState<JournalEntry[]>('journal', [])
+    const journalEntry: JournalEntry = {
+      id: `j-${now}`,
+      timestamp: now,
+      trigger: `语音日记 · ${analysis.stateLabel}`,
+      oldPattern: transcript,
+      newResponse: nextPlan.commitment,
+      somatic: analysis.deliverySignals.join(' · '),
+      distortion: '',
+      analysis: `${analysis.response}\n\n状态推测：能量 ${analysis.energy}/5 · 清晰 ${analysis.clarity}/5 · 压力 ${analysis.pressure}/5\n依据：${analysis.deliverySignals.join('；')}。\n\n这些是自我觉察线索，不是医学或心理诊断。`,
+      source: 'voice',
+      voiceRecordId: record.id,
+      voiceSignals: analysis.deliverySignals,
+    }
+    saveState('journal', [journalEntry, ...journal].slice(0, 365))
+    saveState('dailyCheckIn', inferredCheckIn)
+
+    const voiceUserMessage: ChatMessage = { id: `u-${now}`, role: 'user', content: transcript, timestamp: now }
+    const voiceCoachMessage: ChatMessage = { id: `a-${now + 1}`, role: 'assistant', content: formatCoachMessage(nextPlan), timestamp: now + 1 }
+    setMessages((previous) => [...previous, voiceUserMessage, voiceCoachMessage])
+    setCoachPlan(nextPlan)
+    setStarted(true)
+    setVoiceRecord(record)
+    setFeedbackStatus('')
+    recomputeUserState()
+    voice.reset()
+    navigator.vibrate?.([24, 36, 48])
+  }
+
+  const calibrateVoiceRead = (value: -1 | 0 | 1) => {
+    if (!voiceRecord) return
+    const records = loadState<VoiceJournalRecord[]>('voiceJournal', [])
+    saveState('voiceJournal', records.map((record) => record.id === voiceRecord.id ? { ...record, calibration: value } : record))
+    const nextMemory = calibrateVoiceMemory(loadState<VoiceMemory | undefined>('voiceMemory', voiceMemory), value)
+    saveState('voiceMemory', nextMemory)
+    setVoiceMemory(nextMemory)
+    setVoiceRecord({ ...voiceRecord, calibration: value })
+    setVoiceCalibration(value === 0 ? '已确认，下次会沿用这组判断' : '已校准，系统会逐渐贴近你的真实基线')
+  }
+
+  const clearVoiceMemory = () => {
+    if (!window.confirm('清除语音记录、声音基线与相关语音日志？此操作无法撤销。')) return
+    saveState('voiceJournal', [])
+    window.localStorage.removeItem('hos_voiceMemory')
+    const checkIn = loadState<{ source?: string } | undefined>('dailyCheckIn', undefined)
+    if (checkIn?.source === 'voice') window.localStorage.removeItem('hos_dailyCheckIn')
+    const journal = loadState<JournalEntry[]>('journal', []).filter((entry) => entry.source !== 'voice')
+    saveState('journal', journal)
+    const cleared = loadVoiceMemory()
+    setVoiceMemory(cleared)
+    setVoiceRecord(null)
+    setVoiceCalibration('语音记忆已从当前设备清除')
+    recomputeUserState()
   }
 
   return (
@@ -161,14 +291,107 @@ export default function Architect() {
         {started && <button onClick={resetSession} aria-label="开始新对话"><RefreshCw size={17} /></button>}
       </header>
 
-      <section className={`coach-presence ${started ? 'compact' : ''}`}>
+      {voice.status === 'idle' && !voiceRecord && !started && (
+        <section className="voice-invitation">
+          <div className="voice-invitation-copy">
+            <p>VOICE JOURNAL · 今日倾听</p>
+            <h2>不用整理语言，<br />直接说说今天的你。</h2>
+            <span>像写一篇只给自己的日记。HOS 会先听完，再回应。</span>
+          </div>
+          <button className="voice-orb-button" onClick={startVoiceJournal} aria-label="开始语音日记">
+            <i /><i />
+            <span><Mic size={28} /></span>
+            <strong>按一下，直接说</strong>
+          </button>
+          <div className="voice-invitation-privacy"><LockKeyhole size={13} /><span>原始录音不保存 · 转写与状态仅留在本机</span></div>
+          {voiceMemory.voiceCount > 0 && (
+            <div className="voice-memory-peek"><AudioLines size={14} /><span>{voiceMemoryInsight(voiceMemory)}</span><button onClick={clearVoiceMemory}>管理</button></div>
+          )}
+        </section>
+      )}
+
+      {voice.status === 'idle' && !voiceRecord && started && (
+        <button className="voice-quick-entry" onClick={startVoiceJournal}>
+          <span><Mic size={19} /></span>
+          <div><strong>继续用声音说</strong><small>我会把这一段也收进状态日志</small></div>
+          <AudioLines size={17} />
+        </button>
+      )}
+
+      {(voice.status === 'requesting' || voice.status === 'listening' || voice.status === 'review' || voice.status === 'error') && (
+        <section className={`voice-studio ${voice.status}`}>
+          {voice.status === 'requesting' && (
+            <div className="voice-permission"><span><Mic size={25} /></span><h2>正在打开倾听</h2><p>请在浏览器提示中允许麦克风。原始声音不会被保存。</p></div>
+          )}
+          {voice.status === 'listening' && (
+            <>
+              <header><div><span className="voice-live-dot" />正在倾听</div><time>{String(Math.floor(voice.elapsedSec / 60)).padStart(2, '0')}:{String(voice.elapsedSec % 60).padStart(2, '0')}</time></header>
+              <div className="voice-listening-orb" style={{ '--voice-level': `${Math.max(96, 96 + voice.liveLevel * 0.72)}px` } as CSSProperties}>
+                <i /><span><Mic size={30} /></span>
+              </div>
+              <p className="voice-listening-prompt">慢慢说，我不会打断你。</p>
+              <div className="voice-live-transcript" aria-live="polite">
+                {voice.transcript || voice.interimTranscript
+                  ? <p>{voice.transcript}<em>{voice.interimTranscript}</em></p>
+                  : <span>可以从“我今天……”开始</span>}
+              </div>
+              {voice.error && <p className="voice-inline-error">{voice.error}</p>}
+              <button className="voice-stop" onClick={stopVoiceJournal}><Square size={15} />我说完了</button>
+            </>
+          )}
+          {voice.status === 'review' && (
+            <>
+              <header><div><PencilLine size={15} />收好这段真实表达</div><button onClick={voice.reset} aria-label="取消语音日记">取消</button></header>
+              <div className="voice-review-heading"><span><AudioLines size={20} /></span><div><h2>这是我听到的</h2><p>你可以修改错字，意思不会被擅自改写。</p></div></div>
+              <textarea value={voiceReviewText} onChange={(event) => setVoiceReviewText(event.target.value)} rows={7} aria-label="语音日记转写内容" />
+              <div className="voice-review-meta"><span>{Math.round(voice.metrics.durationSec)} 秒表达</span><span>不保存原始音频</span></div>
+              <button className="voice-save" onClick={saveVoiceJournal} disabled={!voiceReviewText.trim()}><Save size={16} />收进今日日志并让教练回应</button>
+            </>
+          )}
+          {voice.status === 'error' && (
+            <div className="voice-error-state"><span><Mic size={24} /></span><h2>这次没有连接上麦克风</h2><p>{voice.error}</p><div><button onClick={startVoiceJournal}><RotateCcw size={15} />重新尝试</button><button onClick={voice.reset}>先用文字</button></div></div>
+          )}
+        </section>
+      )}
+
+      {voiceRecord && (
+        <section className="voice-readback">
+          <header><div><p>I HEARD YOU</p><h2>我听见了</h2></div><span>{voiceRecord.analysis.confidence}%<small>当前推测</small></span></header>
+          <blockquote>{voiceRecord.analysis.response}</blockquote>
+          <div className="voice-state-cube">
+            <article><small>能量</small><strong>{voiceRecord.analysis.energy}<em>/5</em></strong></article>
+            <article><small>清晰</small><strong>{voiceRecord.analysis.clarity}<em>/5</em></strong></article>
+            <article><small>压力</small><strong>{voiceRecord.analysis.pressure}<em>/5</em></strong></article>
+          </div>
+          <div className="voice-evidence">
+            <p>我参考了什么</p>
+            <div>{[...voiceRecord.analysis.keywords.map((keyword) => `内容 · ${keyword}`), ...voiceRecord.analysis.deliverySignals].map((signal) => <span key={signal}>{signal}</span>)}</div>
+            <small>{voiceRecord.analysis.acousticNote}。这些是可校准线索，不是医学或心理诊断。</small>
+          </div>
+          <div className="voice-calibration">
+            <p>这个判断接近真实的你吗？</p>
+            <div>
+              <button className={voiceRecord.calibration === -1 ? 'active' : ''} onClick={() => calibrateVoiceRead(-1)}>我更平静</button>
+              <button className={voiceRecord.calibration === 0 ? 'active' : ''} onClick={() => calibrateVoiceRead(0)}>比较接近</button>
+              <button className={voiceRecord.calibration === 1 ? 'active' : ''} onClick={() => calibrateVoiceRead(1)}>我更紧绷</button>
+            </div>
+            {voiceCalibration && <span>{voiceCalibration}</span>}
+          </div>
+          <button className="voice-enter-coaching" onClick={() => livePlanRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })}>
+            <span><BrainCircuit size={18} /></span><div><small>带着这份真实状态</small><strong>进入下一步调试</strong></div><ArrowRight size={17} />
+          </button>
+          <button className="voice-record-again" onClick={startVoiceJournal}><Mic size={14} />再记录一段</button>
+        </section>
+      )}
+
+      {(started || voiceRecord) && <section className={`coach-presence ${started ? 'compact' : ''}`}>
         <div className="coach-presence-orb" aria-hidden="true"><i /><i /><span><Sparkles size={22} /></span></div>
         <div>
           <p>{started ? '我正在和你一起收窄问题' : '你不需要把问题说得完整'}</p>
           <h2>{started ? `当前更接近「${coachPlan.stateLabel}」` : '我在。先从最接近的感觉开始。'}</h2>
           <span>{buildCoachGreeting(snapshot)}</span>
         </div>
-      </section>
+      </section>}
 
       {!started && (
         <section className="coach-starters">
@@ -203,7 +426,7 @@ export default function Architect() {
       )}
 
       {started && thinkingStage === null && (
-        <section className={`coach-live-plan ${coachPlan.isCrisis ? 'crisis' : ''}`}>
+        <section ref={livePlanRef} className={`coach-live-plan ${coachPlan.isCrisis ? 'crisis' : ''}`}>
           <header>
             <div><p>CURRENT READ</p><h2>{coachPlan.stateLabel}</h2><span>核心需要：{coachPlan.coreNeed}</span></div>
             <div className="coach-confidence"><strong>{coachPlan.confidence}</strong><small>匹配度</small></div>
@@ -250,7 +473,7 @@ export default function Architect() {
         </section>
       )}
 
-      <footer className="coach-vnext-compose">
+      {voice.status === 'idle' && <footer className="coach-vnext-compose">
         <div className="coach-vnext-input">
           <MessageCircle size={17} />
           <input
@@ -260,10 +483,11 @@ export default function Architect() {
             onKeyDown={(event) => event.key === 'Enter' && sendMessage()}
             placeholder={started ? '继续说，我会沿着上一轮理解…' : '或者，直接说此刻最卡的事…'}
           />
+          <VoiceInputButton value={input} onChange={setInput} label="用语音继续和教练说" />
         </div>
         <button onClick={() => sendMessage()} disabled={!input.trim() || thinkingStage !== null} aria-label="发送"><Send size={17} /></button>
         <div className="coach-privacy"><ShieldCheck size={12} /><span>对话与状态仅保存在当前设备</span></div>
-      </footer>
+      </footer>}
     </div>
   )
 }

@@ -12,6 +12,7 @@ import {
 } from 'lucide-react'
 import { CONFIRMED_SUPPORTERS } from '../data/supporters'
 import { loadState, saveState } from '../stores/useStore'
+import VoiceInputButton from '../components/VoiceInputButton'
 
 interface PendingSupport {
   id: string
@@ -127,8 +128,8 @@ export default function Support() {
       <section className="section-block">
         <div className="hos-section-title"><div><p className="section-kicker">SUPPORT INTENT</p><h2>登记共建意向</h2></div></div>
         <div className="space-y-3">
-          <input className="hos-input" value={nickname} onChange={(event) => { setNickname(event.target.value.slice(0, 20)); setSaved(false) }} placeholder="昵称（不填则匿名）" />
-          <textarea className="hos-input min-h-24 resize-none" value={message} onChange={(event) => { setMessage(event.target.value.slice(0, 120)); setSaved(false) }} placeholder="留下一句话（可选）" />
+          <div className="voice-enabled-control"><input className="hos-input" value={nickname} onChange={(event) => { setNickname(event.target.value.slice(0, 20)); setSaved(false) }} placeholder="昵称（不填则匿名）" /><VoiceInputButton value={nickname} onChange={(value) => { setNickname(value); setSaved(false) }} maxLength={20} label="用语音说出昵称" /></div>
+          <div className="voice-enabled-control textarea"><textarea className="hos-input min-h-24 resize-none" value={message} onChange={(event) => { setMessage(event.target.value.slice(0, 120)); setSaved(false) }} placeholder="点话筒，留下一句话（可选）" /><VoiceInputButton value={message} onChange={(value) => { setMessage(value); setSaved(false) }} maxLength={120} label="用语音留下共建留言" /></div>
           <p className="text-[11px] leading-relaxed text-hos-text-muted">登记只保存在当前设备，不代表已经付款。支付完成并经项目方确认后，记录才会进入公开共建榜。</p>
           <button onClick={saveSupportIntent} className="primary-action w-full">
             {saved ? <CheckCircle2 size={17} /> : <Sparkles size={17} />}

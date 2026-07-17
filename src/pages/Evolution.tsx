@@ -26,6 +26,7 @@ import {
   type EvolutionProfile,
 } from '../engines/evolutionEngine'
 import { loadState, saveState } from '../stores/useStore'
+import VoiceInputButton from '../components/VoiceInputButton'
 
 type HabitRecipe = { anchor: string; behavior: string; celebration: string }
 
@@ -229,11 +230,11 @@ export default function Evolution() {
           <div><p className="section-kicker">行为配方 · B = MAP</p><h2>把改变安放进已有生活</h2><small>提示出现时，让行动足够容易；完成后立刻感受到“我做到了”。</small></div>
         </div>
         <div className="habit-formula">
-          <label><b>01</b><span>锚点 · 当我……之后</span><input value={habitRecipe.anchor} onChange={(event) => { setHabitRecipe({ ...habitRecipe, anchor: event.target.value.slice(0, 80) }); setRecipeSaved(false) }} /></label>
+          <label><b>01</b><span>锚点 · 当我……之后</span><div className="voice-enabled-control"><input value={habitRecipe.anchor} onChange={(event) => { setHabitRecipe({ ...habitRecipe, anchor: event.target.value.slice(0, 80) }); setRecipeSaved(false) }} /><VoiceInputButton value={habitRecipe.anchor} onChange={(value) => { setHabitRecipe({ ...habitRecipe, anchor: value }); setRecipeSaved(false) }} maxLength={80} label="用语音说出习惯锚点" /></div></label>
           <i>→</i>
-          <label><b>02</b><span>微行动 · 我会……</span><input value={habitRecipe.behavior} onChange={(event) => { setHabitRecipe({ ...habitRecipe, behavior: event.target.value.slice(0, 80) }); setRecipeSaved(false) }} /></label>
+          <label><b>02</b><span>微行动 · 我会……</span><div className="voice-enabled-control"><input value={habitRecipe.behavior} onChange={(event) => { setHabitRecipe({ ...habitRecipe, behavior: event.target.value.slice(0, 80) }); setRecipeSaved(false) }} /><VoiceInputButton value={habitRecipe.behavior} onChange={(value) => { setHabitRecipe({ ...habitRecipe, behavior: value }); setRecipeSaved(false) }} maxLength={80} label="用语音说出微行动" /></div></label>
           <i>→</i>
-          <label><b>03</b><span>庆祝 · 然后我……</span><input value={habitRecipe.celebration} onChange={(event) => { setHabitRecipe({ ...habitRecipe, celebration: event.target.value.slice(0, 80) }); setRecipeSaved(false) }} /></label>
+          <label><b>03</b><span>庆祝 · 然后我……</span><div className="voice-enabled-control"><input value={habitRecipe.celebration} onChange={(event) => { setHabitRecipe({ ...habitRecipe, celebration: event.target.value.slice(0, 80) }); setRecipeSaved(false) }} /><VoiceInputButton value={habitRecipe.celebration} onChange={(value) => { setHabitRecipe({ ...habitRecipe, celebration: value }); setRecipeSaved(false) }} maxLength={80} label="用语音说出完成后的庆祝" /></div></label>
         </div>
         <button className="secondary-action" onClick={saveRecipe} disabled={!habitRecipe.anchor.trim() || !habitRecipe.behavior.trim()}>
           {recipeSaved ? <Check size={16} /> : <Save size={16} />}{recipeSaved ? '微习惯配方已保存' : '保存我的微习惯配方'}
@@ -263,11 +264,11 @@ export default function Evolution() {
         </div>
         <label>
           <span>我的阶段方向</span>
-          <input value={direction} onChange={(event) => { setDirection(event.target.value.slice(0, 80)); setSaved(false) }} placeholder="例如：成为一个能稳定行动、照顾身体的创造者" />
+          <div className="voice-enabled-control"><input value={direction} onChange={(event) => { setDirection(event.target.value.slice(0, 80)); setSaved(false) }} placeholder="点话筒，说出你想成为怎样的人" /><VoiceInputButton value={direction} onChange={(value) => { setDirection(value); setSaved(false) }} maxLength={80} label="用语音说出阶段方向" /></div>
         </label>
         <label>
           <span>这件事为什么重要</span>
-          <textarea value={reason} onChange={(event) => { setReason(event.target.value.slice(0, 180)); setSaved(false) }} rows={3} placeholder="写给真实的自己，不必写得正确。" />
+          <div className="voice-enabled-control textarea"><textarea value={reason} onChange={(event) => { setReason(event.target.value.slice(0, 180)); setSaved(false) }} rows={3} placeholder="点话筒，说给真实的自己听" /><VoiceInputButton value={reason} onChange={(value) => { setReason(value); setSaved(false) }} maxLength={180} label="用语音说出这件事为什么重要" /></div>
         </label>
         <button className="primary-action" onClick={saveDirection} disabled={!direction.trim()}>
           {saved ? <Check size={17} /> : <Save size={17} />}{saved ? '方向已保存' : '保存阶段方向'}

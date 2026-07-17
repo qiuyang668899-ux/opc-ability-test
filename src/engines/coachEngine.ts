@@ -14,6 +14,7 @@ import {
   type UserState,
 } from '../stores/useStore'
 import { getTodayRitualRecord } from './ritualEngine'
+import type { VoiceJournalRecord } from './voiceJournalEngine'
 
 export type CoachMode = 'stabilize' | 'clarify' | 'execute' | 'recover' | 'learn' | 'reflect'
 
@@ -29,6 +30,7 @@ export interface CoachSnapshot {
   checkIn?: DailyCheckIn
   ritualKeyword?: string
   ritualAction?: string
+  latestVoice?: VoiceJournalRecord
 }
 
 export interface CoachReplyOption {
@@ -135,6 +137,11 @@ function scoreModes(input: string, snapshot: CoachSnapshot, previousMode?: Coach
     if (snapshot.checkIn.energy <= 2) scores.recover += 2.25
     if (snapshot.checkIn.clarity <= 2) scores.clarify += 2
   }
+  if (snapshot.latestVoice) {
+    if (snapshot.latestVoice.analysis.pressure >= 4) scores.stabilize += 1.75
+    if (snapshot.latestVoice.analysis.energy <= 2) scores.recover += 1.5
+    if (snapshot.latestVoice.analysis.clarity <= 2) scores.clarify += 1.5
+  }
   if (previousMode && input.length <= 32) scores[previousMode] += 1.5
   if (Object.values(scores).every((score) => score === 0)) scores[previousMode ?? 'clarify'] = 1
 
@@ -153,6 +160,7 @@ function buildSignals(mode: CoachMode, snapshot: CoachSnapshot, normalized: stri
   if (snapshot.checkIn?.clarity && snapshot.checkIn.clarity <= 2) signals.push(`今日清晰 ${snapshot.checkIn.clarity}/5`)
   if (previousMode === mode) signals.push('与上一轮语境一致')
   if (snapshot.ritualKeyword) signals.push(`今日关键词「${snapshot.ritualKeyword}」`)
+  if (snapshot.latestVoice?.date === new Date().toLocaleDateString('en-CA')) signals.push(`语音状态「${snapshot.latestVoice.analysis.stateLabel}」`)
   return signals.length ? signals.slice(0, 3) : ['当前表达', '本机练习记录']
 }
 
@@ -198,6 +206,7 @@ export function buildCoachSnapshot(): CoachSnapshot {
   const activeDay = getActiveActivationDay(activation)
   const nextTask = activeDay.tasks.find((task) => !activation.completedTaskIds.includes(task.id))
   const ritual = getTodayRitualRecord()
+  const voiceJournal = loadState<VoiceJournalRecord[]>('voiceJournal', [])
   return {
     user,
     activationCompletion: getActivationCompletion(activation),
@@ -210,6 +219,7 @@ export function buildCoachSnapshot(): CoachSnapshot {
     checkIn,
     ritualKeyword: ritual?.keyword,
     ritualAction: ritual?.microAction,
+    latestVoice: voiceJournal[0],
   }
 }
 
@@ -268,6 +278,9 @@ export function formatCoachMessage(plan: CoachPlan): string {
 }
 
 export function buildCoachGreeting(snapshot: CoachSnapshot): string {
+  if (snapshot.latestVoice?.date === new Date().toLocaleDateString('en-CA')) {
+    return `我记得你今天说过的状态。当前语音线索：${snapshot.latestVoice.analysis.stateLabel} · 能量 ${snapshot.latestVoice.analysis.energy}/5 · 压力 ${snapshot.latestVoice.analysis.pressure}/5。`
+  }
   const state = snapshot.checkIn
     ? `能量 ${snapshot.checkIn.energy}/5 · 清晰 ${snapshot.checkIn.clarity}/5 · 压力 ${snapshot.checkIn.pressure}/5`
     : '还没有今日状态记录'

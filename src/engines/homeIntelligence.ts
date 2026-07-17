@@ -6,6 +6,7 @@ import {
 } from '../stores/useStore'
 import { buildEvolutionSnapshot } from './evolutionEngine'
 import { getTodayRitualRecord, loadRitualProfile } from './ritualEngine'
+import type { VoiceJournalRecord, VoiceMemory } from './voiceJournalEngine'
 
 export type SmartActionId = 'initialize' | 'align' | 'stabilize' | 'restore' | 'clarify' | 'focus' | 'close-day' | 'evolve'
 
@@ -123,6 +124,8 @@ export function buildHomeIntelligence(now = new Date()): HomeIntelligence {
   const evolution = buildEvolutionSnapshot()
   const journal = loadState<JournalEntry[]>('journal', [])
   const flow = loadState<FlowSession[]>('flowSessions', [])
+  const voiceJournal = loadState<VoiceJournalRecord[]>('voiceJournal', [])
+  const voiceMemory = loadState<VoiceMemory | undefined>('voiceMemory', undefined)
 
   let primary = ACTIONS.focus
   if ((checkIn?.pressure ?? 0) >= 4) primary = ACTIONS.stabilize
@@ -145,9 +148,11 @@ export function buildHomeIntelligence(now = new Date()): HomeIntelligence {
     { label: '压力', value: checkIn ? `${checkIn.pressure}/5` : '待记录', level: checkIn && checkIn.pressure >= 4 ? 'attention' : checkIn ? 'calm' : 'neutral' },
   ]
 
-  const learnedSignals = [Boolean(profile), Boolean(ritual), Boolean(checkIn), journal.length > 0, flow.length > 0, evolution.practiceDays > 0].filter(Boolean).length
+  const learnedSignals = [Boolean(profile), Boolean(ritual), Boolean(checkIn), journal.length > 0, flow.length > 0, evolution.practiceDays > 0, (voiceMemory?.voiceCount ?? 0) > 0].filter(Boolean).length
   const insight = checkIn?.intention
-    ? `今天最想守住：${checkIn.intention}`
+    ? checkIn.source === 'voice' && voiceJournal[0]
+      ? `今天从你的声音里听见「${voiceJournal[0].analysis.stateLabel}」，可随时校准。`
+      : `今天最想守住：${checkIn.intention}`
     : ritual
       ? `今日关键词「${ritual.keyword}」，行动是「${ritual.microAction}」`
       : '每多完成一次真实记录，推荐就会更贴近你。'

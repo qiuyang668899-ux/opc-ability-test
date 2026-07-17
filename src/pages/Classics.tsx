@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { BookOpenText, Check, ChevronLeft, ChevronRight, Clock3, Pause, Play, RotateCcw, Save, Volume2 } from 'lucide-react'
 import { CLASSIC_PASSAGES, type ClassicCategory } from '../data/classics'
 import { loadState, saveState } from '../stores/useStore'
+import VoiceInputButton from '../components/VoiceInputButton'
 
 type PracticeNote = { passageId: string; text: string; createdAt: number }
 const categories: Array<'全部' | ClassicCategory> = ['全部', '道家', '禅修', '儒家']
@@ -122,7 +123,10 @@ export default function Classics() {
 
       <section className="reflection-note">
         <div className="hos-section-title"><div><p className="section-kicker">修习记录</p><h2>这一段对今天的我意味着什么？</h2></div>{saved && <span className="check-badge"><Check size={12} />已保存</span>}</div>
-        <textarea value={note} onChange={(event) => { setNote(event.target.value.slice(0, 500)); setSaved(false) }} className="hos-input" placeholder="写下一句话也可以……" />
+        <div className="voice-enabled-control textarea">
+          <textarea value={note} onChange={(event) => { setNote(event.target.value.slice(0, 500)); setSaved(false) }} className="hos-input" placeholder="点话筒，说出这一段对今天的意义……" />
+          <VoiceInputButton value={note} onChange={(value) => { setNote(value); setSaved(false) }} maxLength={500} label="用语音记录修习体会" />
+        </div>
         <button onClick={saveNote} className="secondary-action w-full"><Save size={16} />保存本次体会</button>
       </section>
 

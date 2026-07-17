@@ -28,6 +28,9 @@ export interface JournalEntry {
   somatic: string;
   distortion: string;
   analysis?: string;
+  source?: 'manual' | 'voice';
+  voiceRecordId?: string;
+  voiceSignals?: string[];
 }
 
 // Chat message
@@ -126,6 +129,8 @@ export interface DailyCheckIn {
   pressure: number;
   intention: string;
   createdAt: number;
+  source?: 'manual' | 'voice';
+  confidence?: number;
 }
 
 export const ACTIVATION_DAYS: ActivationDay[] = [

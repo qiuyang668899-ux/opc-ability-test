@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { CheckCircle2, Clock, Focus, Play, RotateCcw, Save, TimerReset } from 'lucide-react'
 import { loadState, recomputeUserState, saveState, type FlowSession } from '../stores/useStore'
+import VoiceInputButton from '../components/VoiceInputButton'
 
 const stages = [
   {
@@ -133,44 +134,44 @@ export default function FlowLab() {
       <section className="hos-card p-4 mb-4 space-y-3">
         <div>
           <label className="text-[11px] text-hos-text-dim mb-1.5 block">要训练的技能 / Skill</label>
-          <input
-            value={skill}
-            onChange={(event) => setSkill(event.target.value)}
-            placeholder="例如：短视频脚本、演讲、网球正手、英语口语..."
-            className="w-full bg-hos-bg/70 border border-hos-border rounded-xl px-3.5 py-2.5 text-[13px] outline-none focus:border-hos-purple/40 text-hos-text placeholder-hos-text-muted transition-colors"
-          />
+          <div className="voice-enabled-control"><input
+              value={skill}
+              onChange={(event) => setSkill(event.target.value)}
+              placeholder="点话筒，说出要训练的技能"
+              className="w-full bg-hos-bg/70 border border-hos-border rounded-xl px-3.5 py-2.5 text-[13px] outline-none focus:border-hos-purple/40 text-hos-text placeholder-hos-text-muted transition-colors"
+            /><VoiceInputButton value={skill} onChange={setSkill} label="用语音说出训练技能" /></div>
         </div>
 
         <div>
           <label className="text-[11px] text-hos-text-dim mb-1.5 block">本轮唯一目标 / One Target</label>
-          <input
-            value={target}
-            onChange={(event) => setTarget(event.target.value)}
-            placeholder="90分钟内，我只要推进..."
-            className="w-full bg-hos-bg/70 border border-hos-border rounded-xl px-3.5 py-2.5 text-[13px] outline-none focus:border-hos-cyan/40 text-hos-text placeholder-hos-text-muted transition-colors"
-          />
+          <div className="voice-enabled-control"><input
+              value={target}
+              onChange={(event) => setTarget(event.target.value)}
+              placeholder="点话筒，说出本轮唯一目标"
+              className="w-full bg-hos-bg/70 border border-hos-border rounded-xl px-3.5 py-2.5 text-[13px] outline-none focus:border-hos-cyan/40 text-hos-text placeholder-hos-text-muted transition-colors"
+            /><VoiceInputButton value={target} onChange={setTarget} label="用语音说出本轮目标" /></div>
         </div>
 
         <div>
           <label className="text-[11px] text-hos-text-dim mb-1.5 block">关键节点 / Key Node</label>
-          <textarea
-            value={keyNode}
-            onChange={(event) => setKeyNode(event.target.value)}
-            rows={2}
-            placeholder="把动作或任务拆成4帧，然后选最重要的一帧..."
-            className="w-full bg-hos-bg/70 border border-hos-border rounded-xl px-3.5 py-2.5 text-[13px] outline-none focus:border-hos-orange/40 text-hos-text placeholder-hos-text-muted resize-none transition-colors"
-          />
+          <div className="voice-enabled-control textarea"><textarea
+              value={keyNode}
+              onChange={(event) => setKeyNode(event.target.value)}
+              rows={2}
+              placeholder="点话筒，说出最重要的一帧"
+              className="w-full bg-hos-bg/70 border border-hos-border rounded-xl px-3.5 py-2.5 text-[13px] outline-none focus:border-hos-orange/40 text-hos-text placeholder-hos-text-muted resize-none transition-colors"
+            /><VoiceInputButton value={keyNode} onChange={setKeyNode} label="用语音说出关键节点" /></div>
         </div>
 
         <div>
           <label className="text-[11px] text-hos-text-dim mb-1.5 block">心象模拟 / Mental Rehearsal</label>
-          <textarea
-            value={rehearsal}
-            onChange={(event) => setRehearsal(event.target.value)}
-            rows={2}
-            placeholder="闭眼时要看到什么画面？身体先做什么？"
-            className="w-full bg-hos-bg/70 border border-hos-border rounded-xl px-3.5 py-2.5 text-[13px] outline-none focus:border-hos-green/40 text-hos-text placeholder-hos-text-muted resize-none transition-colors"
-          />
+          <div className="voice-enabled-control textarea"><textarea
+              value={rehearsal}
+              onChange={(event) => setRehearsal(event.target.value)}
+              rows={2}
+              placeholder="点话筒，说出你想看到的画面"
+              className="w-full bg-hos-bg/70 border border-hos-border rounded-xl px-3.5 py-2.5 text-[13px] outline-none focus:border-hos-green/40 text-hos-text placeholder-hos-text-muted resize-none transition-colors"
+            /><VoiceInputButton value={rehearsal} onChange={setRehearsal} label="用语音描述心象模拟" /></div>
         </div>
 
         <div className="rounded-2xl border border-hos-border bg-hos-bg/60 p-3.5">
@@ -218,13 +219,13 @@ export default function FlowLab() {
 
         <div>
           <label className="text-[11px] text-hos-text-dim mb-1.5 block">反馈固化 / Feedback</label>
-          <textarea
-            value={feedback}
-            onChange={(event) => setFeedback(event.target.value)}
-            rows={2}
-            placeholder="这一轮发现了什么？下一轮只改哪一个点？"
-            className="w-full bg-hos-bg/70 border border-hos-border rounded-xl px-3.5 py-2.5 text-[13px] outline-none focus:border-hos-cyan/40 text-hos-text placeholder-hos-text-muted resize-none transition-colors"
-          />
+          <div className="voice-enabled-control textarea"><textarea
+              value={feedback}
+              onChange={(event) => setFeedback(event.target.value)}
+              rows={2}
+              placeholder="点话筒，说出这一轮的发现"
+              className="w-full bg-hos-bg/70 border border-hos-border rounded-xl px-3.5 py-2.5 text-[13px] outline-none focus:border-hos-cyan/40 text-hos-text placeholder-hos-text-muted resize-none transition-colors"
+            /><VoiceInputButton value={feedback} onChange={setFeedback} label="用语音记录训练反馈" /></div>
         </div>
 
         <div className="flex items-center gap-3 pt-1">
