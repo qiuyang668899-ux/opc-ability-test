@@ -147,6 +147,18 @@ export default function Home() {
         {savedMessage && <p className="intelligence-updated"><Check size={13} />{savedMessage}</p>}
       </section>
 
+      <section className="home-intelligence-section voice-moment-section">
+        <header><div><p>FOR THIS MOMENT</p><h2>此刻，从说出来开始</h2></div><span>不必组织语言</span></header>
+        <button className="home-voice-primary" onClick={() => navigate('/architect?voice=1')}>
+          <span className="home-voice-orb"><i /><Mic size={24} /></span>
+          <span><small>VOICE JOURNAL</small><strong>直接说说今天的状态</strong><em>像写日记一样说，HOS 会先听完，再回应并保存。</em></span>
+          <AudioLines size={19} />
+        </button>
+        <div className="smart-actions-list compact">
+          {intelligence.alternatives.slice(0, 2).map((item) => <SmartActionRow key={item.id} item={item} onOpen={navigate} />)}
+        </div>
+      </section>
+
       <section className="system-glance">
         <header>
           <div><p>此刻状态</p><h2>{intelligence.isCheckedIn ? '系统已获得今日信号' : '告诉系统，你现在怎么样'}</h2></div>
@@ -168,18 +180,6 @@ export default function Home() {
         )}
 
         <div className="local-learning"><ShieldCheck size={14} /><span>{intelligence.insight}</span><small>仅在本机学习</small></div>
-      </section>
-
-      <section className="home-intelligence-section voice-moment-section">
-        <header><div><p>FOR THIS MOMENT</p><h2>此刻，从说出来开始</h2></div><span>不必组织语言</span></header>
-        <button className="home-voice-primary" onClick={() => navigate('/architect?voice=1')}>
-          <span className="home-voice-orb"><i /><Mic size={24} /></span>
-          <span><small>VOICE JOURNAL</small><strong>直接说说今天的状态</strong><em>像写日记一样说，HOS 会先听完，再回应并保存。</em></span>
-          <AudioLines size={19} />
-        </button>
-        <div className="smart-actions-list compact">
-          {intelligence.alternatives.slice(0, 2).map((item) => <SmartActionRow key={item.id} item={item} onOpen={navigate} />)}
-        </div>
       </section>
 
       <section className="home-intelligence-section personal-system-section">
