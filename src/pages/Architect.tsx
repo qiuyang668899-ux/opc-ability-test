@@ -68,6 +68,7 @@ function latestUserMessage(messages: ChatMessage[]) {
 export default function Architect() {
   const navigate = useNavigate()
   const voice = useVoiceCapture()
+  const openVoiceManualFallback = voice.useManualFallback
   const initialMessages = useMemo(() => loadState<ChatMessage[]>('chat', []).slice(-12), [])
   const initialUser = latestUserMessage(initialMessages)
   const initialSnapshot = useMemo(() => buildCoachSnapshot(), [])
@@ -78,16 +79,22 @@ export default function Architect() {
   const [speaking, setSpeaking] = useState(false)
   const [feedbackStatus, setFeedbackStatus] = useState('')
   const [voiceReviewText, setVoiceReviewText] = useState('')
+  const [voiceAutoFinalize, setVoiceAutoFinalize] = useState(false)
   const [voiceRecord, setVoiceRecord] = useState<VoiceJournalRecord | null>(null)
   const [voiceCalibration, setVoiceCalibration] = useState('')
   const [voiceMemory, setVoiceMemory] = useState<VoiceMemory>(() => loadVoiceMemory(loadState<VoiceMemory | undefined>('voiceMemory', undefined)))
   const [coachPlan, setCoachPlan] = useState<CoachPlan>(() => createCoachPlan(initialUser?.content ?? '我需要一个清晰的下一步', initialSnapshot))
   const timersRef = useRef<number[]>([])
   const livePlanRef = useRef<HTMLElement>(null)
+  const saveVoiceJournalRef = useRef<(override?: string) => void>(() => undefined)
   const snapshot = buildCoachSnapshot()
   const userTrail = messages.filter((message) => message.role === 'user').slice(-3)
 
   useEffect(() => { saveState('chat', messages.slice(-20)) }, [messages])
+  useEffect(() => {
+    const heard = polishVoiceTranscript(`${voice.transcript}${voice.interimTranscript}`)
+    if (heard) setVoiceReviewText(heard)
+  }, [voice.interimTranscript, voice.transcript])
   useEffect(() => () => {
     timersRef.current.forEach((timer) => window.clearTimeout(timer))
     window.speechSynthesis?.cancel()
@@ -183,17 +190,20 @@ export default function Architect() {
   const startVoiceJournal = () => {
     setVoiceRecord(null)
     setVoiceCalibration('')
+    setVoiceReviewText('')
+    setVoiceAutoFinalize(false)
     void voice.start()
   }
 
   const stopVoiceJournal = () => {
     const heard = `${voice.transcript}${voice.interimTranscript}`
     setVoiceReviewText(polishVoiceTranscript(heard) || heard)
+    setVoiceAutoFinalize(true)
     voice.stop()
   }
 
-  const saveVoiceJournal = () => {
-    const transcript = polishVoiceTranscript(voiceReviewText)
+  const saveVoiceJournal = (override?: string) => {
+    const transcript = polishVoiceTranscript(override ?? voiceReviewText)
     if (!transcript) return
     const currentMemory = loadVoiceMemory(loadState<VoiceMemory | undefined>('voiceMemory', voiceMemory))
     const analysis = analyzeVoiceJournal(transcript, voice.metrics, currentMemory)
@@ -254,12 +264,27 @@ export default function Architect() {
     setCoachPlan(nextPlan)
     setStarted(true)
     setVoiceRecord(record)
+    setVoiceAutoFinalize(false)
     setFeedbackStatus('')
     recomputeUserState()
     window.dispatchEvent(new CustomEvent('hos:data-updated'))
     voice.reset()
     navigator.vibrate?.([24, 36, 48])
   }
+  saveVoiceJournalRef.current = saveVoiceJournal
+
+  useEffect(() => {
+    if (voice.status !== 'review' || !voiceAutoFinalize) return undefined
+    const heard = polishVoiceTranscript(voiceReviewText || `${voice.transcript}${voice.interimTranscript}`)
+    const timer = window.setTimeout(() => {
+      if (heard) saveVoiceJournalRef.current(heard)
+      else {
+        setVoiceAutoFinalize(false)
+        openVoiceManualFallback()
+      }
+    }, heard ? 280 : 2400)
+    return () => window.clearTimeout(timer)
+  }, [openVoiceManualFallback, voice.interimTranscript, voice.status, voice.transcript, voiceAutoFinalize, voiceReviewText])
 
   const calibrateVoiceRead = (value: -1 | 0 | 1) => {
     if (!voiceRecord) return
@@ -324,7 +349,7 @@ export default function Architect() {
         </button>
       )}
 
-      {(voice.status === 'requesting' || voice.status === 'listening' || voice.status === 'review' || voice.status === 'error') && (
+      {(voice.status === 'requesting' || voice.status === 'listening' || voice.status === 'finalizing' || voice.status === 'review' || voice.status === 'manual' || voice.status === 'error') && (
         <section className={`voice-studio ${voice.status}`}>
           {voice.status === 'requesting' && (
             <div className="voice-permission"><span><Mic size={25} /></span><h2>正在打开倾听</h2><p>请在浏览器提示中允许麦克风。原始声音不会被保存。</p></div>
@@ -345,17 +370,20 @@ export default function Architect() {
               <button className="voice-stop" onClick={stopVoiceJournal}><Square size={15} />我说完了</button>
             </>
           )}
-          {voice.status === 'review' && (
+          {voice.status === 'finalizing' && (
+            <div className="voice-permission"><span><Sparkles size={25} /></span><h2>正在整理刚才的话</h2><p>等待浏览器交回最后一段文字，完成后会自动归入日志并让教练回应。</p></div>
+          )}
+          {(voice.status === 'review' || voice.status === 'manual') && (
             <>
               <header><div><PencilLine size={15} />收好这段真实表达</div><button onClick={voice.reset} aria-label="取消语音日记">取消</button></header>
-              <div className="voice-review-heading"><span><AudioLines size={20} /></span><div><h2>这是我听到的</h2><p>你可以修改错字，意思不会被擅自改写。</p></div></div>
-              <textarea value={voiceReviewText} onChange={(event) => setVoiceReviewText(event.target.value)} rows={7} aria-label="语音日记转写内容" />
+              <div className="voice-review-heading"><span><AudioLines size={20} /></span><div><h2>{voiceReviewText ? '这是我听到的' : '用手机自带话筒继续说'}</h2><p>{voiceReviewText ? '正在自动整理；你也可以先修正错字。' : voice.error}</p></div></div>
+              <textarea autoFocus={voice.status === 'manual'} value={voiceReviewText} onChange={(event) => setVoiceReviewText(event.target.value)} rows={7} aria-label="语音日记转写内容" placeholder="点这里，再点手机键盘上的话筒继续说……" />
               <div className="voice-review-meta"><span>{Math.round(voice.metrics.durationSec)} 秒表达</span><span>不保存原始音频</span></div>
-              <button className="voice-save" onClick={saveVoiceJournal} disabled={!voiceReviewText.trim()}><Save size={16} />收进今日日志并让教练回应</button>
+              <button className="voice-save" onClick={() => saveVoiceJournal()} disabled={!voiceReviewText.trim()}><Save size={16} />收进今日日志并让教练回应</button>
             </>
           )}
           {voice.status === 'error' && (
-            <div className="voice-error-state"><span><Mic size={24} /></span><h2>这次没有连接上麦克风</h2><p>{voice.error}</p><div><button onClick={startVoiceJournal}><RotateCcw size={15} />重新尝试</button><button onClick={voice.reset}>先用文字</button></div></div>
+            <div className="voice-error-state"><span><Mic size={24} /></span><h2>这次没有连接上麦克风</h2><p>{voice.error}</p><div><button onClick={startVoiceJournal}><RotateCcw size={15} />重新尝试</button><button onClick={openVoiceManualFallback}>用系统话筒输入</button></div></div>
           )}
         </section>
       )}

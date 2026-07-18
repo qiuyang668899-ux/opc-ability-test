@@ -1,5 +1,7 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
+import { createPortal } from 'react-dom'
 import {
+  BookMarked,
   BookOpenText,
   Check,
   ChevronLeft,
@@ -10,11 +12,17 @@ import {
   LibraryBig,
   Pause,
   Play,
+  Minus,
+  Moon,
+  Plus,
   RotateCcw,
   Save,
   Search,
+  ShieldCheck,
+  SunMedium,
   Sparkles,
   Volume2,
+  X,
 } from 'lucide-react'
 import {
   CLASSIC_CATEGORIES,
@@ -23,11 +31,15 @@ import {
   type ClassicCategory,
   type ClassicNeed,
 } from '../data/classics'
+import { COMPLETE_CLASSIC_BOOKS, findCompleteClassicBook } from '../data/completeClassics'
 import { loadState, saveState } from '../stores/useStore'
 import VoiceInputButton from '../components/VoiceInputButton'
+import CompleteClassicReader from '../components/CompleteClassicReader'
 
 type PracticeNote = { passageId: string; text: string; createdAt: number }
 type PracticeCompletion = { passageId: string; createdAt: number; duration: number }
+type ReaderMode = 'original' | 'guide' | 'parallel'
+type ReaderTone = 'paper' | 'quiet' | 'night'
 
 function formatTime(seconds: number) {
   const minutes = Math.floor(seconds / 60).toString().padStart(2, '0')
@@ -61,6 +73,15 @@ export default function Classics() {
   const [seconds, setSeconds] = useState(passage.duration * 60)
   const [running, setRunning] = useState(false)
   const [completed, setCompleted] = useState(false)
+  const [readerOpen, setReaderOpen] = useState(false)
+  const [completeBookId, setCompleteBookId] = useState<string | null>(null)
+  const [readerMode, setReaderMode] = useState<ReaderMode>(() => loadState<ReaderMode>('classicReaderMode', 'parallel'))
+  const [readerTone, setReaderTone] = useState<ReaderTone>(() => loadState<ReaderTone>('classicReaderTone', 'paper'))
+  const [readerFontSize, setReaderFontSize] = useState(() => loadState<number>('classicReaderFontSize', 20))
+  const [readerProgress, setReaderProgress] = useState(0)
+  const readerContentRef = useRef<HTMLDivElement>(null)
+  const progressSaveTimerRef = useRef<number | null>(null)
+  const completeBook = findCompleteClassicBook(completeBookId)
 
   const filtered = useMemo(() => CLASSIC_PASSAGES.filter((item) => {
     const inCategory = category === '全部' || item.category === category
@@ -94,6 +115,30 @@ export default function Classics() {
     return () => window.clearInterval(interval)
   }, [running])
 
+  useEffect(() => {
+    if (!readerOpen) return undefined
+    const previousOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    return () => { document.body.style.overflow = previousOverflow }
+  }, [readerOpen])
+
+  useEffect(() => {
+    if (!readerOpen) return
+    const progressMap = loadState<Record<string, number>>('classicReadingProgress', {})
+    const savedProgress = Math.max(0, Math.min(100, progressMap[passage.id] ?? 0))
+    window.requestAnimationFrame(() => {
+      setReaderProgress(savedProgress)
+      const content = readerContentRef.current
+      if (!content) return
+      const maxScroll = Math.max(0, content.scrollHeight - content.clientHeight)
+      content.scrollTop = maxScroll * (savedProgress / 100)
+    })
+  }, [passage.id, readerOpen])
+
+  useEffect(() => () => {
+    if (progressSaveTimerRef.current) window.clearTimeout(progressSaveTimerRef.current)
+  }, [])
+
   const choosePassage = (id: string) => {
     const next = CLASSIC_PASSAGES.find((item) => item.id === id) ?? passage
     const savedNotes = loadState<PracticeNote[]>('classicPracticeNotes', [])
@@ -107,6 +152,46 @@ export default function Classics() {
     setRunning(false)
     setCompleted(false)
     window.speechSynthesis?.cancel()
+  }
+
+  const openPassage = (id: string) => {
+    choosePassage(id)
+    setReaderOpen(true)
+  }
+
+  const closeReader = () => {
+    window.speechSynthesis?.cancel()
+    setReaderOpen(false)
+  }
+
+  const updateReaderMode = (mode: ReaderMode) => {
+    setReaderMode(mode)
+    saveState('classicReaderMode', mode)
+  }
+
+  const updateReaderFontSize = (next: number) => {
+    const size = Math.max(16, Math.min(28, next))
+    setReaderFontSize(size)
+    saveState('classicReaderFontSize', size)
+  }
+
+  const cycleReaderTone = () => {
+    const next: ReaderTone = readerTone === 'paper' ? 'quiet' : readerTone === 'quiet' ? 'night' : 'paper'
+    setReaderTone(next)
+    saveState('classicReaderTone', next)
+  }
+
+  const trackReaderProgress = () => {
+    const content = readerContentRef.current
+    if (!content) return
+    const maxScroll = Math.max(1, content.scrollHeight - content.clientHeight)
+    const progress = Math.max(0, Math.min(100, Math.round((content.scrollTop / maxScroll) * 100)))
+    setReaderProgress(progress)
+    if (progressSaveTimerRef.current) window.clearTimeout(progressSaveTimerRef.current)
+    progressSaveTimerRef.current = window.setTimeout(() => {
+      const progressMap = loadState<Record<string, number>>('classicReadingProgress', {})
+      saveState('classicReadingProgress', { ...progressMap, [passage.id]: progress })
+    }, 160)
   }
 
   const currentFilteredIndex = filtered.findIndex((item) => item.id === passage.id)
@@ -164,8 +249,8 @@ export default function Classics() {
           <p>不急着相信某个答案。先读原意，再理解路径，最后用一次小练习亲自验证。</p>
         </div>
         <div className="classic-library-stats">
-          <span><strong>{CLASSIC_PASSAGES.length}</strong>精读单元</span>
-          <span><strong>{CLASSIC_CATEGORIES.length - 1}</strong>知识传统</span>
+          <span><strong>{COMPLETE_CLASSIC_BOOKS.length}</strong>完整典籍</span>
+          <span><strong>{CLASSIC_PASSAGES.length}</strong>精读摘录</span>
           <span><strong>{completionCount}</strong>完成修习</span>
         </div>
       </section>
@@ -176,12 +261,29 @@ export default function Classics() {
         <div><span>术</span><strong>此刻践行</strong><small>呼吸 · 反省 · 行动</small></div>
       </section>
 
+      <section className="complete-library-section">
+        <div className="hos-section-title">
+          <div><p className="section-kicker">COMPLETE CANON · 完整典籍</p><h2>原典全文，现代译文</h2></div>
+          <span className="complete-library-free"><ShieldCheck size={13} />永久免费</span>
+        </div>
+        <p className="complete-library-intro">只有同时备齐“完整原典＋完整现代译文”的书才会进入这一层。原典来自 CBETA 2026.R1，首次读取后自动缓存。</p>
+        <div className="complete-library-grid">
+          {COMPLETE_CLASSIC_BOOKS.map((book, index) => (
+            <button key={book.id} onClick={() => setCompleteBookId(book.id)}>
+              <span className="complete-library-number">{String(index + 1).padStart(2, '0')}</span>
+              <span className="complete-library-copy"><small>{book.tradition} · {book.sourceWork}</small><strong>{book.title}</strong><em>{book.edition}</em><span><i><BookOpenText size={12} />原典全文</i><i><Check size={12} />{book.chapters.length} 章今译</i></span></span>
+              <ChevronRight size={18} />
+            </button>
+          ))}
+        </div>
+      </section>
+
       <section className="cbeta-portal">
         <div className="cbeta-portal-icon"><BookOpenText size={22} /></div>
         <div>
           <p className="section-kicker">佛典原典入口 · CBETA 2026.R1</p>
-          <h2>需要深读时，回到完整原典</h2>
-          <p>CBETA 收录 4,882 部、22,037 卷汉文佛典。HOS 提供轻量导读与修习转化，版本、上下文和校勘请以原站为准。</p>
+          <h2>免费原典总库，持续接入</h2>
+          <p>CBETA 收录 4,882 部、22,037 卷汉文佛典。HOS 的经文区不设付费墙；学术校勘、异文与版本记录以 CBETA 原站为准。</p>
         </div>
         <a href="https://cbetaonline.dila.edu.tw/" target="_blank" rel="noreferrer">进入全藏检索<ExternalLink size={14} /></a>
       </section>
@@ -217,9 +319,9 @@ export default function Classics() {
         {filtered.length > 0 ? (
           <div className="classic-shelf">
             {filtered.map((item) => (
-              <button key={item.id} className={item.id === passage.id ? 'active' : ''} onClick={() => choosePassage(item.id)}>
+              <button key={item.id} className={item.id === passage.id ? 'active' : ''} onClick={() => openPassage(item.id)}>
                 <span className="classic-shelf-index">{item.category.slice(0, 1)}</span>
-                <span><small>{item.tradition} · {item.work}</small><strong>{item.title}</strong><em>{item.duration} 分钟 · {item.tags.slice(0, 2).join(' / ')}</em></span>
+                <span><small>{item.tradition} · {item.work}</small><strong>{item.title}</strong><em>精读摘录 · {item.duration} 分钟 · {item.tags.slice(0, 2).join(' / ')}</em></span>
                 <ChevronRight size={17} />
               </button>
             ))}
@@ -240,6 +342,7 @@ export default function Classics() {
         </div>
         <blockquote>{passage.original}</blockquote>
         <button onClick={speakOriginal} className="read-aloud"><Volume2 size={16} />慢速朗读这一段</button>
+        <button onClick={() => openPassage(passage.id)} className="reader-open-action"><BookMarked size={16} />进入沉浸阅读</button>
 
         <div className="reading-path-grid">
           <div className="reading-guide">
@@ -285,6 +388,79 @@ export default function Classics() {
         <Sparkles size={16} />
         <p><strong>保持开放，也保持严谨。</strong>古籍选段用于个人学习；义旨转述与科学模型均明确标注。HOS 的“今读”和练习不是宗教权威解释，也不替代学术研究、医疗或心理治疗。</p>
       </section>
+
+      {readerOpen && createPortal((
+        <div className="classic-reader-layer" role="dialog" aria-modal="true" aria-label={`${passage.work}应用内阅读`}>
+          <button className="classic-reader-backdrop" onClick={closeReader} aria-label="关闭阅读器" />
+          <section className={`classic-reader-sheet tone-${readerTone}`}>
+            <div className="classic-reader-progress" aria-label={`阅读进度 ${readerProgress}%`}><span style={{ width: `${readerProgress}%` }} /></div>
+            <header className="classic-reader-header">
+              <button onClick={closeReader} aria-label="返回藏经阁"><ChevronLeft size={20} /></button>
+              <div><small>{passage.work}</small><strong>{passage.chapter}</strong></div>
+              <button onClick={closeReader} aria-label="关闭"><X size={19} /></button>
+            </header>
+
+            <div className="classic-reader-toolbar">
+              <div role="tablist" aria-label="阅读方式">
+                <button role="tab" aria-selected={readerMode === 'original'} className={readerMode === 'original' ? 'active' : ''} onClick={() => updateReaderMode('original')}>原文</button>
+                <button role="tab" aria-selected={readerMode === 'guide'} className={readerMode === 'guide' ? 'active' : ''} onClick={() => updateReaderMode('guide')}>今读</button>
+                <button role="tab" aria-selected={readerMode === 'parallel'} className={readerMode === 'parallel' ? 'active' : ''} onClick={() => updateReaderMode('parallel')}>对照</button>
+              </div>
+              <div className="classic-reader-tools">
+                <button onClick={() => updateReaderFontSize(readerFontSize - 2)} aria-label="缩小字号"><Minus size={15} /></button>
+                <span>{readerFontSize}</span>
+                <button onClick={() => updateReaderFontSize(readerFontSize + 2)} aria-label="放大字号"><Plus size={15} /></button>
+                <button onClick={cycleReaderTone} aria-label="切换阅读底色">{readerTone === 'night' ? <Moon size={15} /> : <SunMedium size={15} />}</button>
+              </div>
+            </div>
+
+            <div className="classic-reader-content" ref={readerContentRef} onScroll={trackReaderProgress}>
+              <article className="classic-reader-document" style={{ '--reader-font-size': `${readerFontSize}px` } as CSSProperties}>
+                <div className="classic-reader-title">
+                  <span>{passage.category} · {passage.tradition}</span>
+                  <h1>{passage.title}</h1>
+                  <p>{passage.work} · {passage.chapter}</p>
+                  <button onClick={toggleFavorite} className={favorites.includes(passage.id) ? 'active' : ''}><Heart size={15} fill={favorites.includes(passage.id) ? 'currentColor' : 'none'} />{favorites.includes(passage.id) ? '已收藏' : '收藏本篇'}</button>
+                </div>
+
+                {(readerMode === 'original' || readerMode === 'parallel') && (
+                  <section className="classic-reader-original">
+                    <header><span>原文</span><button onClick={speakOriginal}><Volume2 size={14} />朗读</button></header>
+                    <blockquote>{passage.original}</blockquote>
+                    {passage.sourceNote && <small>{passage.sourceNote}</small>}
+                  </section>
+                )}
+
+                {(readerMode === 'guide' || readerMode === 'parallel') && (
+                  <section className="classic-reader-guide">
+                    <header><span>今读</span><small>HOS 修习导读</small></header>
+                    <div><b>道</b><article><strong>看见原则</strong><p>{passage.reflection}</p></article></div>
+                    <div><b>法</b><article><strong>理解路径</strong><p>{passage.method}</p></article></div>
+                    <div><b>术</b><article><strong>此刻践行</strong><p>{passage.practice}</p></article></div>
+                  </section>
+                )}
+
+                <section className="classic-reader-note">
+                  <div><span>闻 · 思 · 修 · 记</span><strong>留下一句此刻的体会</strong></div>
+                  <div className="voice-enabled-control textarea">
+                    <textarea value={note} onChange={(event) => { setNote(event.target.value.slice(0, 500)); setSaved(false) }} placeholder="可以直接说，或写下一句……" />
+                    <VoiceInputButton value={note} onChange={(value) => { setNote(value); setSaved(false) }} maxLength={500} label="用语音记录阅读体会" />
+                  </div>
+                  <button onClick={saveNote} disabled={!note.trim()}><Save size={14} />{saved ? '体会已保存' : '保存阅读体会'}</button>
+                </section>
+
+                <footer className="classic-reader-footer">
+                  <button onClick={() => movePassage(-1)}><ChevronLeft size={15} /><span>上一篇</span></button>
+                  <div><strong>{currentFilteredIndex >= 0 ? currentFilteredIndex + 1 : '—'} / {filtered.length || '—'}</strong><small>进度自动保存在本机</small></div>
+                  <button onClick={() => movePassage(1)}><span>下一篇</span><ChevronRight size={15} /></button>
+                </footer>
+              </article>
+            </div>
+          </section>
+        </div>
+      ), document.body)}
+
+      {completeBook && <CompleteClassicReader key={completeBook.id} book={completeBook} onClose={() => setCompleteBookId(null)} />}
     </div>
   )
 }

@@ -33,6 +33,22 @@ function prefersChunkedRecognition() {
   return /MicroMessenger|Android|iPhone|iPad|iPod/i.test(navigator.userAgent)
 }
 
+function shouldAvoidParallelMicrophoneCapture() {
+  return /MicroMessenger|Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent)
+}
+
+function mergeTranscript(previous: string, incoming: string) {
+  const next = incoming.trim()
+  if (!next || previous.endsWith(next)) return previous
+  if (next.startsWith(previous)) return next
+
+  const maxOverlap = Math.min(previous.length, next.length)
+  for (let size = maxOverlap; size > 0; size -= 1) {
+    if (previous.slice(-size) === next.slice(0, size)) return `${previous}${next.slice(size)}`
+  }
+  return `${previous}${next}`
+}
+
 const emptyMetrics: VoiceAcousticMetrics = {
   durationSec: 0,
   averageLevel: 0,
@@ -56,6 +72,7 @@ export function useVoiceCapture() {
   const animationRef = useRef<number | null>(null)
   const timerRef = useRef<number | null>(null)
   const finalizationTimerRef = useRef<number | null>(null)
+  const restartTimerRef = useRef<number | null>(null)
   const startedAtRef = useRef(0)
   const activeRef = useRef(false)
   const stoppingRef = useRef(false)
@@ -65,13 +82,15 @@ export function useVoiceCapture() {
 
   const recognitionAvailable = typeof window !== 'undefined' && Boolean(getRecognitionConstructor())
   const microphoneAvailable = typeof navigator !== 'undefined' && 'mediaDevices' in navigator && 'getUserMedia' in navigator.mediaDevices
-  const supported = recognitionAvailable && microphoneAvailable
+  const supported = recognitionAvailable
 
   const stopSampling = useCallback(() => {
     if (animationRef.current) window.cancelAnimationFrame(animationRef.current)
     if (timerRef.current) window.clearInterval(timerRef.current)
+    if (restartTimerRef.current) window.clearTimeout(restartTimerRef.current)
     animationRef.current = null
     timerRef.current = null
+    restartTimerRef.current = null
     setLiveLevel(0)
   }, [])
 
@@ -88,7 +107,7 @@ export function useVoiceCapture() {
     finalizationTimerRef.current = null
 
     const lastInterim = interimRef.current.trim()
-    if (lastInterim && !transcriptRef.current.endsWith(lastInterim)) transcriptRef.current += lastInterim
+    if (lastInterim) transcriptRef.current = mergeTranscript(transcriptRef.current, lastInterim)
     interimRef.current = ''
     setTranscript(transcriptRef.current)
     setInterimTranscript('')
@@ -97,6 +116,11 @@ export function useVoiceCapture() {
     releaseStream()
     setStatus('review')
   }, [releaseStream])
+
+  const scheduleFinishReview = useCallback((delay = 900) => {
+    if (finalizationTimerRef.current) window.clearTimeout(finalizationTimerRef.current)
+    finalizationTimerRef.current = window.setTimeout(finishReview, delay)
+  }, [finishReview])
 
   const cleanupMedia = useCallback(() => {
     activeRef.current = false
@@ -129,6 +153,50 @@ export function useVoiceCapture() {
     setMetrics(result)
   }, [])
 
+  const startOptionalSampling = useCallback(async () => {
+    if (!microphoneAvailable || shouldAvoidParallelMicrophoneCapture()) return
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: false },
+      })
+      if (!activeRef.current) {
+        stream.getTracks().forEach((track) => track.stop())
+        return
+      }
+
+      const audioContext = new AudioContext()
+      const source = audioContext.createMediaStreamSource(stream)
+      const analyser = audioContext.createAnalyser()
+      analyser.fftSize = 512
+      analyser.smoothingTimeConstant = 0.72
+      source.connect(analyser)
+      const buffer = new Uint8Array(analyser.fftSize)
+
+      streamRef.current = stream
+      audioContextRef.current = audioContext
+
+      const analyze = () => {
+        if (!activeRef.current) return
+        analyser.getByteTimeDomainData(buffer)
+        let squareSum = 0
+        for (const item of buffer) {
+          const centered = (item - 128) / 128
+          squareSum += centered * centered
+        }
+        const rms = Math.sqrt(squareSum / buffer.length)
+        const level = Math.min(100, rms * 390)
+        samplesRef.current.push(level)
+        setLiveLevel(Math.round(level))
+        animationRef.current = window.requestAnimationFrame(analyze)
+      }
+      analyze()
+    } catch {
+      // Speech recognition owns the microphone. Acoustic sampling is best-effort
+      // and must never prevent a transcript from being captured.
+    }
+  }, [microphoneAvailable])
+
   const stop = useCallback(() => {
     if (!activeRef.current) return
     activeRef.current = false
@@ -142,9 +210,9 @@ export function useVoiceCapture() {
       finishReview()
       return
     }
-    finalizationTimerRef.current = window.setTimeout(finishReview, 900)
+    scheduleFinishReview(1800)
     navigator.vibrate?.([18, 30, 22])
-  }, [finalizeMetrics, finishReview, stopSampling])
+  }, [finalizeMetrics, finishReview, scheduleFinishReview, stopSampling])
 
   const start = useCallback(async () => {
     if (status === 'requesting' || status === 'listening' || status === 'finalizing') return
@@ -163,26 +231,10 @@ export function useVoiceCapture() {
       setStatus('manual')
       return
     }
-    if (!microphoneAvailable) {
-      setError('当前浏览器无法打开麦克风，请更新浏览器或在系统设置中允许麦克风。')
-      setStatus('error')
-      return
-    }
-
     setStatus('requesting')
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: false },
-      })
       const Recognition = getRecognitionConstructor()
       if (!Recognition) throw new Error('Speech recognition unavailable')
-      const audioContext = new AudioContext()
-      const source = audioContext.createMediaStreamSource(stream)
-      const analyser = audioContext.createAnalyser()
-      analyser.fftSize = 512
-      analyser.smoothingTimeConstant = 0.72
-      source.connect(analyser)
-      const buffer = new Uint8Array(analyser.fftSize)
       const recognition = new Recognition()
       recognition.lang = 'zh-CN'
       recognition.continuous = !prefersChunkedRecognition()
@@ -199,59 +251,61 @@ export function useVoiceCapture() {
           else finalText += heard
         }
         if (finalText) {
-          if (!transcriptRef.current.endsWith(finalText)) transcriptRef.current += finalText
+          transcriptRef.current = mergeTranscript(transcriptRef.current, finalText)
           setTranscript(transcriptRef.current)
         }
         interimRef.current = interimText
         setInterimTranscript(interimText)
+        if (stoppingRef.current) scheduleFinishReview(650)
       }
       recognition.onerror = (event) => {
         if (event.error === 'no-speech' || event.error === 'aborted') return
-        setError(event.error === 'not-allowed' ? '需要允许麦克风权限，才能倾听并记录。' : '转写连接有些不稳定，我会保留已经听到的文字。')
+        const fatal = ['not-allowed', 'service-not-allowed', 'audio-capture', 'network'].includes(event.error)
+        const message = event.error === 'not-allowed' || event.error === 'service-not-allowed'
+          ? '当前浏览器没有允许自动转写。点输入框后，可直接使用手机键盘上的话筒继续说。'
+          : event.error === 'audio-capture'
+            ? '麦克风暂时被其他功能占用。点输入框后，可使用手机键盘上的话筒继续说。'
+            : '当前内置浏览器的转写服务没有连接成功。已经听到的内容会保留，也可用手机键盘话筒继续说。'
+        setError(message)
+        if (fatal) {
+          activeRef.current = false
+          stoppingRef.current = false
+          stopSampling()
+          releaseStream()
+          recognitionRef.current = null
+          setStatus('manual')
+        }
       }
       recognition.onend = () => {
         if (stoppingRef.current) {
-          if (finalizationTimerRef.current) window.clearTimeout(finalizationTimerRef.current)
-          finalizationTimerRef.current = window.setTimeout(finishReview, 180)
+          scheduleFinishReview(900)
           return
         }
         if (activeRef.current) {
           const completedChunk = interimRef.current.trim()
-          if (completedChunk && !transcriptRef.current.endsWith(completedChunk)) {
-            transcriptRef.current += completedChunk
+          if (completedChunk) {
+            transcriptRef.current = mergeTranscript(transcriptRef.current, completedChunk)
             interimRef.current = ''
             setTranscript(transcriptRef.current)
             setInterimTranscript('')
           }
-          try { recognition.start() } catch { /* browser restart race */ }
+          restartTimerRef.current = window.setTimeout(() => {
+            if (!activeRef.current) return
+            try { recognition.start() } catch { /* browser restart race */ }
+          }, 120)
         }
       }
 
-      streamRef.current = stream
-      audioContextRef.current = audioContext
       recognitionRef.current = recognition
       activeRef.current = true
       stoppingRef.current = false
       startedAtRef.current = Date.now()
-      setStatus('listening')
+      // Start recognition while the user's tap still owns browser activation.
+      // Awaiting getUserMedia first breaks speech start in several mobile webviews.
       recognition.start()
+      setStatus('listening')
       timerRef.current = window.setInterval(() => setElapsedSec(Math.floor((Date.now() - startedAtRef.current) / 1000)), 250)
-
-      const analyze = () => {
-        if (!activeRef.current) return
-        analyser.getByteTimeDomainData(buffer)
-        let squareSum = 0
-        for (const item of buffer) {
-          const centered = (item - 128) / 128
-          squareSum += centered * centered
-        }
-        const rms = Math.sqrt(squareSum / buffer.length)
-        const level = Math.min(100, rms * 390)
-        samplesRef.current.push(level)
-        setLiveLevel(Math.round(level))
-        animationRef.current = window.requestAnimationFrame(analyze)
-      }
-      analyze()
+      void startOptionalSampling()
       navigator.vibrate?.(18)
     } catch (captureError) {
       cleanupMedia()
@@ -259,7 +313,7 @@ export function useVoiceCapture() {
       setError(namedError.name === 'NotAllowedError' ? '麦克风权限没有打开。请允许后再试；声音原始录音不会被保存。' : '暂时无法打开麦克风，请检查浏览器权限。')
       setStatus('error')
     }
-  }, [cleanupMedia, finishReview, microphoneAvailable, recognitionAvailable, status])
+  }, [cleanupMedia, recognitionAvailable, releaseStream, scheduleFinishReview, startOptionalSampling, status, stopSampling])
 
   const reset = useCallback(() => {
     cleanupMedia()

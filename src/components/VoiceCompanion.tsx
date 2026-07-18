@@ -47,7 +47,7 @@ export default function VoiceCompanion() {
     start: startVoice,
     stop: stopVoice,
     reset: resetVoice,
-    useManualFallback,
+    useManualFallback: openManualFallback,
   } = useVoiceCapture()
   const [request, setRequest] = useState<VoiceCompanionRequest | null>(null)
   const [draft, setDraft] = useState('')
@@ -81,6 +81,12 @@ export default function VoiceCompanion() {
     setAutoFinalize(true)
     stopVoice()
   }
+
+  useEffect(() => {
+    if (!request || record) return
+    const heard = polishVoiceTranscript(`${voiceTranscript}${voiceInterimTranscript}`)
+    if (heard) setDraft(heard)
+  }, [record, request, voiceInterimTranscript, voiceTranscript])
 
   const saveAndAnalyze = useCallback((override?: string) => {
     if (!request) return
@@ -151,14 +157,17 @@ export default function VoiceCompanion() {
   useEffect(() => {
     if (voiceStatus !== 'review') return undefined
     const heard = `${voiceTranscript}${voiceInterimTranscript}`
-    const cleaned = polishVoiceTranscript(heard) || heard.trim()
+    const cleaned = polishVoiceTranscript(draft) || polishVoiceTranscript(heard) || heard.trim()
     const timer = window.setTimeout(() => {
       if (cleaned) setDraft(cleaned)
       if (autoFinalize && cleaned) saveAndAnalyze(cleaned)
-      else if (autoFinalize) setAutoFinalize(false)
-    }, autoFinalize && cleaned ? 220 : 0)
+      else if (autoFinalize) {
+        setAutoFinalize(false)
+        openManualFallback()
+      }
+    }, autoFinalize && cleaned ? 260 : autoFinalize ? 2400 : 0)
     return () => window.clearTimeout(timer)
-  }, [autoFinalize, saveAndAnalyze, voiceInterimTranscript, voiceStatus, voiceTranscript])
+  }, [autoFinalize, draft, openManualFallback, saveAndAnalyze, voiceInterimTranscript, voiceStatus, voiceTranscript])
 
   const calibrate = (value: -1 | 0 | 1) => {
     if (!record) return
@@ -227,7 +236,7 @@ export default function VoiceCompanion() {
             )}
 
             {!record && voiceStatus === 'error' && (
-              <div className="companion-error"><span><Mic size={25} /></span><h2>这次没有连接上麦克风</h2><p>{voiceError}</p><div><button onClick={() => void startVoice()}><RotateCcw size={15} />重新尝试</button><button onClick={useManualFallback}><PencilLine size={15} />用系统话筒输入</button></div></div>
+              <div className="companion-error"><span><Mic size={25} /></span><h2>这次没有连接上麦克风</h2><p>{voiceError}</p><div><button onClick={() => void startVoice()}><RotateCcw size={15} />重新尝试</button><button onClick={openManualFallback}><PencilLine size={15} />用系统话筒输入</button></div></div>
             )}
 
             {record && coachPlan && (
