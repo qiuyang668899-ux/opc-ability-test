@@ -2536,19 +2536,29 @@ button:focus-visible, a:focus-visible, input:focus-visible {
 .classic-empty p { margin-top: 5px; font-size: 9px; }
 .classic-empty button { margin-top: 14px; padding: 9px 12px; border-radius: 10px; color: var(--color-hos-cyan); background: var(--hos-accent-faint); font-size: 9px; }
 
-.classic-tradition-gateway { padding: 23px; scroll-margin-top: 22px; border: 1px solid var(--color-hos-border); border-radius: 25px; background: var(--hos-card-bg); box-shadow: var(--hos-shadow-soft); }
-.classic-tradition-intro { max-width: 680px; margin-top: 11px; color: var(--color-hos-text-dim); font-size: 9.5px; line-height: 1.8; }
-.classic-tradition-grid { margin-top: 18px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; }
-.classic-tradition-grid > button { min-height: 92px; padding: 14px; display: grid; grid-template-columns: 42px minmax(0, 1fr) 18px; align-items: center; gap: 11px; text-align: left; border: 1px solid var(--color-hos-border); border-radius: 17px; color: var(--color-hos-text); background: color-mix(in srgb, var(--hos-card-bg) 83%, var(--hos-page-bg)); transition: 160ms ease; }
-.classic-tradition-grid > button:hover { transform: translateY(-1px); border-color: color-mix(in srgb, var(--color-hos-cyan) 38%, var(--color-hos-border)); box-shadow: 0 11px 27px var(--hos-shadow-color); }
-.classic-tradition-grid > button > span { width: 42px; height: 42px; display: flex; align-items: center; justify-content: center; border-radius: 14px; color: var(--color-hos-cyan); background: var(--hos-accent-faint); font-family: 'STKaiti', 'KaiTi', serif; font-size: 20px; }
-.classic-tradition-grid strong, .classic-tradition-grid small { display: block; }
-.classic-tradition-grid strong { font-size: 11px; }
-.classic-tradition-grid small { margin-top: 5px; color: var(--color-hos-text-muted); font-size: 7.5px; line-height: 1.45; }
-.classic-tradition-grid svg { color: var(--color-hos-text-muted); }
-.classic-tradition-grid .tradition-religion-guide { grid-column: 1 / -1; background: linear-gradient(120deg, color-mix(in srgb, var(--hos-accent-faint) 72%, var(--hos-card-bg)), var(--hos-card-bg)); }
-.classic-tradition-note { margin-top: 12px; padding: 11px 12px; display: flex; align-items: flex-start; gap: 7px; border-radius: 13px; color: var(--color-hos-text-dim); background: var(--hos-accent-faint); font-size: 8px; line-height: 1.65; }
-.classic-tradition-note svg { flex: 0 0 auto; color: var(--color-hos-cyan); }
+.canon-unified-library { padding: 23px; border: 1px solid var(--color-hos-border); border-radius: 26px; background: var(--hos-card-bg); box-shadow: var(--hos-shadow-soft); }
+.canon-unified-intro { max-width: 700px; margin-top: 11px; color: var(--color-hos-text-dim); font-size: 9.5px; line-height: 1.8; }
+.canon-division-tabs { margin-top: 19px; padding: 5px; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 5px; border-radius: 17px; background: color-mix(in srgb, var(--hos-page-bg) 76%, var(--hos-card-bg)); }
+.canon-division-tabs button { min-width: 0; min-height: 57px; display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 3px; border: 1px solid transparent; border-radius: 13px; color: var(--color-hos-text-muted); transition: 160ms ease; }
+.canon-division-tabs button strong { font-family: 'STKaiti', 'KaiTi', serif; font-size: 18px; }
+.canon-division-tabs button small { font-family: var(--font-family-mono); font-size: 7px; }
+.canon-division-tabs button.active { color: var(--color-hos-cyan); border-color: color-mix(in srgb, var(--color-hos-cyan) 22%, var(--color-hos-border)); background: var(--hos-card-bg); box-shadow: 0 7px 19px var(--hos-shadow-color); }
+.canon-division-summary { min-height: 104px; margin-top: 13px; padding: 16px; display: grid; grid-template-columns: 50px minmax(0, 1fr) auto; align-items: center; gap: 13px; border: 1px solid color-mix(in srgb, var(--color-hos-cyan) 17%, var(--color-hos-border)); border-radius: 18px; background: linear-gradient(120deg, var(--hos-accent-faint), color-mix(in srgb, var(--hos-card-bg) 92%, transparent)); }
+.canon-division-summary > span { width: 50px; height: 50px; display: flex; align-items: center; justify-content: center; border-radius: 16px; color: var(--color-hos-cyan); background: var(--hos-card-bg); font-family: 'STKaiti', 'KaiTi', serif; font-size: 23px; }
+.canon-division-summary h3 { margin-top: 4px; color: var(--color-hos-text); font-size: 13px; line-height: 1.45; }
+.canon-division-summary small { margin-top: 5px; display: block; color: var(--color-hos-text-dim); font-size: 8px; line-height: 1.6; }
+.canon-division-summary > button { min-height: 38px; padding: 0 11px; display: inline-flex; align-items: center; justify-content: center; gap: 4px; border-radius: 11px; color: var(--color-hos-cyan); background: var(--hos-card-bg); font-size: 8px; font-weight: 700; white-space: nowrap; }
+.canon-section-block { margin-top: 21px; padding-top: 20px; border-top: 1px solid var(--color-hos-border); }
+.canon-section-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.canon-section-heading h3 { margin-top: 4px; color: var(--color-hos-text); font-size: 14px; line-height: 1.45; }
+.canon-section-heading > span { min-height: 28px; padding: 0 9px; display: inline-flex; align-items: center; border-radius: 999px; color: var(--color-hos-cyan); background: var(--hos-accent-faint); font-size: 7.5px; white-space: nowrap; }
+.canon-section-block .open-corpus-search { margin-top: 14px; }
+.canon-search-empty { min-height: 120px; margin-top: 14px; display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 8px; border: 1px dashed var(--color-hos-border); border-radius: 15px; color: var(--color-hos-text-muted); font-size: 8.5px; }
+.canon-religion-list { max-height: none; }
+.canon-source-note, .canon-classification-note { margin-top: 13px; padding: 11px 12px; display: flex; align-items: flex-start; gap: 7px; border-radius: 13px; color: var(--color-hos-text-dim); background: var(--hos-accent-faint); font-size: 8px; line-height: 1.65; }
+.canon-source-note svg { flex: 0 0 auto; color: var(--color-hos-cyan); }
+.canon-classification-note { margin-top: 18px; display: block; color: var(--color-hos-text-muted); background: color-mix(in srgb, var(--hos-page-bg) 63%, transparent); }
+.canon-cbeta-inline { margin-top: 17px; box-shadow: none; }
 
 .reading-card { padding: 26px 22px; border-radius: 24px; }
 .reading-title-row { margin-top: 18px; display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; }
@@ -2577,8 +2587,15 @@ button:focus-visible, a:focus-visible, input:focus-visible {
 .classic-boundary p { color: var(--color-hos-text-dim); font-size: 8.5px; line-height: 1.7; }
 .classic-boundary strong { color: var(--color-hos-text); }
 
-:root[data-hos-theme='art-bloom'] :is(.classic-library-hero, .classic-discovery, .reading-card, .classic-tradition-gateway, .cbeta-portal) { border-radius: 34px 16px 34px 16px; }
-:root[data-hos-theme='clear-order'] :is(.classic-library-hero, .classic-three-layers > div, .classic-tradition-gateway, .classic-tradition-grid > button, .classic-tradition-note, .cbeta-portal, .cbeta-portal-actions a, .classic-discovery, .classic-shelf > button, .reading-card, .reading-path-grid > div, .classic-boundary) { border-radius: 7px; box-shadow: none; }
+:root[data-hos-theme='art-bloom'] :is(.classic-library-hero, .classic-discovery, .reading-card, .canon-unified-library, .cbeta-portal) { border-radius: 34px 16px 34px 16px; }
+:root[data-hos-theme='clear-order'] :is(.classic-library-hero, .classic-three-layers > div, .canon-unified-library, .canon-division-tabs, .canon-division-tabs button, .canon-division-summary, .canon-division-summary > span, .canon-division-summary > button, .canon-source-note, .canon-classification-note, .cbeta-portal, .cbeta-portal-actions a, .classic-discovery, .classic-shelf > button, .reading-card, .reading-path-grid > div, .classic-boundary) { border-radius: 7px; box-shadow: none; }
+
+@media (max-width: 620px) {
+  .canon-unified-library { padding: 19px 16px; }
+  .canon-division-summary { grid-template-columns: 46px minmax(0, 1fr); }
+  .canon-division-summary > span { width: 46px; height: 46px; }
+  .canon-division-summary > button { grid-column: 1 / -1; width: 100%; }
+}
 
 @media (max-width: 380px) {
   .classic-library-hero { padding: 23px 18px 18px; }
@@ -2587,9 +2604,9 @@ button:focus-visible, a:focus-visible, input:focus-visible {
   .classic-three-layers > div { min-height: 108px; padding: 12px 9px; }
   .classic-three-layers small { font-size: 7px; }
   .cbeta-portal, .classic-discovery { padding: 17px; }
-  .classic-tradition-gateway { padding: 19px 16px; }
-  .classic-tradition-grid { grid-template-columns: 1fr; }
-  .classic-tradition-grid .tradition-religion-guide { grid-column: auto; }
+  .canon-unified-library { padding: 17px 14px; }
+  .canon-division-tabs { gap: 3px; }
+  .canon-division-tabs button { min-height: 53px; }
   .cbeta-portal-actions { grid-template-columns: 1fr; }
   .reading-card { padding: 23px 18px; }
 }
@@ -2609,7 +2626,7 @@ button:focus-visible, a:focus-visible, input:focus-visible {
   border-color: rgba(185, 79, 121, .3);
   background: linear-gradient(135deg, rgba(255, 253, 253, .98), rgba(251, 228, 238, .97));
 }
-:root[data-hos-theme='rose-velvet'] :is(.theme-sheet, .theme-option, .hos-card, .home-voice-primary, .personal-archive-card, .journal-archive-hero, .voice-companion-sheet, .classic-library-hero, .classic-discovery, .reading-card) {
+:root[data-hos-theme='rose-velvet'] :is(.theme-sheet, .theme-option, .hos-card, .home-voice-primary, .personal-archive-card, .journal-archive-hero, .voice-companion-sheet, .classic-library-hero, .classic-discovery, .reading-card, .canon-unified-library) {
   border-color: color-mix(in srgb, var(--color-hos-cyan) 18%, var(--color-hos-border));
 }
 :root[data-hos-theme='rose-velvet'] :is(.theme-done, .primary-action, .apple-save-state, .coach-send, .music-play-button, .cbeta-portal-actions a:first-child) {
