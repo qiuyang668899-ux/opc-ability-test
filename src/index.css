@@ -2346,11 +2346,12 @@ button:focus-visible, a:focus-visible, input:focus-visible {
 .voice-companion-header p { color: var(--color-hos-cyan); font-family: var(--font-family-mono); font-size: 7.5px; letter-spacing: .1em; }
 .voice-companion-header strong { margin-top: 3px; display: block; color: var(--color-hos-text); font-size: 13px; }
 .voice-companion-header > button { width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; border-radius: 50%; color: var(--color-hos-text-muted); background: var(--hos-surface-bg); }
-.companion-permission, .companion-error { min-height: 350px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
-.companion-permission > span, .companion-error > span { width: 68px; height: 68px; display: flex; align-items: center; justify-content: center; border-radius: 50%; color: var(--color-hos-cyan); background: var(--hos-accent-faint); animation: soft-breathe 1.5s ease-in-out infinite; }
-.companion-permission h2, .companion-error h2 { margin-top: 17px; color: var(--color-hos-text); font-size: 18px; }
-.companion-permission p, .companion-error p { max-width: 270px; margin-top: 8px; color: var(--color-hos-text-muted); font-size: 9.5px; line-height: 1.65; }
-.companion-error > button { min-height: 44px; margin-top: 17px; padding: 0 14px; display: flex; align-items: center; gap: 6px; border-radius: 13px; color: var(--color-hos-cyan); background: var(--hos-accent-faint); font-size: 9.5px; }
+.companion-permission, .companion-error, .companion-finalizing { min-height: 350px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
+.companion-permission > span, .companion-error > span, .companion-finalizing > span { width: 68px; height: 68px; display: flex; align-items: center; justify-content: center; border-radius: 50%; color: var(--color-hos-cyan); background: var(--hos-accent-faint); animation: soft-breathe 1.5s ease-in-out infinite; }
+.companion-permission h2, .companion-error h2, .companion-finalizing h2 { margin-top: 17px; color: var(--color-hos-text); font-size: 18px; }
+.companion-permission p, .companion-error p, .companion-finalizing p { max-width: 270px; margin-top: 8px; color: var(--color-hos-text-muted); font-size: 9.5px; line-height: 1.65; }
+.companion-error > div { margin-top: 17px; display: flex; gap: 7px; }
+.companion-error > div button { min-height: 44px; padding: 0 12px; display: flex; align-items: center; gap: 6px; border-radius: 13px; color: var(--color-hos-cyan); background: var(--hos-accent-faint); font-size: 9px; }
 .companion-listening { min-height: 490px; padding-top: 14px; display: flex; flex-direction: column; align-items: center; }
 .companion-context { width: 100%; display: flex; align-items: center; gap: 7px; color: var(--color-hos-text-dim); font-size: 9px; }
 .companion-context time { margin-left: auto; color: var(--color-hos-text-muted); font-family: var(--font-family-mono); }
@@ -2371,6 +2372,7 @@ button:focus-visible, a:focus-visible, input:focus-visible {
 .companion-review-title p { margin-top: 4px; color: var(--color-hos-text-muted); font-size: 8.5px; }
 .companion-review textarea { width: 100%; min-height: 168px; margin-top: 16px; padding: 15px; resize: vertical; border: 1px solid var(--color-hos-border); border-radius: 17px; outline: none; color: var(--color-hos-text); background: var(--hos-surface-bg); font-size: 11px; line-height: 1.75; }
 .companion-review textarea:focus { border-color: color-mix(in srgb, var(--color-hos-cyan) 45%, var(--color-hos-border)); background: var(--hos-card-bg); }
+.companion-manual .companion-review-title p { max-width: 250px; line-height: 1.55; }
 .companion-review-meta { margin-top: 8px; display: flex; align-items: center; justify-content: space-between; gap: 8px; color: var(--color-hos-text-muted); font-size: 7.5px; }
 .companion-save { width: 100%; min-height: 50px; margin-top: 15px; display: flex; align-items: center; justify-content: center; gap: 7px; border-radius: 15px; color: var(--hos-card-bg); background: var(--color-hos-text); font-size: 10px; font-weight: 680; }
 .companion-save:disabled { opacity: .28; }
@@ -2416,7 +2418,7 @@ button:focus-visible, a:focus-visible, input:focus-visible {
   .voice-companion-fab { min-width: 50px; height: 50px; right: 12px; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .voice-companion-sheet, .companion-permission > span, .companion-error > span { animation: none; }
+  .voice-companion-sheet, .companion-permission > span, .companion-error > span, .companion-finalizing > span { animation: none; }
   .companion-orb > i { transition: none; }
 }
 

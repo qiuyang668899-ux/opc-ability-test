@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { VoiceAcousticMetrics } from '../engines/voiceJournalEngine'
 
-type CaptureStatus = 'idle' | 'requesting' | 'listening' | 'review' | 'error'
+type CaptureStatus = 'idle' | 'requesting' | 'listening' | 'finalizing' | 'review' | 'manual' | 'error'
 
 interface RecognitionAlternativeLike { transcript: string }
-interface RecognitionResultLike { isFinal: boolean; 0: RecognitionAlternativeLike }
+interface RecognitionResultLike { isFinal?: boolean; 0: RecognitionAlternativeLike }
 interface RecognitionEventLike { resultIndex: number; results: ArrayLike<RecognitionResultLike> }
 interface RecognitionErrorLike { error: string }
 interface RecognitionLike {
@@ -29,6 +29,10 @@ function getRecognitionConstructor() {
   return speechWindow.SpeechRecognition ?? speechWindow.webkitSpeechRecognition
 }
 
+function prefersChunkedRecognition() {
+  return /MicroMessenger|Android|iPhone|iPad|iPod/i.test(navigator.userAgent)
+}
+
 const emptyMetrics: VoiceAcousticMetrics = {
   durationSec: 0,
   averageLevel: 0,
@@ -51,25 +55,59 @@ export function useVoiceCapture() {
   const recognitionRef = useRef<RecognitionLike | null>(null)
   const animationRef = useRef<number | null>(null)
   const timerRef = useRef<number | null>(null)
+  const finalizationTimerRef = useRef<number | null>(null)
   const startedAtRef = useRef(0)
   const activeRef = useRef(false)
+  const stoppingRef = useRef(false)
   const samplesRef = useRef<number[]>([])
+  const transcriptRef = useRef('')
+  const interimRef = useRef('')
 
-  const supported = typeof window !== 'undefined' && 'mediaDevices' in navigator && 'getUserMedia' in navigator.mediaDevices && Boolean(getRecognitionConstructor())
+  const recognitionAvailable = typeof window !== 'undefined' && Boolean(getRecognitionConstructor())
+  const microphoneAvailable = typeof navigator !== 'undefined' && 'mediaDevices' in navigator && 'getUserMedia' in navigator.mediaDevices
+  const supported = recognitionAvailable && microphoneAvailable
 
-  const cleanupMedia = useCallback(() => {
-    activeRef.current = false
+  const stopSampling = useCallback(() => {
     if (animationRef.current) window.cancelAnimationFrame(animationRef.current)
     if (timerRef.current) window.clearInterval(timerRef.current)
     animationRef.current = null
     timerRef.current = null
-    recognitionRef.current?.stop()
-    recognitionRef.current = null
+    setLiveLevel(0)
+  }, [])
+
+  const releaseStream = useCallback(() => {
     streamRef.current?.getTracks().forEach((track) => track.stop())
     streamRef.current = null
     if (audioContextRef.current && audioContextRef.current.state !== 'closed') void audioContextRef.current.close()
     audioContextRef.current = null
   }, [])
+
+  const finishReview = useCallback(() => {
+    if (!stoppingRef.current) return
+    if (finalizationTimerRef.current) window.clearTimeout(finalizationTimerRef.current)
+    finalizationTimerRef.current = null
+
+    const lastInterim = interimRef.current.trim()
+    if (lastInterim && !transcriptRef.current.endsWith(lastInterim)) transcriptRef.current += lastInterim
+    interimRef.current = ''
+    setTranscript(transcriptRef.current)
+    setInterimTranscript('')
+    stoppingRef.current = false
+    recognitionRef.current = null
+    releaseStream()
+    setStatus('review')
+  }, [releaseStream])
+
+  const cleanupMedia = useCallback(() => {
+    activeRef.current = false
+    stoppingRef.current = false
+    if (finalizationTimerRef.current) window.clearTimeout(finalizationTimerRef.current)
+    finalizationTimerRef.current = null
+    stopSampling()
+    try { recognitionRef.current?.abort() } catch { /* recognition may already be closed */ }
+    recognitionRef.current = null
+    releaseStream()
+  }, [releaseStream, stopSampling])
 
   const finalizeMetrics = useCallback(() => {
     const samples = samplesRef.current
@@ -93,30 +131,45 @@ export function useVoiceCapture() {
 
   const stop = useCallback(() => {
     if (!activeRef.current) return
+    activeRef.current = false
+    stoppingRef.current = true
     finalizeMetrics()
-    cleanupMedia()
-    setLiveLevel(0)
-    setInterimTranscript('')
-    setStatus('review')
-    navigator.vibrate?.([18, 30, 22])
-  }, [cleanupMedia, finalizeMetrics])
-
-  const start = useCallback(async () => {
-    if (!supported || status === 'requesting' || status === 'listening') {
-      if (!supported) {
-        setError('当前浏览器暂不支持语音转写，请使用最新版 Chrome、Edge 或 Safari。')
-        setStatus('error')
-      }
+    stopSampling()
+    setStatus('finalizing')
+    try {
+      recognitionRef.current?.stop()
+    } catch {
+      finishReview()
       return
     }
-    setStatus('requesting')
+    finalizationTimerRef.current = window.setTimeout(finishReview, 900)
+    navigator.vibrate?.([18, 30, 22])
+  }, [finalizeMetrics, finishReview, stopSampling])
+
+  const start = useCallback(async () => {
+    if (status === 'requesting' || status === 'listening' || status === 'finalizing') return
+
     setError('')
     setTranscript('')
     setInterimTranscript('')
     setElapsedSec(0)
     setMetrics(emptyMetrics)
+    transcriptRef.current = ''
+    interimRef.current = ''
     samplesRef.current = []
 
+    if (!recognitionAvailable) {
+      setError('当前内置浏览器没有提供自动转写能力。你仍可点输入框，使用手机键盘上的话筒说，说完即可整理保存。')
+      setStatus('manual')
+      return
+    }
+    if (!microphoneAvailable) {
+      setError('当前浏览器无法打开麦克风，请更新浏览器或在系统设置中允许麦克风。')
+      setStatus('error')
+      return
+    }
+
+    setStatus('requesting')
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
         audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: false },
@@ -132,7 +185,7 @@ export function useVoiceCapture() {
       const buffer = new Uint8Array(analyser.fftSize)
       const recognition = new Recognition()
       recognition.lang = 'zh-CN'
-      recognition.continuous = true
+      recognition.continuous = !prefersChunkedRecognition()
       recognition.interimResults = true
       recognition.maxAlternatives = 1
       recognition.onresult = (event) => {
@@ -141,18 +194,35 @@ export function useVoiceCapture() {
         for (let index = event.resultIndex; index < event.results.length; index += 1) {
           const result = event.results[index]
           if (!result) continue
-          if (result.isFinal) finalText += result[0]?.transcript ?? ''
-          else interimText += result[0]?.transcript ?? ''
+          const heard = result[0]?.transcript ?? ''
+          if (result.isFinal === false) interimText += heard
+          else finalText += heard
         }
-        if (finalText) setTranscript((previous) => `${previous}${finalText}`)
+        if (finalText) {
+          if (!transcriptRef.current.endsWith(finalText)) transcriptRef.current += finalText
+          setTranscript(transcriptRef.current)
+        }
+        interimRef.current = interimText
         setInterimTranscript(interimText)
       }
       recognition.onerror = (event) => {
-        if (event.error === 'no-speech') return
-        setError(event.error === 'not-allowed' ? '需要允许麦克风权限，才能倾听并记录。' : '刚才没有听清，请再试一次。')
+        if (event.error === 'no-speech' || event.error === 'aborted') return
+        setError(event.error === 'not-allowed' ? '需要允许麦克风权限，才能倾听并记录。' : '转写连接有些不稳定，我会保留已经听到的文字。')
       }
       recognition.onend = () => {
+        if (stoppingRef.current) {
+          if (finalizationTimerRef.current) window.clearTimeout(finalizationTimerRef.current)
+          finalizationTimerRef.current = window.setTimeout(finishReview, 180)
+          return
+        }
         if (activeRef.current) {
+          const completedChunk = interimRef.current.trim()
+          if (completedChunk && !transcriptRef.current.endsWith(completedChunk)) {
+            transcriptRef.current += completedChunk
+            interimRef.current = ''
+            setTranscript(transcriptRef.current)
+            setInterimTranscript('')
+          }
           try { recognition.start() } catch { /* browser restart race */ }
         }
       }
@@ -161,6 +231,7 @@ export function useVoiceCapture() {
       audioContextRef.current = audioContext
       recognitionRef.current = recognition
       activeRef.current = true
+      stoppingRef.current = false
       startedAtRef.current = Date.now()
       setStatus('listening')
       recognition.start()
@@ -188,7 +259,7 @@ export function useVoiceCapture() {
       setError(namedError.name === 'NotAllowedError' ? '麦克风权限没有打开。请允许后再试；声音原始录音不会被保存。' : '暂时无法打开麦克风，请检查浏览器权限。')
       setStatus('error')
     }
-  }, [cleanupMedia, status, supported])
+  }, [cleanupMedia, finishReview, microphoneAvailable, recognitionAvailable, status])
 
   const reset = useCallback(() => {
     cleanupMedia()
@@ -199,12 +270,22 @@ export function useVoiceCapture() {
     setLiveLevel(0)
     setMetrics(emptyMetrics)
     setError('')
+    transcriptRef.current = ''
+    interimRef.current = ''
+  }, [cleanupMedia])
+
+  const useManualFallback = useCallback(() => {
+    cleanupMedia()
+    setError('当前浏览器的自动转写没有连接成功。点输入框后，可直接使用手机键盘上的话筒继续说。')
+    setStatus('manual')
   }, [cleanupMedia])
 
   useEffect(() => cleanupMedia, [cleanupMedia])
 
   return {
     supported,
+    recognitionAvailable,
+    microphoneAvailable,
     status,
     transcript,
     interimTranscript,
@@ -215,6 +296,7 @@ export function useVoiceCapture() {
     start,
     stop,
     reset,
+    useManualFallback,
     setTranscript,
   }
 }

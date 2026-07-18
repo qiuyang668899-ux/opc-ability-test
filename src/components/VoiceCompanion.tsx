@@ -36,12 +36,25 @@ function todayKey() {
 
 export default function VoiceCompanion() {
   const navigate = useNavigate()
-  const voice = useVoiceCapture()
+  const {
+    status: voiceStatus,
+    transcript: voiceTranscript,
+    interimTranscript: voiceInterimTranscript,
+    elapsedSec: voiceElapsedSec,
+    liveLevel: voiceLiveLevel,
+    metrics: voiceMetrics,
+    error: voiceError,
+    start: startVoice,
+    stop: stopVoice,
+    reset: resetVoice,
+    useManualFallback,
+  } = useVoiceCapture()
   const [request, setRequest] = useState<VoiceCompanionRequest | null>(null)
   const [draft, setDraft] = useState('')
   const [record, setRecord] = useState<VoiceJournalRecord | null>(null)
   const [coachPlan, setCoachPlan] = useState<CoachPlan | null>(null)
   const [calibrationNote, setCalibrationNote] = useState('')
+  const [autoFinalize, setAutoFinalize] = useState(false)
 
   const begin = useCallback((nextRequest: VoiceCompanionRequest) => {
     setRequest(nextRequest)
@@ -49,31 +62,33 @@ export default function VoiceCompanion() {
     setRecord(null)
     setCoachPlan(null)
     setCalibrationNote('')
-    void voice.start()
-  }, [voice])
+    setAutoFinalize(false)
+    void startVoice()
+  }, [startVoice])
 
   useEffect(() => registerVoiceCompanion(begin), [begin])
 
   const close = () => {
-    voice.reset()
+    resetVoice()
     setRequest(null)
     setDraft('')
     setRecord(null)
     setCoachPlan(null)
+    setAutoFinalize(false)
   }
 
   const stopListening = () => {
-    const heard = `${voice.transcript}${voice.interimTranscript}`
-    setDraft(polishVoiceTranscript(heard) || heard)
-    voice.stop()
+    setAutoFinalize(true)
+    stopVoice()
   }
 
-  const saveAndAnalyze = () => {
+  const saveAndAnalyze = useCallback((override?: string) => {
     if (!request) return
-    const transcript = polishVoiceTranscript(draft)
+    const transcript = polishVoiceTranscript(override ?? draft)
     if (!transcript) return
+    const rawHeard = polishVoiceTranscript(`${voiceTranscript}${voiceInterimTranscript}`) || transcript
     const memory = loadVoiceMemory(loadState<VoiceMemory | undefined>('voiceMemory', undefined))
-    const analysis = analyzeVoiceJournal(transcript, voice.metrics, memory)
+    const analysis = analyzeVoiceJournal(transcript, voiceMetrics, memory)
     const now = Date.now()
     const inferredCheckIn = {
       date: todayKey(),
@@ -92,9 +107,9 @@ export default function VoiceCompanion() {
       id: `vj-${now}`,
       timestamp: now,
       date: inferredCheckIn.date,
-      rawTranscript: voice.transcript || transcript,
+      rawTranscript: rawHeard,
       transcript,
-      metrics: voice.metrics,
+      metrics: voiceMetrics,
       analysis,
       coachMode: plan.mode,
       commitment: plan.commitment,
@@ -120,17 +135,30 @@ export default function VoiceCompanion() {
       voiceRecordId: nextRecord.id,
       voiceSignals: analysis.deliverySignals,
       organizedText,
-      rawFragment: voice.transcript || transcript,
+      rawFragment: rawHeard,
     }
     saveState('journal', [journalEntry, ...journal].slice(0, 365))
     recomputeUserState()
     request.onComplete?.(transcript, nextRecord)
     setRecord(nextRecord)
     setCoachPlan(plan)
-    voice.reset()
+    setAutoFinalize(false)
+    resetVoice()
     window.dispatchEvent(new CustomEvent('hos:data-updated'))
     navigator.vibrate?.([20, 28, 44])
-  }
+  }, [draft, request, resetVoice, voiceInterimTranscript, voiceMetrics, voiceTranscript])
+
+  useEffect(() => {
+    if (voiceStatus !== 'review') return undefined
+    const heard = `${voiceTranscript}${voiceInterimTranscript}`
+    const cleaned = polishVoiceTranscript(heard) || heard.trim()
+    const timer = window.setTimeout(() => {
+      if (cleaned) setDraft(cleaned)
+      if (autoFinalize && cleaned) saveAndAnalyze(cleaned)
+      else if (autoFinalize) setAutoFinalize(false)
+    }, autoFinalize && cleaned ? 220 : 0)
+    return () => window.clearTimeout(timer)
+  }, [autoFinalize, saveAndAnalyze, voiceInterimTranscript, voiceStatus, voiceTranscript])
 
   const calibrate = (value: -1 | 0 | 1) => {
     if (!record) return
@@ -154,39 +182,52 @@ export default function VoiceCompanion() {
       {request && (
         <div className="voice-companion-layer" role="dialog" aria-modal="true" aria-label="HOS 语音陪伴">
           <button className="voice-companion-backdrop" onClick={close} aria-label="关闭语音陪伴" />
-          <section className={`voice-companion-sheet ${record ? 'result' : voice.status}`}>
+          <section className={`voice-companion-sheet ${record ? 'result' : voiceStatus}`}>
             <header className="voice-companion-header">
               <div><span><Sparkles size={16} /></span><div><p>HOS VOICE COMPANION</p><strong>我在，慢慢说</strong></div></div>
               <button onClick={close} aria-label="关闭"><X size={18} /></button>
             </header>
 
-            {!record && voice.status === 'requesting' && (
+            {!record && voiceStatus === 'requesting' && (
               <div className="companion-permission"><span><Mic size={27} /></span><h2>正在打开倾听</h2><p>首次使用请允许麦克风。不会保存原始音频。</p></div>
             )}
 
-            {!record && voice.status === 'listening' && (
+            {!record && voiceStatus === 'listening' && (
               <div className="companion-listening">
-                <div className="companion-context"><span className="voice-live-dot" />{request.context}<time>{String(Math.floor(voice.elapsedSec / 60)).padStart(2, '0')}:{String(voice.elapsedSec % 60).padStart(2, '0')}</time></div>
-                <div className="companion-orb" style={{ '--companion-level': `${Math.max(108, 108 + voice.liveLevel * 0.62)}px` } as CSSProperties}><i /><span><Mic size={30} /></span></div>
+                <div className="companion-context"><span className="voice-live-dot" />{request.context}<time>{String(Math.floor(voiceElapsedSec / 60)).padStart(2, '0')}:{String(voiceElapsedSec % 60).padStart(2, '0')}</time></div>
+                <div className="companion-orb" style={{ '--companion-level': `${Math.max(108, 108 + voiceLiveLevel * 0.62)}px` } as CSSProperties}><i /><span><Mic size={30} /></span></div>
                 <h2>不用组织语言，我会先听完。</h2>
-                <div className="companion-transcript" aria-live="polite">{voice.transcript || voice.interimTranscript ? <p>{voice.transcript}<em>{voice.interimTranscript}</em></p> : <span>可以从“我现在……”开始</span>}</div>
-                {voice.error && <p className="voice-inline-error">{voice.error}</p>}
+                <div className="companion-transcript" aria-live="polite">{voiceTranscript || voiceInterimTranscript ? <p>{voiceTranscript}<em>{voiceInterimTranscript}</em></p> : <span>可以从“我现在……”开始</span>}</div>
+                {voiceError && <p className="voice-inline-error">{voiceError}</p>}
                 <button className="companion-stop" onClick={stopListening}><Square size={15} />我说完了</button>
                 <p className="companion-privacy"><LockKeyhole size={12} />应用不保存原始音频，转写与分析仅存当前设备</p>
               </div>
             )}
 
-            {!record && voice.status === 'review' && (
+            {!record && (voiceStatus === 'finalizing' || (voiceStatus === 'review' && autoFinalize)) && (
+              <div className="companion-finalizing"><span><Sparkles size={27} /></span><h2>正在整理刚才的话</h2><p>我在等待浏览器交回最后一段文字，随后会自动分析并保存到个人日志。</p></div>
+            )}
+
+            {!record && voiceStatus === 'review' && !autoFinalize && (
               <div className="companion-review">
-                <div className="companion-review-title"><span><PencilLine size={19} /></span><div><h2>确认一下我听到的内容</h2><p>可以修正错字，随后自动整理、分析并归档。</p></div></div>
-                <textarea value={draft} onChange={(event) => setDraft(event.target.value)} rows={6} aria-label="语音转写内容" placeholder="刚才没有听到内容，可以在这里补充" />
-                <div className="companion-review-meta"><span>{Math.round(voice.metrics.durationSec)} 秒</span><span>原始碎片会附在整理日记下方</span></div>
-                <button className="companion-save" onClick={saveAndAnalyze} disabled={!draft.trim()}><Save size={16} />自动整理、分析并归档</button>
+                <div className="companion-review-title"><span><PencilLine size={19} /></span><div><h2>{draft ? '确认一下我听到的内容' : '这次没有收到可用文字'}</h2><p>{draft ? '可以修正错字，再重新整理保存。' : '点下方输入框，再用手机键盘上的话筒补说一次；这次不会跳转页面。'}</p></div></div>
+                <textarea autoFocus={!draft} value={draft} onChange={(event) => setDraft(event.target.value)} rows={6} aria-label="语音转写内容" placeholder="点这里，再点手机键盘上的话筒继续说……" />
+                <div className="companion-review-meta"><span>{Math.round(voiceMetrics.durationSec)} 秒</span><span>原始碎片会附在整理日记下方</span></div>
+                <button className="companion-save" onClick={() => saveAndAnalyze()} disabled={!draft.trim()}><Save size={16} />整理并保存到日志</button>
               </div>
             )}
 
-            {!record && voice.status === 'error' && (
-              <div className="companion-error"><span><Mic size={25} /></span><h2>这次没有连接上麦克风</h2><p>{voice.error}</p><button onClick={() => void voice.start()}><RotateCcw size={15} />重新尝试</button></div>
+            {!record && voiceStatus === 'manual' && (
+              <div className="companion-review companion-manual">
+                <div className="companion-review-title"><span><Mic size={19} /></span><div><h2>用手机自带的话筒继续说</h2><p>{voiceError}</p></div></div>
+                <textarea autoFocus value={draft} onChange={(event) => setDraft(event.target.value)} rows={6} aria-label="语音转写内容" placeholder="点这里，再点手机键盘上的话筒开始说……" />
+                <div className="companion-review-meta"><span>仍在当前页面</span><span>完成后会归入个人档案</span></div>
+                <button className="companion-save" onClick={() => saveAndAnalyze()} disabled={!draft.trim()}><Save size={16} />整理并保存到日志</button>
+              </div>
+            )}
+
+            {!record && voiceStatus === 'error' && (
+              <div className="companion-error"><span><Mic size={25} /></span><h2>这次没有连接上麦克风</h2><p>{voiceError}</p><div><button onClick={() => void startVoice()}><RotateCcw size={15} />重新尝试</button><button onClick={useManualFallback}><PencilLine size={15} />用系统话筒输入</button></div></div>
             )}
 
             {record && coachPlan && (
