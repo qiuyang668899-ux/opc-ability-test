@@ -33,6 +33,7 @@ export interface VoiceJournalRecord {
   organizedText?: string
   calibration?: -1 | 0 | 1
   journey?: import('./stateOrchestrator').RegulationJourney
+  intelligence?: 'local' | 'deepseek'
 }
 
 export interface VoiceMemory {

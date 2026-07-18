@@ -27,10 +27,11 @@ import {
   type VoiceJournalRecord,
   type VoiceMemory,
 } from '../engines/voiceJournalEngine'
-import { buildCoachSnapshot, createCoachPlan, type CoachPlan } from '../engines/coachEngine'
+import { buildCoachSnapshot, createCoachPlan, refineCoachPlanWithAI, type CoachPlan } from '../engines/coachEngine'
 import { activateRegulationJourney, buildRegulationJourney } from '../engines/stateOrchestrator'
 import { loadState, recomputeUserState, saveState, type JournalEntry } from '../stores/useStore'
 import { openVoiceCompanion, registerVoiceCompanion, type VoiceCompanionRequest } from './voiceCompanionBus'
+import { requestHOSCoachAnalysis } from '../services/aiCoachService'
 
 function todayKey() {
   return new Date().toLocaleDateString('en-CA')
@@ -57,6 +58,7 @@ export default function VoiceCompanion() {
   const [coachPlan, setCoachPlan] = useState<CoachPlan | null>(null)
   const [calibrationNote, setCalibrationNote] = useState('')
   const [autoFinalize, setAutoFinalize] = useState(false)
+  const [intelligenceState, setIntelligenceState] = useState<'idle' | 'analyzing' | 'deepseek' | 'local'>('idle')
 
   const begin = useCallback((nextRequest: VoiceCompanionRequest) => {
     setRequest(nextRequest)
@@ -65,6 +67,7 @@ export default function VoiceCompanion() {
     setCoachPlan(null)
     setCalibrationNote('')
     setAutoFinalize(false)
+    setIntelligenceState('idle')
     void startVoice()
   }, [startVoice])
 
@@ -77,6 +80,7 @@ export default function VoiceCompanion() {
     setRecord(null)
     setCoachPlan(null)
     setAutoFinalize(false)
+    setIntelligenceState('idle')
   }
 
   const stopListening = () => {
@@ -124,6 +128,7 @@ export default function VoiceCompanion() {
       commitment: plan.commitment,
       organizedText,
       journey,
+      intelligence: 'local',
     }
     const voiceRecords = loadState<VoiceJournalRecord[]>('voiceJournal', [])
     saveState('voiceJournal', [nextRecord, ...voiceRecords].slice(0, 180))
@@ -153,10 +158,53 @@ export default function VoiceCompanion() {
     request.onComplete?.(transcript, nextRecord)
     setRecord(nextRecord)
     setCoachPlan(plan)
+    setIntelligenceState('analyzing')
     setAutoFinalize(false)
     resetVoice()
     window.dispatchEvent(new CustomEvent('hos:data-updated'))
     navigator.vibrate?.([20, 28, 44])
+
+    void requestHOSCoachAnalysis({ text: transcript, source: 'voice', snapshot })
+      .then((insight) => {
+        const refinedPlan = refineCoachPlanWithAI(plan, insight)
+        const refinedAnalysis = {
+          ...analysis,
+          stateLabel: insight.stateLabel,
+          confidence: Math.max(analysis.confidence, insight.confidence),
+          summary: insight.hypothesis,
+          response: insight.response,
+        }
+        const refinedJourney = buildRegulationJourney(refinedAnalysis, refinedPlan, insight)
+        const refinedOrganizedText = organizeVoiceDiary(refinedAnalysis, refinedPlan.commitment)
+        const refinedRecord: VoiceJournalRecord = {
+          ...nextRecord,
+          analysis: refinedAnalysis,
+          coachMode: refinedPlan.mode,
+          commitment: refinedPlan.commitment,
+          organizedText: refinedOrganizedText,
+          journey: refinedJourney,
+          intelligence: 'deepseek',
+        }
+        const currentRecords = loadState<VoiceJournalRecord[]>('voiceJournal', [])
+        saveState('voiceJournal', currentRecords.map((item) => item.id === refinedRecord.id ? refinedRecord : item))
+        const currentJournal = loadState<JournalEntry[]>('journal', [])
+        saveState('journal', currentJournal.map((entry) => entry.voiceRecordId === refinedRecord.id
+          ? {
+              ...entry,
+              trigger: `语音日记 · ${refinedAnalysis.stateLabel}`,
+              newResponse: refinedPlan.commitment,
+              analysis: `${refinedAnalysis.response}\n\n这些是可校准的自我觉察线索，不是医学或心理诊断。`,
+              organizedText: refinedOrganizedText,
+              regulationPath: refinedJourney.steps.map((step) => step.title),
+            }
+          : entry))
+        setRecord((current) => current?.id === refinedRecord.id ? refinedRecord : current)
+        setCoachPlan(refinedPlan)
+        setIntelligenceState('deepseek')
+        recomputeUserState()
+        window.dispatchEvent(new CustomEvent('hos:data-updated'))
+      })
+      .catch(() => setIntelligenceState('local'))
   }, [draft, request, resetVoice, voiceInterimTranscript, voiceMetrics, voiceTranscript])
 
   useEffect(() => {
@@ -255,6 +303,10 @@ export default function VoiceCompanion() {
             {record && coachPlan && (
               <div className="companion-result">
                 <div className="companion-result-mark"><span><Check size={21} /></span><div><p>已自动归入个人档案</p><h2>我听见了，也替你整理好了。</h2></div></div>
+                <div className={`companion-intelligence ${intelligenceState}`}>
+                  <BrainCircuit size={14} />
+                  <span>{intelligenceState === 'analyzing' ? '正在进行 DeepSeek 深层分析…' : intelligenceState === 'deepseek' ? 'DeepSeek 已完成深层理解与模块编排' : '本地智能已完成分析，网络恢复后可继续深化'}</span>
+                </div>
                 <blockquote>{record.analysis.response}</blockquote>
                 <div className="companion-state-row"><span>能量 <strong>{record.analysis.energy}/5</strong></span><span>清晰 <strong>{record.analysis.clarity}/5</strong></span><span>压力 <strong>{record.analysis.pressure}/5</strong></span></div>
                 <article className="companion-diary-preview"><header><BookOpenText size={15} /><span>整理后的日记</span></header><p>{record.organizedText}</p><details><summary>查看原始表达碎片</summary><blockquote>{record.rawTranscript}</blockquote></details></article>

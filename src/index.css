@@ -2423,6 +2423,9 @@ button:focus-visible, a:focus-visible, input:focus-visible {
 .companion-result-mark > span { width: 48px; height: 48px; display: flex; align-items: center; justify-content: center; border-radius: 50%; color: var(--hos-card-bg); background: var(--color-hos-green); }
 .companion-result-mark p { color: var(--color-hos-green); font-size: 8px; font-weight: 650; }
 .companion-result-mark h2 { margin-top: 4px; color: var(--color-hos-text); font-size: 17px; line-height: 1.4; }
+.companion-intelligence { margin-top: 12px; padding: 8px 11px; display: flex; align-items: center; gap: 7px; border: 1px solid color-mix(in srgb, var(--color-hos-green) 22%, transparent); border-radius: 999px; color: var(--color-hos-text-2); background: color-mix(in srgb, var(--color-hos-green) 6%, var(--hos-surface-bg)); font-size: 9px; line-height: 1.4; }
+.companion-intelligence.analyzing svg { animation: breathe 1.5s ease-in-out infinite; }
+.companion-intelligence.deepseek { color: var(--color-hos-green); }
 .companion-result > blockquote { margin-top: 16px; padding: 15px; border-radius: 17px; color: var(--color-hos-text); background: color-mix(in srgb, var(--color-hos-green) 7%, var(--hos-surface-bg)); font-size: 11px; line-height: 1.7; }
 .companion-state-row { margin-top: 10px; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
 .companion-state-row > span { min-height: 48px; padding: 9px; display: flex; flex-direction: column; justify-content: space-between; border-radius: 13px; color: var(--color-hos-text-muted); background: var(--hos-surface-bg); font-size: 7.5px; }

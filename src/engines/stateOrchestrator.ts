@@ -1,6 +1,7 @@
 import type { CoachMode, CoachPlan } from './coachEngine'
 import type { VoiceStateAnalysis } from './voiceJournalEngine'
 import { loadState, saveState } from '../stores/useStore'
+import type { HOSAIInsight, HOSModuleId } from '../services/aiCoachService'
 
 export type RegulationStep = {
   id: string
@@ -54,17 +55,67 @@ const journeySteps: Record<CoachMode, RegulationStep[]> = {
   ],
 }
 
-export function buildRegulationJourney(analysis: VoiceStateAnalysis, plan: CoachPlan): RegulationJourney {
-  const steps = journeySteps[plan.mode]
+const moduleSteps: Record<HOSModuleId, RegulationStep> = {
+  reset_pressure: { id: 'reset-pressure', title: '先让身体慢下来', reason: '高唤醒时先恢复安全感，思考才会重新可用。', action: '完成一轮温和呼吸重置', route: '/reset/pressure', minutes: 3 },
+  reset_overload: { id: 'reset-overload', title: '先停止继续输入', reason: '思绪混乱时，继续收集信息只会增加负荷。', action: '完成信息过载重置', route: '/reset/overload', minutes: 3 },
+  reset_sleep: { id: 'reset-sleep', title: '允许系统进入恢复', reason: '能量不足时先减载，之后的行动才可持续。', action: '完成睡眠与恢复重置', route: '/reset/sleep', minutes: 5 },
+  reset_emotion: { id: 'reset-emotion', title: '先给情绪一点空间', reason: '被看见的情绪才不需要用更强烈的方式表达。', action: '完成情绪整合重置', route: '/reset/emotion', minutes: 4 },
+  reset_coherence: { id: 'reset-coherence', title: '清出一个专注通道', reason: '降低无关输入，让注意力重新变得可用。', action: '完成专注校准', route: '/reset/coherence', minutes: 3 },
+  music_pressure: { id: 'music-pressure', title: '用音景缓冲压力', reason: '连续柔和的声音帮助系统从警觉回到稳定。', action: '播放压力释放音景', route: '/music', minutes: 8 },
+  music_sleep: { id: 'music-sleep', title: '进入低刺激音景', reason: '减少新的信息，让身体更容易进入修复节律。', action: '播放睡前修复音景', route: '/music', minutes: 10 },
+  music_focus: { id: 'music-focus', title: '建立专注环境', reason: '稳定的场景音乐可以减少切换和分心。', action: '播放深度专注音景', route: '/music', minutes: 12 },
+  flow: { id: 'flow', title: '只做一个最小回合', reason: '用低阻力行动获得真实反馈，而不是继续空想。', action: '启动最小专注练习', route: '/flow', minutes: 10 },
+  architect: { id: 'architect', title: '把问题收束到一层', reason: '一次只澄清一个关键变量，重新获得选择感。', action: '和状态教练继续梳理', route: '/architect', minutes: 5 },
+  journal: { id: 'journal', title: '留下真实反馈', reason: '把感受和结果留下，下一轮推荐会更了解你。', action: '语音说下这一轮感受', route: '/journal', minutes: 2 },
+  classics: { id: 'classics', title: '借经典重新安放自己', reason: '换到更长的时间尺度，看见另一种理解与行动。', action: '阅读一段适合此刻的经典', route: '/classics', minutes: 5 },
+  visual: { id: 'visual', title: '用视觉看见隐性状态', reason: '语言说不清时，非语言线索能帮助继续觉察。', action: '完成一次视觉状态诊断', route: '/visual', minutes: 4 },
+}
+
+function chooseSteps(plan: CoachPlan, insight?: HOSAIInsight) {
+  const selected = insight?.recommendedModules.map((moduleId) => moduleSteps[moduleId]) ?? []
+  const unique = selected.filter((step, index) => selected.findIndex((item) => item.id === step.id) === index)
+  for (const step of journeySteps[plan.mode]) {
+    if (unique.length >= 3) break
+    if (!unique.some((item) => item.route === step.route && item.action === step.action)) unique.push(step)
+  }
+  return unique.slice(0, 3)
+}
+
+function createJourney(
+  state: Pick<VoiceStateAnalysis, 'stateLabel' | 'keywords' | 'energy' | 'clarity' | 'pressure'>,
+  plan: CoachPlan,
+  insight?: HOSAIInsight,
+): RegulationJourney {
+  const steps = chooseSteps(plan, insight)
   return {
     id: `journey-${Date.now()}`,
     createdAt: Date.now(),
-    stateLabel: analysis.stateLabel,
+    stateLabel: state.stateLabel,
     coreNeed: plan.coreNeed,
-    rationale: `根据你表达中的「${analysis.keywords.slice(0, 2).join('、') || '此刻状态'}」以及能量 ${analysis.energy}/5、清晰 ${analysis.clarity}/5、压力 ${analysis.pressure}/5，先处理最影响状态的环节，再进入行动。`,
+    rationale: insight?.rationale
+      ?? `根据你表达中的「${state.keywords.slice(0, 2).join('、') || '此刻状态'}」以及能量 ${state.energy}/5、清晰 ${state.clarity}/5、压力 ${state.pressure}/5，先处理最影响状态的环节，再进入行动。`,
     currentStep: 0,
     steps,
   }
+}
+
+export function buildRegulationJourney(analysis: VoiceStateAnalysis, plan: CoachPlan, insight?: HOSAIInsight) {
+  return createJourney(analysis, plan, insight)
+}
+
+export function buildTextRegulationJourney(
+  text: string,
+  plan: CoachPlan,
+  state?: { energy?: number; clarity?: number; pressure?: number },
+  insight?: HOSAIInsight,
+) {
+  return createJourney({
+    stateLabel: plan.stateLabel,
+    keywords: text.split(/[，。！？、\s]+/).filter(Boolean).slice(0, 2),
+    energy: state?.energy ?? 3,
+    clarity: state?.clarity ?? 3,
+    pressure: state?.pressure ?? 3,
+  }, plan, insight)
 }
 
 export function activateRegulationJourney(journey: RegulationJourney) {

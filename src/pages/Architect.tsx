@@ -32,6 +32,7 @@ import {
   buildCoachSnapshot,
   createCoachPlan,
   formatCoachMessage,
+  refineCoachPlanWithAI,
   shrinkCoachPlan,
   type CoachPlan,
   type CoachReplyOption,
@@ -49,7 +50,13 @@ import {
 } from '../engines/voiceJournalEngine'
 import { useVoiceCapture } from '../hooks/useVoiceCapture'
 import VoiceInputButton from '../components/VoiceInputButton'
-import { activateRegulationJourney, buildRegulationJourney } from '../engines/stateOrchestrator'
+import {
+  activateRegulationJourney,
+  buildRegulationJourney,
+  buildTextRegulationJourney,
+  type RegulationJourney,
+} from '../engines/stateOrchestrator'
+import { requestHOSCoachAnalysis } from '../services/aiCoachService'
 
 const starterPrompts = [
   { label: '脑子停不下来', desc: '压力、紧绷、想得太多', icon: Waves, text: '我现在压力很大，脑子停不下来，想先稳定状态。' },
@@ -87,9 +94,12 @@ export default function Architect() {
   const [voiceAutoFinalize, setVoiceAutoFinalize] = useState(false)
   const [voiceRecord, setVoiceRecord] = useState<VoiceJournalRecord | null>(rememberedVoice ?? null)
   const [voiceCalibration, setVoiceCalibration] = useState('')
+  const [voiceIntelligence, setVoiceIntelligence] = useState<'idle' | 'analyzing' | 'deepseek' | 'local'>(rememberedVoice?.intelligence === 'deepseek' ? 'deepseek' : 'idle')
   const [voiceMemory, setVoiceMemory] = useState<VoiceMemory>(() => loadVoiceMemory(loadState<VoiceMemory | undefined>('voiceMemory', undefined)))
   const [coachPlan, setCoachPlan] = useState<CoachPlan>(() => createCoachPlan(initialContext ?? '我需要一个清晰的下一步', initialSnapshot))
+  const [coachJourney, setCoachJourney] = useState<RegulationJourney | null>(rememberedVoice?.journey ?? null)
   const timersRef = useRef<number[]>([])
+  const analysisRequestRef = useRef(0)
   const livePlanRef = useRef<HTMLElement>(null)
   const saveVoiceJournalRef = useRef<(override?: string) => void>(() => undefined)
   const snapshot = buildCoachSnapshot()
@@ -101,11 +111,16 @@ export default function Architect() {
     if (heard) setVoiceReviewText(heard)
   }, [voice.interimTranscript, voice.transcript])
   useEffect(() => () => {
+    analysisRequestRef.current += 1
     timersRef.current.forEach((timer) => window.clearTimeout(timer))
     window.speechSynthesis?.cancel()
   }, [])
 
-  const finishResponse = useCallback((nextPlan: CoachPlan, currentSnapshot: ReturnType<typeof buildCoachSnapshot>) => {
+  const finishResponse = useCallback((
+    nextPlan: CoachPlan,
+    currentSnapshot: ReturnType<typeof buildCoachSnapshot>,
+    nextJourney?: RegulationJourney,
+  ) => {
     const aiMsg: ChatMessage = {
       id: `a-${Date.now()}`,
       role: 'assistant',
@@ -114,6 +129,7 @@ export default function Architect() {
     }
     recomputeUserState()
     setCoachPlan(nextPlan)
+    if (nextJourney) setCoachJourney(nextJourney)
     setMessages((previous) => [...previous, aiMsg])
     setThinkingStage(null)
     setStarted(true)
@@ -131,7 +147,9 @@ export default function Architect() {
       timestamp: Date.now(),
     }
     const currentSnapshot = buildCoachSnapshot()
-    const nextPlan = createCoachPlan(content, currentSnapshot, coachPlan)
+    const localPlan = createCoachPlan(content, currentSnapshot, coachPlan)
+    const requestId = ++analysisRequestRef.current
+    const startedAt = Date.now()
     setMessages((previous) => [...previous, userMsg])
     setInput('')
     setThinkingStage(0)
@@ -141,9 +159,31 @@ export default function Architect() {
     timersRef.current = [
       window.setTimeout(() => setThinkingStage(1), 260),
       window.setTimeout(() => setThinkingStage(2), 560),
-      window.setTimeout(() => finishResponse(nextPlan, currentSnapshot), 880),
     ]
-  }, [coachPlan, finishResponse, input, thinkingStage])
+    const complete = (nextPlan: CoachPlan, deepInsight?: Awaited<ReturnType<typeof requestHOSCoachAnalysis>>) => {
+      if (analysisRequestRef.current !== requestId) return
+      const checkIn = currentSnapshot.checkIn
+      const journey = buildTextRegulationJourney(content, nextPlan, checkIn, deepInsight)
+      const delay = Math.max(0, 880 - (Date.now() - startedAt))
+      const timer = window.setTimeout(() => finishResponse(nextPlan, currentSnapshot, journey), delay)
+      timersRef.current.push(timer)
+    }
+    if (localPlan.isCrisis) {
+      complete(localPlan)
+      return
+    }
+    void requestHOSCoachAnalysis({
+      text: content,
+      source: 'text',
+      snapshot: currentSnapshot,
+      recentUserMessages: [
+        ...messages.filter((message) => message.role === 'user').slice(-3).map((message) => message.content),
+        content,
+      ],
+    })
+      .then((insight) => complete(refineCoachPlanWithAI(localPlan, insight), insight))
+      .catch(() => complete(localPlan))
+  }, [coachPlan, finishResponse, input, messages, thinkingStage])
 
   const chooseReply = (option: CoachReplyOption) => sendMessage(option.value, option.label)
 
@@ -182,12 +222,15 @@ export default function Architect() {
     window.speechSynthesis?.cancel()
     setMessages([])
     saveState('chat', [])
+    analysisRequestRef.current += 1
     setStarted(false)
     setThinkingStage(null)
     setSpeaking(false)
     setFeedbackStatus('')
     setVoiceRecord(null)
+    setCoachJourney(null)
     setVoiceCalibration('')
+    setVoiceIntelligence('idle')
     voice.reset()
     setCoachPlan(createCoachPlan('我需要一个清晰的下一步', buildCoachSnapshot()))
   }
@@ -195,6 +238,7 @@ export default function Architect() {
   const startVoiceJournal = () => {
     setVoiceRecord(null)
     setVoiceCalibration('')
+    setVoiceIntelligence('idle')
     setVoiceReviewText('')
     setVoiceAutoFinalize(false)
     void voice.start()
@@ -239,6 +283,7 @@ export default function Architect() {
       commitment: nextPlan.commitment,
       organizedText,
       journey,
+      intelligence: 'local',
     }
     const voiceRecords = loadState<VoiceJournalRecord[]>('voiceJournal', [])
     saveState('voiceJournal', [record, ...voiceRecords].slice(0, 180))
@@ -270,14 +315,64 @@ export default function Architect() {
     const voiceCoachMessage: ChatMessage = { id: `a-${now + 1}`, role: 'assistant', content: formatCoachMessage(nextPlan), timestamp: now + 1 }
     setMessages((previous) => [...previous, voiceUserMessage, voiceCoachMessage])
     setCoachPlan(nextPlan)
+    setCoachJourney(journey)
     setStarted(true)
     setVoiceRecord(record)
+    setVoiceIntelligence('analyzing')
     setVoiceAutoFinalize(false)
     setFeedbackStatus('')
     recomputeUserState()
     window.dispatchEvent(new CustomEvent('hos:data-updated'))
     voice.reset()
     navigator.vibrate?.([24, 36, 48])
+
+    void requestHOSCoachAnalysis({
+      text: transcript,
+      source: 'voice',
+      snapshot: { ...currentSnapshot, checkIn: inferredCheckIn },
+      recentUserMessages: messages.filter((message) => message.role === 'user').slice(-3).map((message) => message.content),
+    })
+      .then((insight) => {
+        const refinedPlan = refineCoachPlanWithAI(nextPlan, insight)
+        const refinedAnalysis = {
+          ...analysis,
+          stateLabel: insight.stateLabel,
+          confidence: Math.max(analysis.confidence, insight.confidence),
+          summary: insight.hypothesis,
+          response: insight.response,
+        }
+        const refinedJourney = buildRegulationJourney(refinedAnalysis, refinedPlan, insight)
+        const refinedOrganizedText = organizeVoiceDiary(refinedAnalysis, refinedPlan.commitment)
+        const refinedRecord: VoiceJournalRecord = {
+          ...record,
+          analysis: refinedAnalysis,
+          coachMode: refinedPlan.mode,
+          commitment: refinedPlan.commitment,
+          organizedText: refinedOrganizedText,
+          journey: refinedJourney,
+          intelligence: 'deepseek',
+        }
+        const currentRecords = loadState<VoiceJournalRecord[]>('voiceJournal', [])
+        saveState('voiceJournal', currentRecords.map((item) => item.id === refinedRecord.id ? refinedRecord : item))
+        const currentJournal = loadState<JournalEntry[]>('journal', [])
+        saveState('journal', currentJournal.map((entry) => entry.voiceRecordId === refinedRecord.id
+          ? {
+              ...entry,
+              trigger: `语音日记 · ${refinedAnalysis.stateLabel}`,
+              newResponse: refinedPlan.commitment,
+              analysis: `${refinedAnalysis.response}\n\n状态推测：能量 ${refinedAnalysis.energy}/5 · 清晰 ${refinedAnalysis.clarity}/5 · 压力 ${refinedAnalysis.pressure}/5\n\n这些是自我觉察线索，不是医学或心理诊断。`,
+              organizedText: refinedOrganizedText,
+              regulationPath: refinedJourney.steps.map((step) => step.title),
+            }
+          : entry))
+        setVoiceRecord((current) => current?.id === refinedRecord.id ? refinedRecord : current)
+        setCoachPlan(refinedPlan)
+        setCoachJourney(refinedJourney)
+        setVoiceIntelligence('deepseek')
+        recomputeUserState()
+        window.dispatchEvent(new CustomEvent('hos:data-updated'))
+      })
+      .catch(() => setVoiceIntelligence('local'))
   }
   saveVoiceJournalRef.current = saveVoiceJournal
 
@@ -306,9 +401,10 @@ export default function Architect() {
   }
 
   const beginCoachPractice = () => {
-    if (voiceRecord?.journey) {
-      activateRegulationJourney(voiceRecord.journey)
-      navigate(voiceRecord.journey.steps[0].route)
+    const journey = voiceRecord?.journey ?? coachJourney
+    if (journey) {
+      activateRegulationJourney(journey)
+      navigate(journey.steps[0].route)
       return
     }
     navigate(coachPlan.route)
@@ -325,6 +421,7 @@ export default function Architect() {
     const cleared = loadVoiceMemory()
     setVoiceMemory(cleared)
     setVoiceRecord(null)
+    setVoiceIntelligence('idle')
     setVoiceCalibration('语音记忆已从当前设备清除')
     recomputeUserState()
   }
@@ -408,6 +505,10 @@ export default function Architect() {
       {voiceRecord && (
         <section className="voice-readback">
           <header><div><p>I HEARD YOU</p><h2>我听见了</h2></div><span>{voiceRecord.analysis.confidence}%<small>当前推测</small></span></header>
+          <div className={`companion-intelligence ${voiceIntelligence}`}>
+            <BrainCircuit size={14} />
+            <span>{voiceIntelligence === 'analyzing' ? '正在进行 DeepSeek 深层分析…' : voiceIntelligence === 'deepseek' ? 'DeepSeek 已完成深层理解与模块编排' : '本地智能已完成分析'}</span>
+          </div>
           <blockquote>{voiceRecord.analysis.response}</blockquote>
           <div className="voice-state-cube">
             <article><small>能量</small><strong>{voiceRecord.analysis.energy}<em>/5</em></strong></article>

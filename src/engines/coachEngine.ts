@@ -15,6 +15,7 @@ import {
 } from '../stores/useStore'
 import { getTodayRitualRecord } from './ritualEngine'
 import type { VoiceJournalRecord } from './voiceJournalEngine'
+import type { HOSAIInsight, HOSModuleId } from '../services/aiCoachService'
 
 export type CoachMode = 'stabilize' | 'clarify' | 'execute' | 'recover' | 'learn' | 'reflect'
 
@@ -79,6 +80,22 @@ const modeLabels: Record<CoachMode, string> = {
 
 const coreNeeds: Record<CoachMode, string> = {
   stabilize: '安全与稳定', clarify: '边界与清晰', execute: '低阻力启动', recover: '减载与恢复', learn: '反馈与精进', reflect: '被看见与重新选择',
+}
+
+const routeByModule: Record<HOSModuleId, string> = {
+  reset_pressure: '/reset/pressure',
+  reset_overload: '/reset/overload',
+  reset_sleep: '/reset/sleep',
+  reset_emotion: '/reset/emotion',
+  reset_coherence: '/reset/coherence',
+  music_pressure: '/music',
+  music_sleep: '/music',
+  music_focus: '/music',
+  flow: '/flow',
+  architect: '/architect',
+  journal: '/journal',
+  classics: '/classics',
+  visual: '/visual',
 }
 
 const crisisSignals = ['自杀', '轻生', '不想活', '伤害自己', 'suicide', 'kill myself', 'self harm']
@@ -259,6 +276,29 @@ export function createCoachPlan(input: string, snapshot: CoachSnapshot, previous
   }
   const learnedDifficulty = loadState<CoachFeedbackSignal[]>('coachFeedback', []).find((item) => item.mode === mode)
   return learnedDifficulty?.result === 'tiny' ? shrinkCoachPlan(plan) : plan
+}
+
+export function refineCoachPlanWithAI(localPlan: CoachPlan, insight: HOSAIInsight): CoachPlan {
+  if (localPlan.isCrisis) return localPlan
+  const mode = insight.mode
+  return {
+    ...localPlan,
+    mode,
+    protocol: getProtocol(mode),
+    stateLabel: insight.stateLabel,
+    confidence: insight.confidence,
+    signals: ['DeepSeek 深层语义分析', ...localPlan.signals].slice(0, 3),
+    coreNeed: insight.coreNeed,
+    hypothesis: insight.hypothesis,
+    bodyStep: insight.bodyStep,
+    actionStep: insight.actionStep,
+    reflectionStep: insight.reflectionStep,
+    reframe: insight.reframe,
+    question: insight.question,
+    commitment: insight.commitment,
+    replyOptions: replyOptions[mode],
+    route: routeByModule[insight.recommendedModules[0]] ?? localPlan.route,
+  }
 }
 
 export function shrinkCoachPlan(plan: CoachPlan): CoachPlan {
