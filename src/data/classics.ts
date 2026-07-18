@@ -19,6 +19,10 @@ export type ClassicPassage = {
   needs: ClassicNeed[]
   tags: string[]
   sourceKind: ClassicSourceKind
+  religionGroup?: '基督教' | '伊斯兰教' | '犹太教' | '印度教' | '印度教·瑜伽' | '锡克教'
+  originalLanguage?: string
+  originalLabel?: string
+  modernTranslation?: string
   sourceUrl?: string
   sourceNote?: string
 }
@@ -191,44 +195,76 @@ export const CLASSIC_PASSAGES: ClassicPassage[] = [
   },
 
   {
-    id: 'christian-daily-trouble', category: '世界宗教', tradition: '基督宗教', work: '《马太福音》', chapter: '6:34', title: '只承担今天真正需要承担的',
-    original: '一天的难处一天当就够了。',
+    id: 'christian-daily-trouble', category: '世界宗教', religionGroup: '基督教', tradition: '基督教', work: '《马太福音》', chapter: '6:34', title: '只承担今天真正需要承担的',
+    original: 'Μὴ οὖν μεριμνήσητε εἰς τὴν αὔριον· ἡ γὰρ αὔριον μεριμνήσει τὰ ἑαυτῆς. ἀρκετὸν τῇ ἡμέρᾳ ἡ κακία αὐτῆς.',
+    originalLanguage: '古希腊语', originalLabel: '希腊文原典', modernTranslation: '所以，不要为明天忧虑；明天自有明天的忧虑。一天的难处，一天承担已经足够。',
     reflection: '人会用今天的精力反复预支未来的困难。回到此刻，并不否认明天，而是不让想象先耗尽今天。',
     method: '把担忧分成今天能行动的部分与需要留给明天的信息。',
     practice: '写下最担心的一件事，再写：今天我真正需要做的一步是什么？其余暂放到明天。', duration: 4,
-    needs: ['安定身心', '意义韧性'], tags: ['当下', '忧虑', '信靠'], sourceKind: '原典选段', sourceNote: '短句采用通行中文表达；不同译本措辞可能不同，请以所属传统正式版本为准。',
+    needs: ['安定身心', '意义韧性'], tags: ['当下', '忧虑', '信靠'], sourceKind: '原典选段', sourceUrl: 'https://greeknewtestament.net/mt6-34', sourceNote: '原文为《马太福音》6:34 希腊文；中文为 HOS 学习译文，可从来源页核对异文。',
   },
   {
-    id: 'jewish-now', category: '世界宗教', tradition: '犹太传统', work: '《先贤训诫》', chapter: '1:14', title: '为自己负责，也不只为自己',
-    original: '义旨：若我不为自己，谁为我？若我只为自己，我是什么？若不是现在，更待何时？',
+    id: 'jewish-now', category: '世界宗教', religionGroup: '犹太教', tradition: '犹太教', work: '《先贤训诫》', chapter: '1:14', title: '为自己负责，也不只为自己',
+    original: 'הוּא הָיָה אוֹמֵר, אִם אֵין אֲנִי לִי, מִי לִי. וּכְשֶׁאֲנִי לְעַצְמִי, מָה אֲנִי. וְאִם לֹא עַכְשָׁיו, אֵימָתָי:',
+    originalLanguage: '希伯来语', originalLabel: '希伯来文原典', modernTranslation: '他说：如果我不为自己负责，谁会为我？如果我只为自己，我又成了什么？如果不是现在，又要等到何时？',
     reflection: '成熟同时包含三件事：为自己负责、超越只顾自己，并把价值放进当下行动。',
     method: '让一个决定同时经过自我责任、他人影响与行动时机三重检查。',
     practice: '面对一个选择，分别回答：我需要什么？他人会受何影响？今天可以做什么？', duration: 5,
-    needs: ['关系慈悲', '专注行动', '意义韧性'], tags: ['责任', '共同体', '当下'], sourceKind: '义旨转述', sourceNote: 'HOS 依据《Pirkei Avot》1:14 的通行义旨转述，不替代宗教权威译本。',
+    needs: ['关系慈悲', '专注行动', '意义韧性'], tags: ['责任', '共同体', '当下'], sourceKind: '原典选段', sourceUrl: 'https://www.sefaria.org/Pirkei_Avot.1.14', sourceNote: '原文为《Pirkei Avot》1:14；中文为 HOS 学习译文。',
   },
   {
-    id: 'islam-remembrance', category: '世界宗教', tradition: '伊斯兰教', work: '《古兰经》', chapter: '13:28', title: '让心回到所敬畏与信赖的中心',
-    original: '义旨：在对真主的记念中，心获得安宁。',
+    id: 'jewish-whole-heart', category: '世界宗教', religionGroup: '犹太教', tradition: '犹太教', work: '《申命记》', chapter: '6:5', title: '让爱成为全心的方向',
+    original: 'ואהבת את יהוה אלהיך בכל לבבך ובכל נפשך ובכל מאדך',
+    originalLanguage: '希伯来语', originalLabel: '希伯来文原典', modernTranslation: '你要尽心、尽性、尽力，爱上主——你的神。',
+    reflection: '当价值只停留在口头，生活会被无数小冲动拆散。“全心”是让思想、情感与行动朝同一方向靠拢。',
+    method: '把今天最重要的价值，翻译成一个看得见的行为。',
+    practice: '写下你最想忠于的一个价值，然后补完：今天我会用“____”来证明它。', duration: 4,
+    needs: ['意义韧性', '专注行动'], tags: ['全心', '爱', '价值'], sourceKind: '原典选段', sourceUrl: 'https://www.sefaria.org/Deuteronomy.6.5', sourceNote: '原文为《Deuteronomy》6:5 希伯来文；中文为 HOS 学习译文。',
+  },
+  {
+    id: 'islam-remembrance', category: '世界宗教', religionGroup: '伊斯兰教', tradition: '伊斯兰教', work: '《古兰经》', chapter: '13:28', title: '让心回到所敬畏与信赖的中心',
+    original: 'ٱلَّذِينَ ءَامَنُوا۟ وَتَطْمَئِنُّ قُلُوبُهُم بِذِكْرِ ٱللَّهِ ۗ أَلَا بِذِكْرِ ٱللَّهِ تَطْمَئِنُّ ٱلْقُلُوبُ',
+    originalLanguage: '阿拉伯语', originalLabel: '阿拉伯文原典', modernTranslation: '那些信仰的人，他们的心因记念真主而安定。须知，心在记念真主中获得安定。',
     reflection: '当注意力被无数小事撕散，人需要回到一个更高、更稳定的价值中心，重新排列轻重。',
     method: '用安静的记念、祈祷或价值回顾，把心从纷乱带回所信赖的方向。',
     practice: '安静一分钟，重复一个与你信念相符的核心词，并问：此刻最合乎它的行动是什么？', duration: 4,
-    needs: ['安定身心', '意义韧性'], tags: ['记念', '安宁', '信念'], sourceKind: '义旨转述', sourceNote: 'HOS 依据《古兰经》13:28 的义旨转述；请以正规阿文文本与权威译注为准。',
+    needs: ['安定身心', '意义韧性'], tags: ['记念', '安宁', '信念'], sourceKind: '原典选段', sourceUrl: 'https://quran.com/13/28', sourceNote: '原文为《古兰经》13:28 阿拉伯文；中文为 HOS 学习译文，信仰实践请以正规阿文与权威译注为准。',
   },
   {
-    id: 'gita-action', category: '世界宗教', tradition: '印度教', work: '《薄伽梵歌》', chapter: '2:47', title: '专注行动，不把心系死在结果',
-    original: '义旨：你可以全力行动，却不能把自己对行动的权利误当作对结果的控制。',
+    id: 'gita-action', category: '世界宗教', religionGroup: '印度教', tradition: '印度教', work: '《薄伽梵歌》', chapter: '2:47', title: '专注行动，不把心系死在结果',
+    original: 'कर्मण्येवाधिकारस्ते मा फलेषु कदाचन।\nमा कर्मफलहेतुर्भूर्मा ते सङ्गोऽस्त्वकर्मणि॥२।४७॥',
+    originalLanguage: '梵语', originalLabel: '天城体梵文原典', modernTranslation: '你的权责在于行动本身，不在于占有行动的结果。不要把结果当作行动的唯一动机，也不要因此执著于不行动。',
     reflection: '结果受多重条件影响。把注意放回可投入的行动，既能减少焦虑，也能提升当下工作的质量。',
     method: '用过程指标替代单一结果指标：今天投入多久、完成几轮、获得什么反馈。',
     practice: '为一件重要的事设一个只与行动有关的完成标准，并专注完成这一轮。', duration: 5,
-    needs: ['专注行动', '意义韧性'], tags: ['行动', '结果', '瑜伽'], sourceKind: '义旨转述', sourceNote: 'HOS 依据《Bhagavad Gita》2:47 的通行义旨转述，不替代宗教或学术译本。',
+    needs: ['专注行动', '意义韧性'], tags: ['行动', '结果', '瑜伽'], sourceKind: '原典选段', sourceUrl: 'https://www.gitasupersite.iitk.ac.in/srimad?field_chapter_value=2&field_nsutra_value=47&language=dv', sourceNote: '原文为《薄伽梵歌》2:47 梵文；中文为 HOS 学习译文。',
   },
   {
-    id: 'sikh-honest-work', category: '世界宗教', tradition: '锡克教', work: '《古鲁·格兰特·萨希卜》传统', chapter: 'Kirat Karo', title: '让诚实劳动成为修行的一部分',
-    original: '义旨：以诚实劳动生活，在记念与分享中服务共同体。',
+    id: 'isha-stewardship', category: '世界宗教', religionGroup: '印度教', tradition: '印度教', work: '《伊沙奥义书》', chapter: '第一颂', title: '享用世界，但不把世界占为己有',
+    original: 'ईशावास्यमिदं सर्वं यत्किञ्च जगत्यां जगत् ।\nतेन त्यक्तेन भुञ्जीथा मा गृधः कस्यस्विद्धनम् ॥१॥',
+    originalLanguage: '梵语', originalLabel: '天城体梵文原典', modernTranslation: '这个流动世界中的一切，都被神圣的存在所覆护。以放下占有的心来受用它；不要贪求属于任何人的财物。',
+    reflection: '当人不再把一切当作必须占有的东西，反而更能珍惜、使用与照管它们。',
+    method: '把“拥有”的语言改成“受托照管”，重新检查使用方式。',
+    practice: '选一件你很在意的东西，问：如果我是它的照管者，今天会怎样对待它？', duration: 5,
+    needs: ['关系慈悲', '意义韧性'], tags: ['放下占有', '照管', '节制'], sourceKind: '原典选段', sourceUrl: 'https://upanishads.org.in/upanishads/1/1', sourceNote: '原文为《伊沙奥义书》第一颂梵文；中文为 HOS 学习译文。',
+  },
+  {
+    id: 'yoga-still-mind', category: '世界宗教', religionGroup: '印度教·瑜伽', tradition: '印度教·瑜伽', work: '《瑜伽经》', chapter: '1:2', title: '让心的波动安静下来',
+    original: 'योगश्चित्तवृत्तिनिरोधः॥१।२॥',
+    originalLanguage: '梵语', originalLabel: '天城体梵文原典', modernTranslation: '瑜伽，是心识活动与波动的安止。',
+    reflection: '安止不是粗暴消灭念头，而是不再被每一个波动立即带走。',
+    method: '用稳定的呼吸或身体感受作为锚点，波动出现时只观察并返回。',
+    practice: '自然呼吸两分钟。每次念头带走注意时，轻声标记“想法”，再回到呼吸。', duration: 3,
+    needs: ['安定身心', '认知清明'], tags: ['瑜伽', '安止', '心识'], sourceKind: '原典选段', sourceUrl: 'https://www.gitasupersite.iitk.ac.in/yogasutra_content?field_chapter_value=1&field_nsutra_value=2&language=dv', sourceNote: '原文为帕坦伽利《瑜伽经》1:2 梵文；中文为 HOS 学习译文。',
+  },
+  {
+    id: 'sikh-honest-work', category: '世界宗教', religionGroup: '锡克教', tradition: '锡克教', work: '《古鲁·格兰特·萨希卜》', chapter: 'Ang 1245', title: '让诚实劳动成为修行的一部分',
+    original: 'ਘਾਲਿ ਖਾਇ ਕਿਛੁ ਹਥਹੁ ਦੇਇ ॥\nਨਾਨਕ ਰਾਹੁ ਪਛਾਣਹਿ ਸੇਇ ॥੧॥',
+    originalLanguage: '古鲁木奇文', originalLabel: '古鲁木奇文原典', modernTranslation: '辛勤工作以谋生，并从自己手中分享一部分给他人；纳纳克说，这样的人认出了正路。',
     reflection: '精神成长不只在抽离日常时发生，也在认真工作、公平取得、愿意分享的生活方式里发生。',
     method: '把工作看成价值实践：诚实、专注、服务与分享分别如何落在今天？',
     practice: '选择一项普通工作，用完整注意做十分钟，并明确它最终在服务谁。', duration: 5,
-    needs: ['专注行动', '关系慈悲', '意义韧性'], tags: ['劳动', '服务', '分享'], sourceKind: '义旨转述', sourceNote: 'HOS 依据锡克教 Kirat Karo 等核心实践义旨转述，不替代宗教权威文本。',
+    needs: ['专注行动', '关系慈悲', '意义韧性'], tags: ['劳动', '服务', '分享'], sourceKind: '原典选段', sourceUrl: 'https://www.srigranth.org/servlet/gurbani.gurbani?Action=Page&Param=1245&english=t', sourceNote: '原文为《古鲁·格兰特·萨希卜》第 1245 页古鲁木奇文；中文为 HOS 学习译文。',
   },
 ]
 

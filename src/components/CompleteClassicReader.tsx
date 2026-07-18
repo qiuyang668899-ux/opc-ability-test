@@ -32,6 +32,7 @@ type Props = {
 }
 
 export default function CompleteClassicReader({ book, onClose }: Props) {
+  const isGuide = book.modernKind === 'guide'
   const [original, setOriginal] = useState('')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -162,8 +163,8 @@ export default function CompleteClassicReader({ book, onClose }: Props) {
   )
 
   const renderModern = () => (
-    <section className="complete-reader-modern" aria-label="完整现代译文">
-      <header><span>现代译文·全文</span><small>HOS 现代直译</small></header>
+    <section className="complete-reader-modern" aria-label={isGuide ? '现代学习导读' : '完整现代译文'}>
+      <header><span>{isGuide ? '现代导读·按卷' : '现代译文·全文'}</span><small>{isGuide ? '原典结构导读，非逐句全译' : 'HOS 现代直译'}</small></header>
       {book.chapters.map((chapter) => (
         <article key={chapter.id} id={`${book.id}-${chapter.id}`} className="complete-reader-chapter">
           <h2>{chapter.title}</h2>
@@ -187,7 +188,7 @@ export default function CompleteClassicReader({ book, onClose }: Props) {
         <div className="classic-reader-toolbar complete-reader-toolbar">
           <div role="tablist" aria-label="阅读方式">
             <button role="tab" aria-selected={mode === 'original'} className={mode === 'original' ? 'active' : ''} onClick={() => updateMode('original')}>原典</button>
-            <button role="tab" aria-selected={mode === 'modern'} className={mode === 'modern' ? 'active' : ''} onClick={() => updateMode('modern')}>今译</button>
+            <button role="tab" aria-selected={mode === 'modern'} className={mode === 'modern' ? 'active' : ''} onClick={() => updateMode('modern')}>{isGuide ? '导读' : '今译'}</button>
             <button role="tab" aria-selected={mode === 'parallel'} className={mode === 'parallel' ? 'active' : ''} onClick={() => updateMode('parallel')}>对照</button>
           </div>
           <div className="classic-reader-tools">
@@ -201,8 +202,8 @@ export default function CompleteClassicReader({ book, onClose }: Props) {
         </div>
 
         {tocOpen && (
-          <nav className="complete-reader-toc" aria-label="现代译文目录">
-            <div><strong>章节目录</strong><small>{book.chapters.length} 章·点击跳转</small></div>
+          <nav className="complete-reader-toc" aria-label={isGuide ? '学习导读目录' : '现代译文目录'}>
+            <div><strong>{isGuide ? '分卷导读' : '章节目录'}</strong><small>{book.chapters.length} {isGuide ? '卷' : '章'}·点击跳转</small></div>
             <div>{book.chapters.map((chapter) => <button key={chapter.id} onClick={() => { if (mode === 'original') updateMode('modern'); window.setTimeout(() => jumpToChapter(chapter.id), 40) }}>{chapter.title}</button>)}</div>
           </nav>
         )}
@@ -213,7 +214,7 @@ export default function CompleteClassicReader({ book, onClose }: Props) {
               <span>{book.category} · {book.tradition}</span>
               <h1>{book.title}</h1>
               <p>{book.edition}</p>
-              <div className="complete-reader-badges"><span><BookOpenText size={12} />原典全文</span><span><Check size={12} />现代译文</span><span><ShieldCheck size={12} />永久免费</span></div>
+              <div className="complete-reader-badges"><span><BookOpenText size={12} />原典全文</span><span><Check size={12} />{isGuide ? '分卷导读' : '完整今译'}</span><span><ShieldCheck size={12} />永久免费</span></div>
               <p className="complete-reader-description">{book.description}</p>
             </div>
 
@@ -224,7 +225,7 @@ export default function CompleteClassicReader({ book, onClose }: Props) {
 
             <section className="complete-reader-source">
               <ShieldCheck size={17} />
-              <div><strong>版本与边界</strong><p>原典由 CBETA 2026.R1 数字资料库提供，仅用于免费、非商业阅读；HOS 现代译文是学习辅助稿，不替代宗教传承或学术校注。</p><a href={book.sourceUrl} target="_blank" rel="noreferrer">在 CBETA 核对原典<ExternalLink size={12} /></a>{cached && <small>· 本次已从本机缓存读取</small>}</div>
+              <div><strong>版本与边界</strong><p>原典由 CBETA 2026.R1 数字资料库提供，仅用于免费、非商业阅读；{isGuide ? 'HOS 内容是按卷学习导读，不是逐句全译。' : 'HOS 现代译文是学习辅助稿。'}它们均不替代宗教传承或学术校注。</p><a href={book.sourceUrl} target="_blank" rel="noreferrer">在 CBETA 核对原典<ExternalLink size={12} /></a>{cached && <small>· 本次已从本机缓存读取</small>}</div>
             </section>
 
             <section className="classic-reader-note complete-reader-note">

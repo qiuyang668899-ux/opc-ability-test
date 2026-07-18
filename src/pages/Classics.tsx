@@ -40,21 +40,25 @@ import {
 import { loadState, saveState } from '../stores/useStore'
 import VoiceInputButton from '../components/VoiceInputButton'
 import CompleteClassicReader from '../components/CompleteClassicReader'
+import CuratedDaoistReader from '../components/CuratedDaoistReader'
 import OpenCorpusReader from '../components/OpenCorpusReader'
+import { JINGMING_ZONGJIAO_LU } from '../data/curatedDaoist'
 
 type PracticeNote = { passageId: string; text: string; createdAt: number }
 type PracticeCompletion = { passageId: string; createdAt: number; duration: number }
 type ReaderMode = 'original' | 'guide' | 'parallel'
 type ReaderTone = 'paper' | 'quiet' | 'night'
-type CanonDivision = '儒' | '释' | '道' | '科' | '宗'
+type CanonDivision = '儒' | '释' | '道' | '杂' | '宗'
+type ReligionGroup = '全部' | '基督教' | '伊斯兰教' | '犹太教' | '印度教' | '印度教·瑜伽' | '锡克教'
 
-const CANON_DIVISIONS: CanonDivision[] = ['儒', '释', '道', '科', '宗']
+const CANON_DIVISIONS: CanonDivision[] = ['儒', '释', '道', '杂', '宗']
+const RELIGION_GROUPS: ReligionGroup[] = ['全部', '基督教', '伊斯兰教', '犹太教', '印度教', '印度教·瑜伽', '锡克教']
 const CANON_DIVISION_META: Record<CanonDivision, { eyebrow: string; title: string; description: string }> = {
   儒: { eyebrow: 'CONFUCIAN · HUMANITIES', title: '修身、关系与人文历史', description: '儒家原典连同史、文典籍，放在同一条人文理解路径中。' },
-  释: { eyebrow: 'BUDDHIST CANON', title: '观照、智慧与解脱', description: '先读校勘原典与完整今译，再按需进入 CBETA 全藏研究。' },
+  释: { eyebrow: 'BUDDHIST CANON', title: '观照、智慧与解脱', description: '先读校勘原典，再选择完整今译或分卷导读，按需进入 CBETA 全藏研究。' },
   道: { eyebrow: 'DAOIST CANON', title: '规律、自然与生命方法', description: '从老庄到道家诸典，阅读原文、今译与章节脉络。' },
-  科: { eyebrow: 'SCIENCE · PRACTICE', title: '实学、技艺与行动智慧', description: '将科学、医典、兵法与实践类典籍收束为可检索的实学谱系。' },
-  宗: { eyebrow: 'WORLD TRADITIONS', title: '世界宗教原典导读', description: '只呈现来源状态清楚的选段；完整权威译本核对完成后再收入全文馆。' },
+  杂: { eyebrow: 'MISCELLANY · PRACTICE', title: '医典、实学、兵法与技艺', description: '这里是“杂”纲目：收录暂不属于儒释道宗的科学、医典、兵法、技艺与实学文献。' },
+  宗: { eyebrow: 'WORLD RELIGIONS', title: '六个传统·八条原典对照', description: '基督教、伊斯兰教、犹太教、印度教、瑜伽传统与锡克教；每条同时显示原语原文、中文学习译文与出处。' },
 }
 
 function formatTime(seconds: number) {
@@ -91,9 +95,11 @@ export default function Classics() {
   const [completed, setCompleted] = useState(false)
   const [readerOpen, setReaderOpen] = useState(false)
   const [completeBookId, setCompleteBookId] = useState<string | null>(null)
+  const [jingmingOpen, setJingmingOpen] = useState(false)
   const [openBookName, setOpenBookName] = useState<string | null>(null)
   const [corpusQuery, setCorpusQuery] = useState('')
   const [canonDivision, setCanonDivision] = useState<CanonDivision>('儒')
+  const [religionFilter, setReligionFilter] = useState<ReligionGroup>('全部')
   const [showAllCorpus, setShowAllCorpus] = useState(false)
   const [readerMode, setReaderMode] = useState<ReaderMode>(() => loadState<ReaderMode>('classicReaderMode', 'parallel'))
   const [readerTone, setReaderTone] = useState<ReaderTone>(() => loadState<ReaderTone>('classicReaderTone', 'paper'))
@@ -110,7 +116,7 @@ export default function Classics() {
       ? ['儒', '史', '文']
       : canonDivision === '道'
         ? ['道']
-        : canonDivision === '科'
+        : canonDivision === '杂'
           ? ['科', '术']
           : []
     const categoryMatches = divisionCategories.includes(book.category)
@@ -118,12 +124,13 @@ export default function Classics() {
     return categoryMatches && queryMatches
   }), [canonDivision, corpusQuery, openCorpusCatalog])
   const visibleCorpus = showAllCorpus || corpusQuery.trim() ? corpusFiltered : corpusFiltered.slice(0, 12)
-  const bilingualTitleCount = openCorpusCatalog.length + COMPLETE_CLASSIC_BOOKS.length
+  const visibleReligionGuides = religionFilter === '全部' ? religionGuides : religionGuides.filter((item) => item.religionGroup === religionFilter)
+  const bilingualTitleCount = openCorpusCatalog.length + COMPLETE_CLASSIC_BOOKS.length + 1
   const canonCounts = useMemo<Record<CanonDivision, number>>(() => ({
     儒: openCorpusCatalog.filter((book) => ['儒', '史', '文'].includes(book.category)).length,
     释: COMPLETE_CLASSIC_BOOKS.length,
-    道: openCorpusCatalog.filter((book) => book.category === '道').length,
-    科: openCorpusCatalog.filter((book) => ['科', '术'].includes(book.category)).length,
+    道: openCorpusCatalog.filter((book) => book.category === '道').length + 1,
+    杂: openCorpusCatalog.filter((book) => ['科', '术'].includes(book.category)).length,
     宗: religionGuides.length,
   }), [openCorpusCatalog, religionGuides])
   const divisionMeta = CANON_DIVISION_META[canonDivision]
@@ -137,6 +144,7 @@ export default function Classics() {
       item.chapter,
       item.tradition,
       item.original,
+      item.modernTranslation ?? '',
       item.reflection,
       item.method,
       item.practice,
@@ -251,7 +259,7 @@ export default function Classics() {
   const speakOriginal = () => {
     if (!('speechSynthesis' in window)) return
     window.speechSynthesis.cancel()
-    const utterance = new SpeechSynthesisUtterance(passage.original)
+    const utterance = new SpeechSynthesisUtterance(passage.modernTranslation ?? passage.original)
     utterance.lang = 'zh-CN'
     utterance.rate = 0.78
     window.speechSynthesis.speak(utterance)
@@ -287,6 +295,7 @@ export default function Classics() {
   const selectCanonDivision = (division: CanonDivision) => {
     setCanonDivision(division)
     setCorpusQuery('')
+    setReligionFilter('全部')
     setShowAllCorpus(false)
   }
 
@@ -300,7 +309,7 @@ export default function Classics() {
           <p>不急着相信某个答案。先读原意，再理解路径，最后用一次小练习亲自验证。</p>
         </div>
         <div className="classic-library-stats">
-          <span><strong>{bilingualTitleCount}</strong>双语典籍</span>
+          <span><strong>{bilingualTitleCount}</strong>馆藏典籍</span>
           <span><strong>{CLASSIC_PASSAGES.length}</strong>智慧导读</span>
           <span><strong>{completionCount}</strong>完成修习</span>
         </div>
@@ -370,8 +379,13 @@ export default function Classics() {
           <div><p>{passage.sourceKind}</p><h2>{passage.title}</h2></div>
           <button onClick={toggleFavorite} className={favorites.includes(passage.id) ? 'favorite active' : 'favorite'} aria-label={favorites.includes(passage.id) ? '取消收藏' : '收藏'}><Heart size={18} fill={favorites.includes(passage.id) ? 'currentColor' : 'none'} /></button>
         </div>
-        <blockquote>{passage.original}</blockquote>
-        <button onClick={speakOriginal} className="read-aloud"><Volume2 size={16} />慢速朗读这一段</button>
+        {passage.modernTranslation ? (
+          <div className="scripture-parallel-preview">
+            <div className="scripture-original-block" dir={passage.originalLanguage === '希伯来语' || passage.originalLanguage === '阿拉伯语' ? 'rtl' : 'auto'}><small>{passage.originalLabel ?? '原语原典'}</small><blockquote>{passage.original}</blockquote></div>
+            <div className="scripture-translation-block"><small>中文学习译文</small><p>{passage.modernTranslation}</p></div>
+          </div>
+        ) : <blockquote>{passage.original}</blockquote>}
+        <button onClick={speakOriginal} className="read-aloud"><Volume2 size={16} />{passage.modernTranslation ? '朗读中文译文' : '慢速朗读这一段'}</button>
         <button onClick={() => openPassage(passage.id)} className="reader-open-action"><BookMarked size={16} />进入沉浸阅读</button>
 
         <div className="reading-path-grid">
@@ -387,7 +401,7 @@ export default function Classics() {
         </div>
 
         {passage.sourceNote && <p className="passage-source-note">{passage.sourceNote}</p>}
-        {passage.sourceUrl && <a className="passage-source-link" href={passage.sourceUrl} target="_blank" rel="noreferrer">前往 CBETA 核对原典<ExternalLink size={13} /></a>}
+        {passage.sourceUrl && <a className="passage-source-link" href={passage.sourceUrl} target="_blank" rel="noreferrer">核对原典来源<ExternalLink size={13} /></a>}
 
         <div className="reading-nav">
           <button onClick={() => movePassage(-1)} aria-label="上一篇"><ChevronLeft size={18} /></button>
@@ -416,12 +430,12 @@ export default function Classics() {
 
       <section className="canon-unified-library" aria-labelledby="canon-unified-title">
         <div className="hos-section-title">
-          <div><p className="section-kicker">ONE CANON · 一个总馆</p><h2 id="canon-unified-title">儒 · 释 · 道 · 科 · 宗经典总馆</h2></div>
-          <span className="complete-library-free"><ShieldCheck size={13} />{bilingualTitleCount} 部全文</span>
+          <div><p className="section-kicker">ONE CANON · 一个总馆</p><h2 id="canon-unified-title">儒 · 释 · 道 · 杂 · 宗经典总馆</h2></div>
+          <span className="complete-library-free"><ShieldCheck size={13} />{bilingualTitleCount} 部馆藏</span>
         </div>
         <p className="canon-unified-intro">原来的多个书库已合为一个板块。先按纲目选择，再直接阅读原文、今译或严谨标注的导读，不需要在不同模块之间来回寻找。</p>
 
-        <div className="canon-division-tabs" role="tablist" aria-label="儒释道科宗经典纲目">
+        <div className="canon-division-tabs" role="tablist" aria-label="儒释道杂宗经典纲目">
           {CANON_DIVISIONS.map((division) => (
             <button key={division} role="tab" aria-selected={canonDivision === division} className={canonDivision === division ? 'active' : ''} onClick={() => selectCanonDivision(division)}>
               <strong>{division}</strong><small>{canonCounts[division]}</small>
@@ -435,17 +449,17 @@ export default function Classics() {
           {canonDivision === '儒' && <button onClick={() => setOpenBookName('中庸')}>读《中庸》<ChevronRight size={14} /></button>}
           {canonDivision === '释' && <button onClick={() => setCompleteBookId('heart-sutra-complete')}>读《心经》<ChevronRight size={14} /></button>}
           {canonDivision === '道' && <button onClick={() => setOpenBookName('老子')}>读《老子》<ChevronRight size={14} /></button>}
-          {canonDivision === '科' && <button onClick={() => setOpenBookName('黄帝内经')}>读《内经》<ChevronRight size={14} /></button>}
+          {canonDivision === '杂' && <button onClick={() => setOpenBookName('黄帝内经')}>读《内经》<ChevronRight size={14} /></button>}
         </div>
 
         {canonDivision === '释' && (
           <div className="canon-section-block">
-            <div className="canon-section-heading"><div><p className="section-kicker">CBETA VERIFIED · 沉浸原典</p><h3>校勘原文与完整现代译文</h3></div><span>2 部</span></div>
+            <div className="canon-section-heading"><div><p className="section-kicker">CBETA VERIFIED · 沉浸原典</p><h3>校勘原文、完整今译与分卷导读</h3></div><span>{COMPLETE_CLASSIC_BOOKS.length} 部</span></div>
             <div className="complete-library-grid">
               {COMPLETE_CLASSIC_BOOKS.map((book, index) => (
                 <button key={book.id} onClick={() => setCompleteBookId(book.id)}>
                   <span className="complete-library-number">{String(index + 1).padStart(2, '0')}</span>
-                  <span className="complete-library-copy"><small>{book.tradition} · {book.sourceWork}</small><strong>{book.title}</strong><em>{book.edition}</em><span><i><BookOpenText size={12} />原典全文</i><i><Check size={12} />{book.chapters.length} 章今译</i></span></span>
+                  <span className="complete-library-copy"><small>{book.tradition} · {book.sourceWork}</small><strong>{book.title}</strong><em>{book.edition}</em><span><i><BookOpenText size={12} />原典全文</i><i><Check size={12} />{book.modernKind === 'guide' ? `${book.chapters.length} 卷导读` : `${book.chapters.length} 章今译`}</i></span></span>
                   <ChevronRight size={18} />
                 </button>
               ))}
@@ -456,7 +470,7 @@ export default function Classics() {
               <div>
                 <p className="section-kicker">深度研究 · CBETA 2026.R1</p>
                 <h2>4,882 部佛典原典研究入口</h2>
-                <p>完整今译阅读留在 HOS；学术异文、版本记录与全藏检索进入 CBETA 原站。</p>
+                <p>应用内原典、已完成今译与分卷导读留在 HOS；学术异文、版本记录与全藏检索进入 CBETA 原站。</p>
               </div>
               <div className="cbeta-portal-actions">
                 <a href="https://cbetaonline.cn/" target="_blank" rel="noreferrer">进入全藏检索<ExternalLink size={14} /></a>
@@ -468,7 +482,16 @@ export default function Classics() {
 
         {canonDivision !== '释' && canonDivision !== '宗' && (
           <div className="canon-section-block">
-            <div className="canon-section-heading"><div><p className="section-kicker">FULL BILINGUAL READING · 全文阅读</p><h3>{canonCounts[canonDivision]} 部原文与现代译文</h3></div><span>应用内直读</span></div>
+            <div className="canon-section-heading"><div><p className="section-kicker">FULL READING · 全文阅读</p><h3>{canonCounts[canonDivision]} 部原文、今译与导读</h3></div><span>应用内直读</span></div>
+            {canonDivision === '道' && (
+              <div className="curated-daoist-feature">
+                <button onClick={() => setJingmingOpen(true)}>
+                  <span className="curated-daoist-seal">淨</span>
+                  <span><small>淨明道 · KR5i0041 · 两卷原典</small><strong>{JINGMING_ZONGJIAO_LU.title}</strong><em>{JINGMING_ZONGJIAO_LU.edition}</em><i><BookOpenText size={12} />应用内原典直读 · 分卷现代导读</i></span>
+                  <ChevronRight size={18} />
+                </button>
+              </div>
+            )}
             <div className="open-corpus-search">
               <div className="voice-enabled-control">
                 <Search size={16} />
@@ -500,21 +523,27 @@ export default function Classics() {
 
         {canonDivision === '宗' && (
           <div className="canon-section-block">
-            <div className="canon-section-heading"><div><p className="section-kicker">SOURCE-AWARE GUIDES · 来源透明</p><h3>{religionGuides.length} 条世界宗教原典导读</h3></div><span>逐条标注</span></div>
+            <div className="canon-section-heading"><div><p className="section-kicker">ORIGINAL · TRANSLATION · SOURCE</p><h3>{religionGuides.length} 条世界宗教原典与翻译</h3></div><span>6 个传统</span></div>
+            <div className="religion-group-tabs" role="tablist" aria-label="按宗教传统筛选">
+              {RELIGION_GROUPS.map((group) => {
+                const count = group === '全部' ? religionGuides.length : religionGuides.filter((item) => item.religionGroup === group).length
+                return <button key={group} role="tab" aria-selected={religionFilter === group} className={religionFilter === group ? 'active' : ''} onClick={() => setReligionFilter(group)}><span>{group}</span><small>{count}</small></button>
+              })}
+            </div>
             <div className="classic-shelf canon-religion-list">
-              {religionGuides.map((item) => (
+              {visibleReligionGuides.map((item) => (
                 <button key={item.id} onClick={() => openPassage(item.id)}>
-                  <span className="classic-shelf-index">宗</span>
-                  <span><small>{item.tradition} · {item.work}</small><strong>{item.title}</strong><em>{item.sourceKind} · {item.duration} 分钟</em></span>
+                  <span className="classic-shelf-index">{item.religionGroup?.slice(0, 1) ?? '宗'}</span>
+                  <span><small>{item.tradition} · {item.work} {item.chapter}</small><strong>{item.title}</strong><em>{item.originalLabel} · 中文学习译文 · {item.duration} 分钟</em></span>
                   <ChevronRight size={17} />
                 </button>
               ))}
             </div>
-            <p className="canon-source-note"><ShieldCheck size={14} />完整权威原文与具体译本仍在逐部核对；目前不会把义旨转述标成完整原典。</p>
+            <p className="canon-source-note"><ShieldCheck size={14} />每条均已改为可核对的原语原典选段，并与 HOS 中文学习译文分层显示；不再用义旨转述冒充原文。</p>
           </div>
         )}
 
-        <p className="canon-classification-note">纲目用于降低查找负担，不等同于学术分类：史、文归入“儒·人文”，医典、实学与兵法归入“科·实践”。</p>
+        <p className="canon-classification-note">纲目用于降低查找负担，不等同于学术分类：史、文归入“儒·人文”；医典、实学、兵法与技艺收入“杂”纲目，不再误称为“科”。</p>
       </section>
 
       <section className="classic-boundary">
@@ -558,15 +587,17 @@ export default function Classics() {
 
                 {(readerMode === 'original' || readerMode === 'parallel') && (
                   <section className="classic-reader-original">
-                    <header><span>原文</span><button onClick={speakOriginal}><Volume2 size={14} />朗读</button></header>
-                    <blockquote>{passage.original}</blockquote>
+                    <header><span>{passage.originalLabel ?? '原文'}</span><button onClick={speakOriginal}><Volume2 size={14} />{passage.modernTranslation ? '听中文译文' : '朗读'}</button></header>
+                    <blockquote dir={passage.originalLanguage === '希伯来语' || passage.originalLanguage === '阿拉伯语' ? 'rtl' : 'auto'}>{passage.original}</blockquote>
                     {passage.sourceNote && <small>{passage.sourceNote}</small>}
+                    {passage.sourceUrl && <a className="passage-source-link" href={passage.sourceUrl} target="_blank" rel="noreferrer">核对原典来源<ExternalLink size={12} /></a>}
                   </section>
                 )}
 
                 {(readerMode === 'guide' || readerMode === 'parallel') && (
                   <section className="classic-reader-guide">
                     <header><span>今读</span><small>HOS 修习导读</small></header>
+                    {passage.modernTranslation && <div className="classic-reader-translation"><b>译</b><article><strong>中文学习译文</strong><p>{passage.modernTranslation}</p></article></div>}
                     <div><b>道</b><article><strong>看见原则</strong><p>{passage.reflection}</p></article></div>
                     <div><b>法</b><article><strong>理解路径</strong><p>{passage.method}</p></article></div>
                     <div><b>术</b><article><strong>此刻践行</strong><p>{passage.practice}</p></article></div>
@@ -594,6 +625,7 @@ export default function Classics() {
       ), document.body)}
 
       {completeBook && <CompleteClassicReader key={completeBook.id} book={completeBook} onClose={() => setCompleteBookId(null)} />}
+      {jingmingOpen && <CuratedDaoistReader book={JINGMING_ZONGJIAO_LU} onClose={() => setJingmingOpen(false)} />}
       {openBook && <OpenCorpusReader key={openBook.id} book={openBook} onClose={() => setOpenBookName(null)} />}
     </div>
   )

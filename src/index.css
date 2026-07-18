@@ -2555,6 +2555,20 @@ button:focus-visible, a:focus-visible, input:focus-visible {
 .canon-section-block .open-corpus-search { margin-top: 14px; }
 .canon-search-empty { min-height: 120px; margin-top: 14px; display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 8px; border: 1px dashed var(--color-hos-border); border-radius: 15px; color: var(--color-hos-text-muted); font-size: 8.5px; }
 .canon-religion-list { max-height: none; }
+.religion-group-tabs { margin-top: 15px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 7px; }
+.religion-group-tabs button { min-height: 42px; padding: 0 11px; display: flex; align-items: center; justify-content: space-between; gap: 9px; border: 1px solid var(--color-hos-border); border-radius: 13px; color: var(--color-hos-text-dim); background: color-mix(in srgb, var(--hos-card-bg) 82%, var(--hos-page-bg)); font-size: 8.5px; text-align: left; }
+.religion-group-tabs button small { min-width: 20px; color: var(--color-hos-text-muted); font-family: var(--font-family-mono); font-size: 7.5px; text-align: right; }
+.religion-group-tabs button.active { color: var(--color-hos-cyan); border-color: color-mix(in srgb, var(--color-hos-cyan) 33%, var(--color-hos-border)); background: var(--hos-accent-faint); }
+.curated-daoist-feature { margin-top: 15px; }
+.curated-daoist-feature > button { width: 100%; min-height: 112px; padding: 16px; display: grid; grid-template-columns: 48px minmax(0, 1fr) 24px; align-items: center; gap: 14px; border: 1px solid color-mix(in srgb, var(--color-hos-cyan) 24%, var(--color-hos-border)); border-radius: 18px; color: var(--color-hos-text); background: linear-gradient(125deg, color-mix(in srgb, var(--hos-accent-faint) 72%, var(--hos-card-bg)), var(--hos-card-bg)); text-align: left; }
+.curated-daoist-feature .curated-daoist-seal { width: 48px; height: 48px; display: flex; align-items: center; justify-content: center; border-radius: 16px; color: var(--color-hos-cyan); background: var(--hos-card-bg); font-family: 'STKaiti', 'KaiTi', serif; font-size: 21px; box-shadow: 0 8px 20px var(--hos-shadow-color); }
+.curated-daoist-feature button > span:nth-child(2) { min-width: 0; }
+.curated-daoist-feature small, .curated-daoist-feature strong, .curated-daoist-feature em, .curated-daoist-feature i { display: block; font-style: normal; }
+.curated-daoist-feature small { color: var(--color-hos-cyan); font-size: 7.5px; }
+.curated-daoist-feature strong { margin-top: 5px; font-family: 'STKaiti', 'KaiTi', serif; font-size: 15px; }
+.curated-daoist-feature em { margin-top: 4px; color: var(--color-hos-text-muted); font-size: 8px; line-height: 1.5; }
+.curated-daoist-feature i { margin-top: 8px; color: var(--color-hos-text-dim); font-size: 7.5px; }
+.curated-daoist-feature i svg { margin-right: 4px; vertical-align: -2px; }
 .canon-source-note, .canon-classification-note { margin-top: 13px; padding: 11px 12px; display: flex; align-items: flex-start; gap: 7px; border-radius: 13px; color: var(--color-hos-text-dim); background: var(--hos-accent-faint); font-size: 8px; line-height: 1.65; }
 .canon-source-note svg { flex: 0 0 auto; color: var(--color-hos-cyan); }
 .canon-classification-note { margin-top: 18px; display: block; color: var(--color-hos-text-muted); background: color-mix(in srgb, var(--hos-page-bg) 63%, transparent); }
@@ -2567,6 +2581,13 @@ button:focus-visible, a:focus-visible, input:focus-visible {
 .reading-title-row .favorite { width: 42px; height: 42px; flex: 0 0 42px; display: flex; align-items: center; justify-content: center; border: 1px solid var(--color-hos-border); border-radius: 50%; color: var(--color-hos-text-muted); background: var(--hos-card-bg); }
 .reading-title-row .favorite.active { color: #bd6b63; border-color: rgba(189, 107, 99, .22); background: #fff0ed; }
 .reading-card > blockquote { padding: 17px 0 17px 17px; }
+.scripture-parallel-preview { margin-top: 19px; display: grid; gap: 9px; }
+.scripture-original-block, .scripture-translation-block { padding: 17px; border-radius: 17px; }
+.scripture-original-block { border: 1px solid color-mix(in srgb, var(--color-hos-purple) 18%, var(--color-hos-border)); background: color-mix(in srgb, var(--hos-card-bg) 82%, #f5f1f8); }
+.scripture-translation-block { border: 1px solid color-mix(in srgb, var(--color-hos-cyan) 18%, var(--color-hos-border)); background: color-mix(in srgb, var(--hos-card-bg) 82%, #f1f6f2); }
+.scripture-parallel-preview small { display: block; color: var(--color-hos-text-muted); font-family: var(--font-family-mono); font-size: 7.5px; letter-spacing: .07em; }
+.scripture-original-block blockquote { margin-top: 10px; color: var(--color-hos-text); font-family: 'Noto Serif', 'Times New Roman', 'STSong', serif; font-size: 17px; line-height: 1.85; white-space: pre-line; }
+.scripture-translation-block p { margin-top: 10px; color: var(--color-hos-text); font-family: 'STSong', 'Songti SC', serif; font-size: 14px; line-height: 1.85; }
 .reading-path-grid { margin-top: 24px; display: flex; flex-direction: column; gap: 10px; }
 .reading-path-grid > div { margin: 0; padding: 16px; display: grid; grid-template-columns: 34px minmax(0, 1fr); gap: 11px; border: 0; border-radius: 16px; }
 .reading-path-grid > div > span { width: 34px; height: 34px; display: flex; align-items: center; justify-content: center; border-radius: 11px; font-family: 'STKaiti', 'KaiTi', serif; font-size: 16px; }
@@ -2758,9 +2779,11 @@ button:focus-visible, a:focus-visible, input:focus-visible {
 .classic-reader-original > header > span, .classic-reader-guide > header > span { color: var(--color-hos-cyan); font-size: 9px; font-weight: 700; letter-spacing: .12em; }
 .classic-reader-original > header button { display: flex; align-items: center; gap: 5px; color: var(--reader-dim); font-size: 8px; }
 .classic-reader-original blockquote { margin-top: 24px; color: var(--reader-text); font-family: 'STSong', 'Songti SC', serif; font-size: var(--reader-font-size); line-height: 2.15; letter-spacing: .055em; text-align: justify; }
+.classic-reader-original blockquote[dir='rtl'] { font-family: 'Noto Naskh Arabic', 'Noto Serif Hebrew', Georgia, serif; text-align: right; letter-spacing: 0; }
 .classic-reader-original > small { margin-top: 22px; padding-top: 15px; display: block; border-top: 1px solid var(--reader-line); color: var(--reader-dim); font-size: 8px; line-height: 1.75; }
 .classic-reader-guide > header small { color: var(--reader-dim); font-size: 8px; }
 .classic-reader-guide > div { margin-top: 14px; padding: 16px; display: grid; grid-template-columns: 34px minmax(0, 1fr); gap: 12px; border-radius: 15px; background: color-mix(in srgb, var(--color-hos-cyan) 7%, var(--reader-panel)); }
+.classic-reader-guide > .classic-reader-translation { border: 1px solid color-mix(in srgb, var(--color-hos-gold) 20%, var(--reader-line)); background: color-mix(in srgb, var(--color-hos-gold) 8%, var(--reader-panel)); }
 .classic-reader-guide b { width: 34px; height: 34px; display: flex; align-items: center; justify-content: center; border-radius: 11px; color: var(--color-hos-cyan); background: var(--reader-panel); font-family: 'STKaiti', 'KaiTi', serif; font-size: 17px; }
 .classic-reader-guide strong { color: var(--reader-text); font-size: 9.5px; }
 .classic-reader-guide p { margin-top: 7px; color: var(--reader-dim); font-size: calc(var(--reader-font-size) * .6); line-height: 1.9; }
@@ -2852,7 +2875,11 @@ button:focus-visible, a:focus-visible, input:focus-visible {
 .complete-reader-source strong { color: var(--reader-text); font-size: 9px; }
 .complete-reader-source p { margin-top: 5px; font-size: 8px; line-height: 1.75; }
 .complete-reader-source a { margin-top: 8px; display: inline-flex; align-items: center; gap: 4px; color: var(--color-hos-cyan); font-size: 8px; }
+.complete-reader-source a + a { margin-left: 12px; }
 .complete-reader-source small { color: var(--reader-dim); font-size: 7.5px; }
+.jingming-volume-nav { margin-top: 18px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.jingming-volume-nav button { min-height: 42px; padding: 8px 11px; border: 1px solid var(--reader-line); border-radius: 12px; color: var(--reader-dim); background: var(--reader-panel); font-size: 8.5px; line-height: 1.45; }
+.jingming-volume-nav button.active { color: var(--color-hos-cyan); border-color: color-mix(in srgb, var(--color-hos-cyan) 35%, var(--reader-line)); background: color-mix(in srgb, var(--color-hos-cyan) 7%, var(--reader-panel)); }
 .complete-reader-note { margin-top: 22px; }
 .spin { animation: reader-spin 900ms linear infinite; }
 @keyframes reader-spin { to { transform: rotate(360deg); } }
