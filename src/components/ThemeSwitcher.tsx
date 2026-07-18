@@ -43,7 +43,7 @@ export default function ThemeSwitcher({ theme, open, onOpenChange, onThemeChange
               <div>
                 <p>VISUAL MOOD</p>
                 <h2 id="theme-sheet-title">选择此刻喜欢的界面</h2>
-                <span>三套风格功能完全一致，选择会自动记住。</span>
+                <span>四套风格功能完全一致，选择会自动记住。</span>
               </div>
               <button type="button" className="theme-sheet-close" onClick={() => onOpenChange(false)} aria-label="关闭">
                 <X size={17} />

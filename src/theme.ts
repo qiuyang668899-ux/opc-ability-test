@@ -1,4 +1,4 @@
-export type HOSTheme = 'art-bloom' | 'clear-order' | 'apricot-sun'
+export type HOSTheme = 'art-bloom' | 'clear-order' | 'apricot-sun' | 'rose-velvet'
 
 export interface ThemeOption {
   id: HOSTheme
@@ -15,6 +15,7 @@ const THEME_META_COLORS: Record<HOSTheme, string> = {
   'art-bloom': '#f4effd',
   'clear-order': '#eef0f2',
   'apricot-sun': '#faf2e7',
+  'rose-velvet': '#fff1f6',
 }
 
 export const THEME_OPTIONS: ThemeOption[] = [
@@ -38,6 +39,13 @@ export const THEME_OPTIONS: ThemeOption[] = [
     en: 'Apricot Sun',
     description: '杏仁纸色与柔暖陶橘，更有亲和力，适合阅读与夜间放松。',
     swatches: ['#fbf4ea', '#b9664f', '#e5b786'],
+  },
+  {
+    id: 'rose-velvet',
+    name: '蔷薇绒光',
+    en: 'Rose Velvet',
+    description: '从雾粉、豆沙到深蔷薇的完整粉色体系，柔软治愈，也保留清晰层级与高级质感。',
+    swatches: ['#fff1f6', '#b94f79', '#e9a9bd'],
   },
 ]
 

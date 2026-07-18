@@ -148,6 +148,48 @@
   --hos-backdrop: rgba(66, 47, 37, 0.2);
 }
 
+:root[data-hos-theme='rose-velvet'] {
+  --color-hos-bg: #fff1f6;
+  --color-hos-surface: #fff8fb;
+  --color-hos-card: #fffdfd;
+  --color-hos-card-hover: #fff0f5;
+  --color-hos-border: #efd5df;
+  --color-hos-border-light: #ddb2c3;
+  --color-hos-cyan: #b94f79;
+  --color-hos-cyan-dim: #98405f;
+  --color-hos-red: #c95876;
+  --color-hos-green: #ad627f;
+  --color-hos-purple: #a65d91;
+  --color-hos-orange: #cf7786;
+  --color-hos-teal: #b86a8b;
+  --color-hos-gold: #b76e78;
+  --color-hos-text: #49333d;
+  --color-hos-text-dim: #765864;
+  --color-hos-text-muted: #a78391;
+  --hos-body-bg: radial-gradient(circle at 8% 0%, rgba(236, 164, 190, .32), transparent 31%), radial-gradient(circle at 96% 36%, rgba(244, 193, 207, .24), transparent 34%), linear-gradient(165deg, #fff0f6 0%, #fff8fa 52%, #fcebf2 100%);
+  --hos-shell-bg: rgba(255, 248, 251, .97);
+  --hos-card-bg: #fffdfd;
+  --hos-card-glass: rgba(255, 252, 253, .95);
+  --hos-surface-bg: #fff6f9;
+  --hos-neutral-soft: #f8e9ef;
+  --hos-accent-soft: #f9dfe9;
+  --hos-accent-faint: #fbe8ef;
+  --hos-accent-panel: #fcedf3;
+  --hos-warm-soft: #fff0f2;
+  --hos-warning-soft: #fce9ee;
+  --hos-danger-soft: #fde6ed;
+  --hos-card-accent-bg: linear-gradient(140deg, #fffdfd 0%, #fbe5ed 54%, #f6dce7 100%);
+  --hos-hero-bg: radial-gradient(circle at 86% 15%, rgba(194, 78, 123, .2), transparent 35%), radial-gradient(circle at 8% 92%, rgba(238, 168, 193, .28), transparent 39%), linear-gradient(145deg, #fce4ed 0%, #fff6f9 57%, #f8dfe9 100%);
+  --hos-feature-bg: linear-gradient(135deg, #fbe3ec, #fff9fb 70%, #f6e0e9);
+  --hos-reading-bg: linear-gradient(155deg, #fffdfd, #fcebf2 62%, #f7e1ea);
+  --hos-player-bg: rgba(255, 248, 251, .97);
+  --hos-shadow-color: rgba(157, 64, 99, .1);
+  --hos-shadow-soft: 0 15px 40px rgba(157, 64, 99, .11);
+  --hos-radius-core: 20px;
+  --hos-radius-panel: 27px;
+  --hos-backdrop: rgba(83, 41, 58, .22);
+}
+
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
 html, body, #root {
@@ -2523,4 +2565,103 @@ button:focus-visible, a:focus-visible, input:focus-visible {
   .classic-three-layers small { font-size: 7px; }
   .cbeta-portal, .classic-discovery { padding: 17px; }
   .reading-card { padding: 23px 18px; }
+}
+
+/* ========== Rose Velvet: complete pink visual specification ========== */
+:root[data-hos-theme='rose-velvet'] .app-shell::before {
+  height: 390px;
+  opacity: 1;
+  background:
+    radial-gradient(circle at 10% 6%, rgba(217, 111, 151, .19), transparent 27%),
+    radial-gradient(circle at 92% 31%, rgba(244, 184, 205, .28), transparent 32%),
+    radial-gradient(circle at 62% 0%, rgba(184, 79, 122, .1), transparent 24%);
+}
+:root[data-hos-theme='rose-velvet'] .hos-glass { border-color: color-mix(in srgb, var(--color-hos-border) 92%, transparent); }
+:root[data-hos-theme='rose-velvet'] .hos-tag { background: rgba(255, 245, 249, .9); }
+:root[data-hos-theme='rose-velvet'] .theme-fab {
+  border-color: rgba(185, 79, 121, .3);
+  background: linear-gradient(135deg, rgba(255, 253, 253, .98), rgba(251, 228, 238, .97));
+}
+:root[data-hos-theme='rose-velvet'] :is(.theme-sheet, .theme-option, .hos-card, .home-voice-primary, .personal-archive-card, .journal-archive-hero, .voice-companion-sheet, .classic-library-hero, .classic-discovery, .reading-card) {
+  border-color: color-mix(in srgb, var(--color-hos-cyan) 18%, var(--color-hos-border));
+}
+:root[data-hos-theme='rose-velvet'] :is(.theme-done, .primary-action, .apple-save-state, .coach-send, .music-play-button, .cbeta-portal > a) {
+  color: #fffafd;
+  background: linear-gradient(135deg, #a9406b, #c9668c);
+  box-shadow: 0 9px 24px rgba(164, 58, 101, .18);
+}
+:root[data-hos-theme='rose-velvet'] :is(.intelligence-primary, .journal-archive-hero > button, .voice-stop, .voice-save, .voice-enter-coaching, .companion-stop, .companion-save, .companion-next) {
+  color: #fffafd;
+  background: linear-gradient(135deg, #51313f, #8f405f 72%, #b9557c);
+  box-shadow: 0 11px 28px rgba(113, 49, 74, .17);
+}
+:root[data-hos-theme='rose-velvet'] .nav-item[aria-current='page'] {
+  color: var(--color-hos-cyan);
+  background: linear-gradient(145deg, rgba(232, 159, 187, .2), rgba(251, 227, 237, .72));
+}
+:root[data-hos-theme='rose-velvet'] .ritual-shell {
+  background: radial-gradient(circle at 50% -8%, rgba(207, 101, 142, .2), transparent 35%), radial-gradient(circle at 96% 67%, rgba(242, 177, 201, .23), transparent 34%), var(--hos-shell-bg);
+}
+:root[data-hos-theme='rose-velvet'] :is(.warm-hero, .status-hero, .intelligence-hero, .coach-presence, .voice-invitation) {
+  background: var(--hos-hero-bg);
+}
+:root[data-hos-theme='rose-velvet'] :is(.home-voice-primary, .journal-archive-hero, .voice-checkin-entry) {
+  background: linear-gradient(140deg, #fffdfd 0%, #fce9f0 58%, #f7dee8 100%);
+}
+:root[data-hos-theme='rose-velvet'] :is(.archive-local, .journal-archive-hero > header > span, .voice-journal-signals > p, .intelligence-updated, .local-learning) {
+  color: var(--color-hos-cyan);
+}
+:root[data-hos-theme='rose-velvet'] :is(.music-scene-icon, .music-track-icon) {
+  color: var(--color-hos-cyan) !important;
+  background: var(--hos-accent-faint) !important;
+}
+:root[data-hos-theme='rose-velvet'] :is(.music-wave-mark, .music-library-switch button > span, .music-library-switch em, .coach-brain, .journal-chip.selected) {
+  color: var(--color-hos-cyan);
+  border-color: rgba(185, 79, 121, .22);
+  background: var(--hos-accent-faint);
+}
+:root[data-hos-theme='rose-velvet'] .music-library-switch button.active > span {
+  color: var(--color-hos-cyan);
+  background: rgba(255, 253, 253, .86);
+}
+:root[data-hos-theme='rose-velvet'] .music-library-switch button.active em {
+  color: #fffafd;
+  background: var(--color-hos-cyan);
+}
+:root[data-hos-theme='rose-velvet'] :is(.music-scene, .music-track-card, .music-scene-panel, .frequency-guide-panel, .frequency-guide-grid article) {
+  border-color: var(--color-hos-border);
+  background-color: var(--hos-card-bg);
+}
+:root[data-hos-theme='rose-velvet'] .music-scene-play { color: var(--color-hos-cyan); background: var(--hos-accent-faint); }
+:root[data-hos-theme='rose-velvet'] .camera-placeholder { background: linear-gradient(155deg, #fce8f0, #fff8fb 60%, #f8dee8); }
+:root[data-hos-theme='rose-velvet'] .classic-library-hero {
+  background: radial-gradient(circle at 88% 10%, rgba(204, 91, 134, .16), transparent 31%), linear-gradient(145deg, #fce8f0 0%, #fff9fb 58%, #f7dce7 100%);
+}
+:root[data-hos-theme='rose-velvet'] .classic-library-hero::after { color: rgba(167, 67, 105, .055); }
+:root[data-hos-theme='rose-velvet'] .cbeta-portal { border-color: rgba(185, 79, 121, .22); background: #fce8f0; }
+:root[data-hos-theme='rose-velvet'] .classic-shelf > button.active { border-color: rgba(185, 79, 121, .36); background: #fbe8ef; }
+:root[data-hos-theme='rose-velvet'] .reading-path-grid .reading-guide { background: #fcecf2; }
+:root[data-hos-theme='rose-velvet'] .reading-path-grid .reading-method { background: #f8e5ee; }
+:root[data-hos-theme='rose-velvet'] .reading-path-grid .practice-card { background: #fff0f3; }
+:root[data-hos-theme='rose-velvet'] :is(.reading-path-grid .reading-guide > span, .reading-path-grid .reading-method > span, .reading-path-grid .practice-card > span) {
+  color: var(--color-hos-cyan);
+  background: rgba(255, 253, 253, .82);
+}
+:root[data-hos-theme='rose-velvet'] .classic-boundary { color: var(--color-hos-cyan); background: #fce9ef; }
+:root[data-hos-theme='rose-velvet'] .voice-live-dot { background: #c0527c; box-shadow: 0 0 0 5px rgba(192, 82, 124, .11); }
+:root[data-hos-theme='rose-velvet'] :is(.companion-result-mark > span, .home-voice-orb, .voice-checkin-entry > span) {
+  color: #fffafd;
+  background: linear-gradient(145deg, #a93f6b, #cf7293);
+}
+:root[data-hos-theme='rose-velvet'] :is(.companion-result > blockquote, .voice-readback blockquote) {
+  background: linear-gradient(145deg, #fcecf2, #fff7fa);
+}
+:root[data-hos-theme='rose-velvet'] .voice-companion-fab {
+  border-color: rgba(185, 79, 121, .28);
+  background: linear-gradient(145deg, #fffafd, #f8dce7);
+  box-shadow: 0 11px 30px rgba(154, 60, 96, .16);
+}
+:root[data-hos-theme='rose-velvet'] :is(.shortcut-icon.sage, .shortcut-icon.peach, .shortcut-icon.lavender, .shortcut-icon.sand) {
+  color: var(--color-hos-cyan);
+  background: var(--hos-accent-faint);
 }
