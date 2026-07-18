@@ -2490,6 +2490,10 @@ button:focus-visible, a:focus-visible, input:focus-visible {
 .classic-library-stats span + span { padding-left: 14px; border-left: 1px solid rgba(141, 123, 96, .18); }
 .classic-library-stats strong { margin-bottom: 3px; color: var(--color-hos-text); font-family: var(--font-family-mono); font-size: 17px; }
 
+.classic-path-heading { padding: 0 3px; }
+.classic-path-heading h2 { margin-top: 6px; color: var(--color-hos-text); font-size: 19px; line-height: 1.45; }
+.classic-path-heading > p:last-child { max-width: 600px; margin-top: 7px; color: var(--color-hos-text-dim); font-size: 9.5px; line-height: 1.75; }
+
 .classic-three-layers { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
 .classic-three-layers > div { min-height: 116px; padding: 15px 12px; border: 1px solid var(--color-hos-border); border-radius: 18px; background: var(--hos-card-bg); }
 .classic-three-layers span { width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 11px; color: var(--color-hos-cyan); background: var(--hos-accent-faint); font-family: 'STKaiti', 'KaiTi', serif; font-size: 17px; }
@@ -2501,7 +2505,9 @@ button:focus-visible, a:focus-visible, input:focus-visible {
 .cbeta-portal-icon { width: 42px; height: 42px; display: flex; align-items: center; justify-content: center; border-radius: 14px; color: var(--color-hos-cyan); background: rgba(255, 255, 255, .72); }
 .cbeta-portal h2 { margin-top: 5px; color: var(--color-hos-text); font-size: 15px; line-height: 1.45; }
 .cbeta-portal p:not(.section-kicker) { margin-top: 7px; color: var(--color-hos-text-dim); font-size: 9.5px; line-height: 1.7; }
-.cbeta-portal > a { grid-column: 1 / -1; min-height: 44px; display: flex; align-items: center; justify-content: center; gap: 7px; border-radius: 13px; color: #fffdf9; background: var(--color-hos-cyan); font-size: 10px; font-weight: 650; }
+.cbeta-portal-actions { grid-column: 1 / -1; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; }
+.cbeta-portal-actions a { min-height: 44px; padding: 0 14px; display: flex; align-items: center; justify-content: center; gap: 7px; border-radius: 13px; color: #fffdf9; background: var(--color-hos-cyan); font-size: 9.5px; font-weight: 650; }
+.cbeta-portal-actions a:last-child { color: var(--color-hos-cyan); border: 1px solid rgba(82, 125, 112, .22); background: rgba(255, 255, 255, .72); }
 
 .classic-discovery { padding: 20px; border: 1px solid var(--color-hos-border); border-radius: 22px; background: var(--hos-card-bg); }
 .classic-result-count { padding: 5px 8px; border-radius: 999px; color: var(--color-hos-cyan); background: var(--hos-accent-faint); font-size: 8px; }
@@ -2530,6 +2536,20 @@ button:focus-visible, a:focus-visible, input:focus-visible {
 .classic-empty p { margin-top: 5px; font-size: 9px; }
 .classic-empty button { margin-top: 14px; padding: 9px 12px; border-radius: 10px; color: var(--color-hos-cyan); background: var(--hos-accent-faint); font-size: 9px; }
 
+.classic-tradition-gateway { padding: 23px; scroll-margin-top: 22px; border: 1px solid var(--color-hos-border); border-radius: 25px; background: var(--hos-card-bg); box-shadow: var(--hos-shadow-soft); }
+.classic-tradition-intro { max-width: 680px; margin-top: 11px; color: var(--color-hos-text-dim); font-size: 9.5px; line-height: 1.8; }
+.classic-tradition-grid { margin-top: 18px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; }
+.classic-tradition-grid > button { min-height: 92px; padding: 14px; display: grid; grid-template-columns: 42px minmax(0, 1fr) 18px; align-items: center; gap: 11px; text-align: left; border: 1px solid var(--color-hos-border); border-radius: 17px; color: var(--color-hos-text); background: color-mix(in srgb, var(--hos-card-bg) 83%, var(--hos-page-bg)); transition: 160ms ease; }
+.classic-tradition-grid > button:hover { transform: translateY(-1px); border-color: color-mix(in srgb, var(--color-hos-cyan) 38%, var(--color-hos-border)); box-shadow: 0 11px 27px var(--hos-shadow-color); }
+.classic-tradition-grid > button > span { width: 42px; height: 42px; display: flex; align-items: center; justify-content: center; border-radius: 14px; color: var(--color-hos-cyan); background: var(--hos-accent-faint); font-family: 'STKaiti', 'KaiTi', serif; font-size: 20px; }
+.classic-tradition-grid strong, .classic-tradition-grid small { display: block; }
+.classic-tradition-grid strong { font-size: 11px; }
+.classic-tradition-grid small { margin-top: 5px; color: var(--color-hos-text-muted); font-size: 7.5px; line-height: 1.45; }
+.classic-tradition-grid svg { color: var(--color-hos-text-muted); }
+.classic-tradition-grid .tradition-religion-guide { grid-column: 1 / -1; background: linear-gradient(120deg, color-mix(in srgb, var(--hos-accent-faint) 72%, var(--hos-card-bg)), var(--hos-card-bg)); }
+.classic-tradition-note { margin-top: 12px; padding: 11px 12px; display: flex; align-items: flex-start; gap: 7px; border-radius: 13px; color: var(--color-hos-text-dim); background: var(--hos-accent-faint); font-size: 8px; line-height: 1.65; }
+.classic-tradition-note svg { flex: 0 0 auto; color: var(--color-hos-cyan); }
+
 .reading-card { padding: 26px 22px; border-radius: 24px; }
 .reading-title-row { margin-top: 18px; display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; }
 .reading-title-row p { color: var(--color-hos-cyan); font-family: var(--font-family-mono); font-size: 7.5px; letter-spacing: .08em; }
@@ -2557,8 +2577,8 @@ button:focus-visible, a:focus-visible, input:focus-visible {
 .classic-boundary p { color: var(--color-hos-text-dim); font-size: 8.5px; line-height: 1.7; }
 .classic-boundary strong { color: var(--color-hos-text); }
 
-:root[data-hos-theme='art-bloom'] :is(.classic-library-hero, .classic-discovery, .reading-card, .cbeta-portal) { border-radius: 34px 16px 34px 16px; }
-:root[data-hos-theme='clear-order'] :is(.classic-library-hero, .classic-three-layers > div, .cbeta-portal, .classic-discovery, .classic-shelf > button, .reading-card, .reading-path-grid > div, .classic-boundary) { border-radius: 7px; box-shadow: none; }
+:root[data-hos-theme='art-bloom'] :is(.classic-library-hero, .classic-discovery, .reading-card, .classic-tradition-gateway, .cbeta-portal) { border-radius: 34px 16px 34px 16px; }
+:root[data-hos-theme='clear-order'] :is(.classic-library-hero, .classic-three-layers > div, .classic-tradition-gateway, .classic-tradition-grid > button, .classic-tradition-note, .cbeta-portal, .cbeta-portal-actions a, .classic-discovery, .classic-shelf > button, .reading-card, .reading-path-grid > div, .classic-boundary) { border-radius: 7px; box-shadow: none; }
 
 @media (max-width: 380px) {
   .classic-library-hero { padding: 23px 18px 18px; }
@@ -2567,6 +2587,10 @@ button:focus-visible, a:focus-visible, input:focus-visible {
   .classic-three-layers > div { min-height: 108px; padding: 12px 9px; }
   .classic-three-layers small { font-size: 7px; }
   .cbeta-portal, .classic-discovery { padding: 17px; }
+  .classic-tradition-gateway { padding: 19px 16px; }
+  .classic-tradition-grid { grid-template-columns: 1fr; }
+  .classic-tradition-grid .tradition-religion-guide { grid-column: auto; }
+  .cbeta-portal-actions { grid-template-columns: 1fr; }
   .reading-card { padding: 23px 18px; }
 }
 
@@ -2588,7 +2612,7 @@ button:focus-visible, a:focus-visible, input:focus-visible {
 :root[data-hos-theme='rose-velvet'] :is(.theme-sheet, .theme-option, .hos-card, .home-voice-primary, .personal-archive-card, .journal-archive-hero, .voice-companion-sheet, .classic-library-hero, .classic-discovery, .reading-card) {
   border-color: color-mix(in srgb, var(--color-hos-cyan) 18%, var(--color-hos-border));
 }
-:root[data-hos-theme='rose-velvet'] :is(.theme-done, .primary-action, .apple-save-state, .coach-send, .music-play-button, .cbeta-portal > a) {
+:root[data-hos-theme='rose-velvet'] :is(.theme-done, .primary-action, .apple-save-state, .coach-send, .music-play-button, .cbeta-portal-actions a:first-child) {
   color: #fffafd;
   background: linear-gradient(135deg, #a9406b, #c9668c);
   box-shadow: 0 9px 24px rgba(164, 58, 101, .18);

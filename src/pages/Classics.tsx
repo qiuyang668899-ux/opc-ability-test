@@ -259,6 +259,15 @@ export default function Classics() {
     setCompleted(true)
   }
 
+  const showWorldReligionGuides = () => {
+    setCategory('世界宗教')
+    setNeed('全部需要')
+    setQuery('')
+    window.requestAnimationFrame(() => {
+      document.getElementById('classic-discovery')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    })
+  }
+
   return (
     <div className="hos-page classics-page animate-float-up">
       <section className="classic-library-hero">
@@ -275,71 +284,19 @@ export default function Classics() {
         </div>
       </section>
 
+      <div className="classic-path-heading">
+        <p className="section-kicker">DAO · FA · SHU</p>
+        <h2>先找到此刻真正需要的一段</h2>
+        <p>这里是精华导读：用“道”看原则，用“法”理清路径，再用“术”完成一个可执行的小练习。</p>
+      </div>
+
       <section className="classic-three-layers" aria-label="道法术阅读路径">
         <div><span>道</span><strong>看见原则</strong><small>世界观 · 价值 · 规律</small></div>
         <div><span>法</span><strong>理解路径</strong><small>方法 · 次第 · 边界</small></div>
         <div><span>术</span><strong>此刻践行</strong><small>呼吸 · 反省 · 行动</small></div>
       </section>
 
-      <section className="complete-library-section">
-        <div className="hos-section-title">
-          <div><p className="section-kicker">CBETA VERIFIED · 校勘全译</p><h2>权威原典，HOS 完整今译</h2></div>
-          <span className="complete-library-free"><ShieldCheck size={13} />永久免费</span>
-        </div>
-        <p className="complete-library-intro">《心经》《金刚经》采用 CBETA 2026.R1 校勘正文与 HOS 完整今译；下方开放双语书库继续提供 96 部原文与逐句译文。</p>
-        <div className="complete-library-grid">
-          {COMPLETE_CLASSIC_BOOKS.map((book, index) => (
-            <button key={book.id} onClick={() => setCompleteBookId(book.id)}>
-              <span className="complete-library-number">{String(index + 1).padStart(2, '0')}</span>
-              <span className="complete-library-copy"><small>{book.tradition} · {book.sourceWork}</small><strong>{book.title}</strong><em>{book.edition}</em><span><i><BookOpenText size={12} />原典全文</i><i><Check size={12} />{book.chapters.length} 章今译</i></span></span>
-              <ChevronRight size={18} />
-            </button>
-          ))}
-        </div>
-      </section>
-
-      <section className="open-corpus-library">
-        <div className="hos-section-title">
-          <div><p className="section-kicker">FULL BILINGUAL LIBRARY · 全量双语书库</p><h2>{bilingualTitleCount} 部原文与现代译文</h2></div>
-          <span className="complete-library-free"><ShieldCheck size={13} />全部可直接阅读</span>
-        </div>
-        <p className="open-corpus-intro">不再把导读摘录当作整本书。每一部都按原书目录展开，点击章节即可阅读原文、今译或逐句对照；译文与原文分栏呈现，阅读进度和体会保存在本机。</p>
-        <div className="open-corpus-search">
-          <div className="voice-enabled-control">
-            <Search size={16} />
-            <input value={corpusQuery} onChange={(event) => setCorpusQuery(event.target.value.slice(0, 60))} placeholder="搜索 98 部完整双语经典…" />
-            <VoiceInputButton value={corpusQuery} onChange={setCorpusQuery} maxLength={60} label="说出想读的完整经典" />
-          </div>
-          <div>{OPEN_CLASSIC_CATEGORIES.map((item) => <button key={item} className={corpusCategory === item ? 'active' : ''} onClick={() => setCorpusCategory(item)}>{item}</button>)}</div>
-        </div>
-        <div className="open-corpus-grid">
-          {visibleCorpus.map((book) => (
-            <button key={book.id} onClick={() => setOpenBookName(book.name)}>
-              <span>{book.category}</span>
-              <div><strong>《{book.name}》</strong><p>{book.description}</p><small><BookOpenText size={11} />完整目录 <i /> <Check size={11} />原文今译</small></div>
-              <ChevronRight size={17} />
-            </button>
-          ))}
-        </div>
-        {!showAllCorpus && !corpusQuery.trim() && corpusCategory === '全部' && (
-          <button className="open-corpus-more" onClick={() => setShowAllCorpus(true)}>展开全部 {openCorpusCatalog.length} 部开放双语典籍<ChevronRight size={15} /></button>
-        )}
-        {showAllCorpus && !corpusQuery.trim() && corpusCategory === '全部' && (
-          <button className="open-corpus-more" onClick={() => setShowAllCorpus(false)}>收起，保留核心推荐</button>
-        )}
-      </section>
-
-      <section className="cbeta-portal">
-        <div className="cbeta-portal-icon"><BookOpenText size={22} /></div>
-        <div>
-          <p className="section-kicker">佛典原典入口 · CBETA 2026.R1</p>
-          <h2>4,882 部佛典原典研究入口</h2>
-          <p>CBETA 的 22,037 卷作为外部权威校勘总库，不混入上方“已配齐现代译文”的 HOS 书目。HOS 经文阅读永久免费；学术异文与版本记录以 CBETA 原站为准。</p>
-        </div>
-        <a href="https://cbetaonline.dila.edu.tw/" target="_blank" rel="noreferrer">进入全藏检索<ExternalLink size={14} /></a>
-      </section>
-
-      <section className="classic-discovery">
+      <section className="classic-discovery" id="classic-discovery">
         <div className="hos-section-title">
           <div><p className="section-kicker">找到此刻需要的智慧</p><h2>可以说，也可以搜索</h2></div>
           <span className="classic-result-count">{filtered.length} 条</span>
@@ -435,9 +392,96 @@ export default function Classics() {
         <button onClick={saveNote} className="secondary-action w-full"><Save size={16} />保存本次体会</button>
       </section>
 
+      <section className="classic-tradition-gateway" aria-labelledby="classic-tradition-title">
+        <div className="hos-section-title">
+          <div><p className="section-kicker">CIVILIZATION CANON · 文明原典</p><h2 id="classic-tradition-title">儒 · 释 · 道 · 科 · 宗</h2></div>
+          <span className="complete-library-free"><ShieldCheck size={13} />原文译文分明</span>
+        </div>
+        <p className="classic-tradition-intro">先选传统，再进入原典。已校核的内容直接提供全文与现代译文；尚在核对版本的内容只作导读，并明确标注，不把义旨转述冒充原典。</p>
+        <div className="classic-tradition-grid">
+          <button onClick={() => setOpenBookName('中庸')}>
+            <span>儒</span><div><strong>修身与关系</strong><small>《中庸》· 原文今译</small></div><ChevronRight size={17} />
+          </button>
+          <button onClick={() => setCompleteBookId('heart-sutra-complete')}>
+            <span>释</span><div><strong>观照与解脱</strong><small>《心经》· CBETA 校勘</small></div><ChevronRight size={17} />
+          </button>
+          <button onClick={() => setOpenBookName('老子')}>
+            <span>道</span><div><strong>规律与自然</strong><small>《老子》· 原文今译</small></div><ChevronRight size={17} />
+          </button>
+          <button onClick={() => setOpenBookName('黄帝内经')}>
+            <span>科</span><div><strong>古代身体知识</strong><small>《黄帝内经》· 文化学习</small></div><ChevronRight size={17} />
+          </button>
+          <button className="tradition-religion-guide" onClick={showWorldReligionGuides}>
+            <span>宗</span><div><strong>世界宗教导读</strong><small>权威原文与译本持续校核</small></div><ChevronRight size={17} />
+          </button>
+        </div>
+        <p className="classic-tradition-note"><ShieldCheck size={14} />“宗”暂保留来源状态清楚的跨宗教导读；待具体版本校核完成后，再收入完整双语书库。</p>
+      </section>
+
+      <section className="complete-library-section">
+        <div className="hos-section-title">
+          <div><p className="section-kicker">IMMERSIVE ORIGINAL READING · 沉浸原典</p><h2>经典原文沉浸式阅读</h2></div>
+          <span className="complete-library-free"><ShieldCheck size={13} />永久免费</span>
+        </div>
+        <p className="complete-library-intro">先以《心经》《金刚经》进入可切换原文、今译与对照的完整阅读体验；正文采用 CBETA 2026.R1 校勘本，HOS 提供完整现代学习译文。</p>
+        <div className="complete-library-grid">
+          {COMPLETE_CLASSIC_BOOKS.map((book, index) => (
+            <button key={book.id} onClick={() => setCompleteBookId(book.id)}>
+              <span className="complete-library-number">{String(index + 1).padStart(2, '0')}</span>
+              <span className="complete-library-copy"><small>{book.tradition} · {book.sourceWork}</small><strong>{book.title}</strong><em>{book.edition}</em><span><i><BookOpenText size={12} />原典全文</i><i><Check size={12} />{book.chapters.length} 章今译</i></span></span>
+              <ChevronRight size={18} />
+            </button>
+          ))}
+        </div>
+      </section>
+
+      <section className="open-corpus-library">
+        <div className="hos-section-title">
+          <div><p className="section-kicker">FULL BILINGUAL LIBRARY · 全量双语书库</p><h2>{bilingualTitleCount} 部原文与现代译文</h2></div>
+          <span className="complete-library-free"><ShieldCheck size={13} />全部可直接阅读</span>
+        </div>
+        <p className="open-corpus-intro">不再把导读摘录当作整本书。每一部都按原书目录展开，点击章节即可阅读原文、今译或逐句对照；译文与原文分栏呈现，阅读进度和体会保存在本机。</p>
+        <div className="open-corpus-search">
+          <div className="voice-enabled-control">
+            <Search size={16} />
+            <input value={corpusQuery} onChange={(event) => setCorpusQuery(event.target.value.slice(0, 60))} placeholder="搜索 98 部完整双语经典…" />
+            <VoiceInputButton value={corpusQuery} onChange={setCorpusQuery} maxLength={60} label="说出想读的完整经典" />
+          </div>
+          <div>{OPEN_CLASSIC_CATEGORIES.map((item) => <button key={item} className={corpusCategory === item ? 'active' : ''} onClick={() => setCorpusCategory(item)}>{item}</button>)}</div>
+        </div>
+        <div className="open-corpus-grid">
+          {visibleCorpus.map((book) => (
+            <button key={book.id} onClick={() => setOpenBookName(book.name)}>
+              <span>{book.category}</span>
+              <div><strong>《{book.name}》</strong><p>{book.description}</p><small><BookOpenText size={11} />完整目录 <i /> <Check size={11} />原文今译</small></div>
+              <ChevronRight size={17} />
+            </button>
+          ))}
+        </div>
+        {!showAllCorpus && !corpusQuery.trim() && corpusCategory === '全部' && (
+          <button className="open-corpus-more" onClick={() => setShowAllCorpus(true)}>展开全部 {openCorpusCatalog.length} 部开放双语典籍<ChevronRight size={15} /></button>
+        )}
+        {showAllCorpus && !corpusQuery.trim() && corpusCategory === '全部' && (
+          <button className="open-corpus-more" onClick={() => setShowAllCorpus(false)}>收起，保留核心推荐</button>
+        )}
+      </section>
+
       <section className="classic-boundary">
         <Sparkles size={16} />
         <p><strong>保持开放，也保持严谨。</strong>古籍选段用于个人学习；义旨转述与科学模型均明确标注。HOS 的“今读”和练习不是宗教权威解释，也不替代学术研究、医疗或心理治疗。</p>
+      </section>
+
+      <section className="cbeta-portal">
+        <div className="cbeta-portal-icon"><BookOpenText size={22} /></div>
+        <div>
+          <p className="section-kicker">佛典原典入口 · CBETA 2026.R1</p>
+          <h2>4,882 部佛典原典研究入口</h2>
+          <p>CBETA 的 22,037 卷作为外部权威校勘总库，放在最后供深度研究与版本核对。HOS 经文阅读永久免费；学术异文与版本记录以 CBETA 原站为准。</p>
+        </div>
+        <div className="cbeta-portal-actions">
+          <a href="https://cbetaonline.cn/" target="_blank" rel="noreferrer">进入 CBETA 全藏检索<ExternalLink size={14} /></a>
+          <a href="https://cbeta.org/" target="_blank" rel="noreferrer">CBETA 官方网站<ExternalLink size={13} /></a>
+        </div>
       </section>
 
       {readerOpen && createPortal((

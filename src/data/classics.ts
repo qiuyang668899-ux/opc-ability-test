@@ -23,7 +23,7 @@ export type ClassicPassage = {
   sourceNote?: string
 }
 
-const cbeta = 'https://cbetaonline.dila.edu.tw/'
+const cbeta = 'https://cbetaonline.cn/'
 
 export const CLASSIC_PASSAGES: ClassicPassage[] = [
   {
