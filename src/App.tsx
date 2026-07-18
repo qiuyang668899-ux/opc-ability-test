@@ -1,6 +1,7 @@
 import { lazy } from 'react'
 import { Routes, Route } from 'react-router-dom'
 import Layout from './components/Layout'
+import ActiveGuidance from './components/ActiveGuidance'
 
 const Home = lazy(() => import('./pages/Home'))
 const Architect = lazy(() => import('./pages/Architect'))
@@ -21,25 +22,28 @@ const DailyRitual = lazy(() => import('./pages/DailyRitual'))
 
 export default function App() {
   return (
-    <Routes>
-      <Route element={<Layout />}>
-        <Route index element={<Home />} />
-        <Route path="architect" element={<Architect />} />
-        <Route path="journal" element={<Journal />} />
-        <Route path="biosync" element={<BioSync />} />
-        <Route path="activation" element={<Activation />} />
-        <Route path="protocols" element={<Protocols />} />
-        <Route path="flow" element={<FlowLab />} />
-        <Route path="music" element={<MoodMusic />} />
-        <Route path="tools" element={<Tools />} />
-        <Route path="classics" element={<Classics />} />
-        <Route path="evolution" element={<Evolution />} />
-        <Route path="support" element={<Support />} />
-        <Route path="about" element={<About />} />
-        <Route path="visual" element={<VisualDiag />} />
-      </Route>
-      <Route path="ritual" element={<DailyRitual />} />
-      <Route path="reset/:protocol?" element={<SystemReset />} />
-    </Routes>
+    <>
+      <Routes>
+        <Route element={<Layout />}>
+          <Route index element={<Home />} />
+          <Route path="architect" element={<Architect />} />
+          <Route path="journal" element={<Journal />} />
+          <Route path="biosync" element={<BioSync />} />
+          <Route path="activation" element={<Activation />} />
+          <Route path="protocols" element={<Protocols />} />
+          <Route path="flow" element={<FlowLab />} />
+          <Route path="music" element={<MoodMusic />} />
+          <Route path="tools" element={<Tools />} />
+          <Route path="classics" element={<Classics />} />
+          <Route path="evolution" element={<Evolution />} />
+          <Route path="support" element={<Support />} />
+          <Route path="about" element={<About />} />
+          <Route path="visual" element={<VisualDiag />} />
+        </Route>
+        <Route path="ritual" element={<DailyRitual />} />
+        <Route path="reset/:protocol?" element={<SystemReset />} />
+      </Routes>
+      <ActiveGuidance />
+    </>
   )
 }

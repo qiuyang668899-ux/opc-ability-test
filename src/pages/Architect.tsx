@@ -49,6 +49,7 @@ import {
 } from '../engines/voiceJournalEngine'
 import { useVoiceCapture } from '../hooks/useVoiceCapture'
 import VoiceInputButton from '../components/VoiceInputButton'
+import { activateRegulationJourney, buildRegulationJourney } from '../engines/stateOrchestrator'
 
 const starterPrompts = [
   { label: '脑子停不下来', desc: '压力、紧绷、想得太多', icon: Waves, text: '我现在压力很大，脑子停不下来，想先稳定状态。' },
@@ -72,18 +73,22 @@ export default function Architect() {
   const initialMessages = useMemo(() => loadState<ChatMessage[]>('chat', []).slice(-12), [])
   const initialUser = latestUserMessage(initialMessages)
   const initialSnapshot = useMemo(() => buildCoachSnapshot(), [])
+  const rememberedVoice = initialSnapshot.latestVoice?.date === new Date().toLocaleDateString('en-CA')
+    ? initialSnapshot.latestVoice
+    : undefined
+  const initialContext = initialUser?.content ?? rememberedVoice?.transcript
   const [messages, setMessages] = useState<ChatMessage[]>(initialMessages)
   const [input, setInput] = useState('')
-  const [started, setStarted] = useState(Boolean(initialUser))
+  const [started, setStarted] = useState(Boolean(initialContext))
   const [thinkingStage, setThinkingStage] = useState<number | null>(null)
   const [speaking, setSpeaking] = useState(false)
   const [feedbackStatus, setFeedbackStatus] = useState('')
   const [voiceReviewText, setVoiceReviewText] = useState('')
   const [voiceAutoFinalize, setVoiceAutoFinalize] = useState(false)
-  const [voiceRecord, setVoiceRecord] = useState<VoiceJournalRecord | null>(null)
+  const [voiceRecord, setVoiceRecord] = useState<VoiceJournalRecord | null>(rememberedVoice ?? null)
   const [voiceCalibration, setVoiceCalibration] = useState('')
   const [voiceMemory, setVoiceMemory] = useState<VoiceMemory>(() => loadVoiceMemory(loadState<VoiceMemory | undefined>('voiceMemory', undefined)))
-  const [coachPlan, setCoachPlan] = useState<CoachPlan>(() => createCoachPlan(initialUser?.content ?? '我需要一个清晰的下一步', initialSnapshot))
+  const [coachPlan, setCoachPlan] = useState<CoachPlan>(() => createCoachPlan(initialContext ?? '我需要一个清晰的下一步', initialSnapshot))
   const timersRef = useRef<number[]>([])
   const livePlanRef = useRef<HTMLElement>(null)
   const saveVoiceJournalRef = useRef<(override?: string) => void>(() => undefined)
@@ -220,6 +225,7 @@ export default function Architect() {
       confidence: analysis.confidence,
     }
     const nextPlan = createCoachPlan(transcript, { ...currentSnapshot, checkIn: inferredCheckIn }, coachPlan)
+    const journey = buildRegulationJourney(analysis, nextPlan)
     const organizedText = organizeVoiceDiary(analysis, nextPlan.commitment)
     const record: VoiceJournalRecord = {
       id: `vj-${now}`,
@@ -232,6 +238,7 @@ export default function Architect() {
       coachMode: nextPlan.mode,
       commitment: nextPlan.commitment,
       organizedText,
+      journey,
     }
     const voiceRecords = loadState<VoiceJournalRecord[]>('voiceJournal', [])
     saveState('voiceJournal', [record, ...voiceRecords].slice(0, 180))
@@ -254,6 +261,7 @@ export default function Architect() {
       voiceSignals: analysis.deliverySignals,
       organizedText,
       rawFragment: voice.transcript || transcript,
+      regulationPath: journey.steps.map((step) => step.title),
     }
     saveState('journal', [journalEntry, ...journal].slice(0, 365))
     saveState('dailyCheckIn', inferredCheckIn)
@@ -295,6 +303,15 @@ export default function Architect() {
     setVoiceMemory(nextMemory)
     setVoiceRecord({ ...voiceRecord, calibration: value })
     setVoiceCalibration(value === 0 ? '已确认，下次会沿用这组判断' : '已校准，系统会逐渐贴近你的真实基线')
+  }
+
+  const beginCoachPractice = () => {
+    if (voiceRecord?.journey) {
+      activateRegulationJourney(voiceRecord.journey)
+      navigate(voiceRecord.journey.steps[0].route)
+      return
+    }
+    navigate(coachPlan.route)
   }
 
   const clearVoiceMemory = () => {
@@ -480,7 +497,7 @@ export default function Architect() {
             <article><span>03</span><div><small>留下反馈</small><strong>{coachPlan.reflectionStep}</strong></div></article>
           </div>
 
-          <button className="coach-commitment" onClick={() => navigate(coachPlan.route)}>
+          <button className="coach-commitment" onClick={beginCoachPractice}>
             <span><Target size={18} /></span><div><small>{coachPlan.isTiny ? '保底版' : '现在只承诺'}</small><strong>{coachPlan.commitment}</strong></div><ArrowRight size={18} />
           </button>
 
@@ -494,7 +511,7 @@ export default function Architect() {
 
           <div className="coach-plan-actions">
             <button onClick={speakPlan}><Volume2 size={16} />{speaking ? '停止播放' : '听教练说'}</button>
-            <button onClick={() => navigate(coachPlan.route)}><Play size={16} />进入实践</button>
+            <button onClick={beginCoachPractice}><Play size={16} />进入实践</button>
           </div>
 
           {!coachPlan.isCrisis && (

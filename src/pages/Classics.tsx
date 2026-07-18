@@ -32,9 +32,16 @@ import {
   type ClassicNeed,
 } from '../data/classics'
 import { COMPLETE_CLASSIC_BOOKS, findCompleteClassicBook } from '../data/completeClassics'
+import {
+  OPEN_CLASSICS_CATALOG,
+  OPEN_CLASSIC_CATEGORIES,
+  findOpenClassic,
+  type OpenClassicCategory,
+} from '../data/openClassicsCatalog'
 import { loadState, saveState } from '../stores/useStore'
 import VoiceInputButton from '../components/VoiceInputButton'
 import CompleteClassicReader from '../components/CompleteClassicReader'
+import OpenCorpusReader from '../components/OpenCorpusReader'
 
 type PracticeNote = { passageId: string; text: string; createdAt: number }
 type PracticeCompletion = { passageId: string; createdAt: number; duration: number }
@@ -75,6 +82,10 @@ export default function Classics() {
   const [completed, setCompleted] = useState(false)
   const [readerOpen, setReaderOpen] = useState(false)
   const [completeBookId, setCompleteBookId] = useState<string | null>(null)
+  const [openBookName, setOpenBookName] = useState<string | null>(null)
+  const [corpusQuery, setCorpusQuery] = useState('')
+  const [corpusCategory, setCorpusCategory] = useState<'全部' | OpenClassicCategory>('全部')
+  const [showAllCorpus, setShowAllCorpus] = useState(false)
   const [readerMode, setReaderMode] = useState<ReaderMode>(() => loadState<ReaderMode>('classicReaderMode', 'parallel'))
   const [readerTone, setReaderTone] = useState<ReaderTone>(() => loadState<ReaderTone>('classicReaderTone', 'paper'))
   const [readerFontSize, setReaderFontSize] = useState(() => loadState<number>('classicReaderFontSize', 20))
@@ -82,6 +93,15 @@ export default function Classics() {
   const readerContentRef = useRef<HTMLDivElement>(null)
   const progressSaveTimerRef = useRef<number | null>(null)
   const completeBook = findCompleteClassicBook(completeBookId)
+  const openBook = findOpenClassic(openBookName)
+  const openCorpusCatalog = useMemo(() => OPEN_CLASSICS_CATALOG.filter((book) => book.name !== '心经'), [])
+  const corpusFiltered = useMemo(() => openCorpusCatalog.filter((book) => {
+    const categoryMatches = corpusCategory === '全部' || book.category === corpusCategory
+    const queryMatches = includesQuery(corpusQuery, [book.name, book.category, book.description])
+    return categoryMatches && queryMatches
+  }), [corpusCategory, corpusQuery, openCorpusCatalog])
+  const visibleCorpus = showAllCorpus || corpusQuery.trim() || corpusCategory !== '全部' ? corpusFiltered : corpusFiltered.slice(0, 12)
+  const bilingualTitleCount = openCorpusCatalog.length + COMPLETE_CLASSIC_BOOKS.length
 
   const filtered = useMemo(() => CLASSIC_PASSAGES.filter((item) => {
     const inCategory = category === '全部' || item.category === category
@@ -249,8 +269,8 @@ export default function Classics() {
           <p>不急着相信某个答案。先读原意，再理解路径，最后用一次小练习亲自验证。</p>
         </div>
         <div className="classic-library-stats">
-          <span><strong>{COMPLETE_CLASSIC_BOOKS.length}</strong>完整典籍</span>
-          <span><strong>{CLASSIC_PASSAGES.length}</strong>精读摘录</span>
+          <span><strong>{bilingualTitleCount}</strong>双语典籍</span>
+          <span><strong>{CLASSIC_PASSAGES.length}</strong>智慧导读</span>
           <span><strong>{completionCount}</strong>完成修习</span>
         </div>
       </section>
@@ -263,10 +283,10 @@ export default function Classics() {
 
       <section className="complete-library-section">
         <div className="hos-section-title">
-          <div><p className="section-kicker">COMPLETE CANON · 完整典籍</p><h2>原典全文，现代译文</h2></div>
+          <div><p className="section-kicker">CBETA VERIFIED · 校勘全译</p><h2>权威原典，HOS 完整今译</h2></div>
           <span className="complete-library-free"><ShieldCheck size={13} />永久免费</span>
         </div>
-        <p className="complete-library-intro">只有同时备齐“完整原典＋完整现代译文”的书才会进入这一层。原典来自 CBETA 2026.R1，首次读取后自动缓存。</p>
+        <p className="complete-library-intro">《心经》《金刚经》采用 CBETA 2026.R1 校勘正文与 HOS 完整今译；下方开放双语书库继续提供 96 部原文与逐句译文。</p>
         <div className="complete-library-grid">
           {COMPLETE_CLASSIC_BOOKS.map((book, index) => (
             <button key={book.id} onClick={() => setCompleteBookId(book.id)}>
@@ -278,12 +298,43 @@ export default function Classics() {
         </div>
       </section>
 
+      <section className="open-corpus-library">
+        <div className="hos-section-title">
+          <div><p className="section-kicker">FULL BILINGUAL LIBRARY · 全量双语书库</p><h2>{bilingualTitleCount} 部原文与现代译文</h2></div>
+          <span className="complete-library-free"><ShieldCheck size={13} />全部可直接阅读</span>
+        </div>
+        <p className="open-corpus-intro">不再把导读摘录当作整本书。每一部都按原书目录展开，点击章节即可阅读原文、今译或逐句对照；译文与原文分栏呈现，阅读进度和体会保存在本机。</p>
+        <div className="open-corpus-search">
+          <div className="voice-enabled-control">
+            <Search size={16} />
+            <input value={corpusQuery} onChange={(event) => setCorpusQuery(event.target.value.slice(0, 60))} placeholder="搜索 98 部完整双语经典…" />
+            <VoiceInputButton value={corpusQuery} onChange={setCorpusQuery} maxLength={60} label="说出想读的完整经典" />
+          </div>
+          <div>{OPEN_CLASSIC_CATEGORIES.map((item) => <button key={item} className={corpusCategory === item ? 'active' : ''} onClick={() => setCorpusCategory(item)}>{item}</button>)}</div>
+        </div>
+        <div className="open-corpus-grid">
+          {visibleCorpus.map((book) => (
+            <button key={book.id} onClick={() => setOpenBookName(book.name)}>
+              <span>{book.category}</span>
+              <div><strong>《{book.name}》</strong><p>{book.description}</p><small><BookOpenText size={11} />完整目录 <i /> <Check size={11} />原文今译</small></div>
+              <ChevronRight size={17} />
+            </button>
+          ))}
+        </div>
+        {!showAllCorpus && !corpusQuery.trim() && corpusCategory === '全部' && (
+          <button className="open-corpus-more" onClick={() => setShowAllCorpus(true)}>展开全部 {openCorpusCatalog.length} 部开放双语典籍<ChevronRight size={15} /></button>
+        )}
+        {showAllCorpus && !corpusQuery.trim() && corpusCategory === '全部' && (
+          <button className="open-corpus-more" onClick={() => setShowAllCorpus(false)}>收起，保留核心推荐</button>
+        )}
+      </section>
+
       <section className="cbeta-portal">
         <div className="cbeta-portal-icon"><BookOpenText size={22} /></div>
         <div>
           <p className="section-kicker">佛典原典入口 · CBETA 2026.R1</p>
-          <h2>免费原典总库，持续接入</h2>
-          <p>CBETA 收录 4,882 部、22,037 卷汉文佛典。HOS 的经文区不设付费墙；学术校勘、异文与版本记录以 CBETA 原站为准。</p>
+          <h2>4,882 部佛典原典研究入口</h2>
+          <p>CBETA 的 22,037 卷作为外部权威校勘总库，不混入上方“已配齐现代译文”的 HOS 书目。HOS 经文阅读永久免费；学术异文与版本记录以 CBETA 原站为准。</p>
         </div>
         <a href="https://cbetaonline.dila.edu.tw/" target="_blank" rel="noreferrer">进入全藏检索<ExternalLink size={14} /></a>
       </section>
@@ -321,7 +372,7 @@ export default function Classics() {
             {filtered.map((item) => (
               <button key={item.id} className={item.id === passage.id ? 'active' : ''} onClick={() => openPassage(item.id)}>
                 <span className="classic-shelf-index">{item.category.slice(0, 1)}</span>
-                <span><small>{item.tradition} · {item.work}</small><strong>{item.title}</strong><em>精读摘录 · {item.duration} 分钟 · {item.tags.slice(0, 2).join(' / ')}</em></span>
+                <span><small>{item.tradition} · {item.work}</small><strong>{item.title}</strong><em>智慧导读 · {item.duration} 分钟 · {item.tags.slice(0, 2).join(' / ')}</em></span>
                 <ChevronRight size={17} />
               </button>
             ))}
@@ -461,6 +512,7 @@ export default function Classics() {
       ), document.body)}
 
       {completeBook && <CompleteClassicReader key={completeBook.id} book={completeBook} onClose={() => setCompleteBookId(null)} />}
+      {openBook && <OpenCorpusReader key={openBook.id} book={openBook} onClose={() => setOpenBookName(null)} />}
     </div>
   )
 }

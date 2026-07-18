@@ -9,6 +9,7 @@ import {
   Mic,
   PencilLine,
   RotateCcw,
+  Route,
   Save,
   ShieldCheck,
   Sparkles,
@@ -27,6 +28,7 @@ import {
   type VoiceMemory,
 } from '../engines/voiceJournalEngine'
 import { buildCoachSnapshot, createCoachPlan, type CoachPlan } from '../engines/coachEngine'
+import { activateRegulationJourney, buildRegulationJourney } from '../engines/stateOrchestrator'
 import { loadState, recomputeUserState, saveState, type JournalEntry } from '../stores/useStore'
 import { openVoiceCompanion, registerVoiceCompanion, type VoiceCompanionRequest } from './voiceCompanionBus'
 
@@ -108,6 +110,7 @@ export default function VoiceCompanion() {
     }
     const snapshot = buildCoachSnapshot()
     const plan = createCoachPlan(transcript, { ...snapshot, checkIn: inferredCheckIn })
+    const journey = buildRegulationJourney(analysis, plan)
     const organizedText = organizeVoiceDiary(analysis, plan.commitment)
     const nextRecord: VoiceJournalRecord = {
       id: `vj-${now}`,
@@ -120,6 +123,7 @@ export default function VoiceCompanion() {
       coachMode: plan.mode,
       commitment: plan.commitment,
       organizedText,
+      journey,
     }
     const voiceRecords = loadState<VoiceJournalRecord[]>('voiceJournal', [])
     saveState('voiceJournal', [nextRecord, ...voiceRecords].slice(0, 180))
@@ -142,6 +146,7 @@ export default function VoiceCompanion() {
       voiceSignals: analysis.deliverySignals,
       organizedText,
       rawFragment: rawHeard,
+      regulationPath: journey.steps.map((step) => step.title),
     }
     saveState('journal', [journalEntry, ...journal].slice(0, 365))
     recomputeUserState()
@@ -181,6 +186,14 @@ export default function VoiceCompanion() {
   }
 
   const openEverywhere = () => openVoiceCompanion({ context: '随时记录 · 此刻的我' })
+
+  const beginJourney = () => {
+    if (!record?.journey) return
+    const firstStep = record.journey.steps[0]
+    activateRegulationJourney(record.journey)
+    close()
+    navigate(firstStep.route)
+  }
 
   return (
     <>
@@ -245,6 +258,14 @@ export default function VoiceCompanion() {
                 <blockquote>{record.analysis.response}</blockquote>
                 <div className="companion-state-row"><span>能量 <strong>{record.analysis.energy}/5</strong></span><span>清晰 <strong>{record.analysis.clarity}/5</strong></span><span>压力 <strong>{record.analysis.pressure}/5</strong></span></div>
                 <article className="companion-diary-preview"><header><BookOpenText size={15} /><span>整理后的日记</span></header><p>{record.organizedText}</p><details><summary>查看原始表达碎片</summary><blockquote>{record.rawTranscript}</blockquote></details></article>
+                {record.journey && (
+                  <section className="companion-journey">
+                    <header><span><Route size={16} /></span><div><small>HOS 主动调试路径</small><strong>我会一步步陪你调整</strong></div></header>
+                    <p>{record.journey.rationale}</p>
+                    <div>{record.journey.steps.map((step, index) => <article key={step.id}><span>{String(index + 1).padStart(2, '0')}</span><div><strong>{step.title}</strong><small>{step.action} · {step.minutes} 分钟</small></div></article>)}</div>
+                    <button onClick={beginJourney}>从第一步开始<ArrowRight size={15} /></button>
+                  </section>
+                )}
                 <div className="companion-calibration"><p>这次判断接近真实的你吗？</p><div><button className={record.calibration === -1 ? 'active' : ''} onClick={() => calibrate(-1)}>我更平静</button><button className={record.calibration === 0 ? 'active' : ''} onClick={() => calibrate(0)}>比较接近</button><button className={record.calibration === 1 ? 'active' : ''} onClick={() => calibrate(1)}>我更紧绷</button></div>{calibrationNote && <span>{calibrationNote}</span>}</div>
                 <button className="companion-next" onClick={close}><span><BrainCircuit size={17} /></span><div><small>此刻最小下一步</small><strong>{coachPlan.commitment}</strong></div><Check size={16} /></button>
                 <button className="companion-open-journal" onClick={() => { close(); navigate('/journal') }}><ShieldCheck size={13} />打开个人日志档案<ArrowRight size={14} /></button>

@@ -32,6 +32,7 @@ export interface VoiceJournalRecord {
   commitment: string
   organizedText?: string
   calibration?: -1 | 0 | 1
+  journey?: import('./stateOrchestrator').RegulationJourney
 }
 
 export interface VoiceMemory {

@@ -33,6 +33,7 @@ export interface JournalEntry {
   voiceSignals?: string[];
   organizedText?: string;
   rawFragment?: string;
+  regulationPath?: string[];
 }
 
 // Chat message

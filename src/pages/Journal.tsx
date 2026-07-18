@@ -280,6 +280,12 @@ export default function Journal() {
                     <p className="text-[12px] text-hos-text mt-1 leading-relaxed">{entry.newResponse}</p>
                   </div>
                 )}
+                {entry.source === 'voice' && entry.regulationPath?.length ? (
+                  <div className="voice-archive-path">
+                    <p><Sparkles size={12} />当时为你编排的调试路径</p>
+                    <div>{entry.regulationPath.map((step, index) => <span key={`${step}-${index}`}><i>{index + 1}</i>{step}</span>)}</div>
+                  </div>
+                ) : null}
                 {entry.somatic && <p className="text-[10px] text-hos-text-muted">{UI.somaticMarker.zh}: {entry.somatic}</p>}
                 {entry.analysis && (
                   <div className="mt-2 p-4 rounded-xl bg-hos-bg/70 border border-hos-border/40">
