@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   AudioLines,
@@ -25,6 +25,7 @@ import { buildHomeIntelligence, type SmartAction } from '../engines/homeIntellig
 import { loadState, saveState, type DailyCheckIn, type JournalEntry } from '../stores/useStore'
 import { loadVoiceMemory, voiceMemoryInsight, type VoiceJournalRecord, type VoiceMemory } from '../engines/voiceJournalEngine'
 import VoiceInputButton from '../components/VoiceInputButton'
+import { openVoiceCompanion } from '../components/voiceCompanionBus'
 
 const stateLabels = {
   energy: ['耗尽', '偏低', '平稳', '充足', '饱满'],
@@ -83,13 +84,23 @@ export default function Home() {
   const [clarity, setClarity] = useState(initial.checkIn?.clarity ?? 3)
   const [pressure, setPressure] = useState(initial.checkIn?.pressure ?? 3)
   const [intention, setIntention] = useState(initial.checkIn?.intention ?? '')
-  const voiceMemory = useMemo(() => loadVoiceMemory(loadState<VoiceMemory | undefined>('voiceMemory', undefined)), [])
-  const voiceRecords = useMemo(() => loadState<VoiceJournalRecord[]>('voiceJournal', []), [])
-  const journalCount = useMemo(() => loadState<JournalEntry[]>('journal', []).length, [])
+  const [, setArchiveVersion] = useState(0)
+  const voiceMemory = loadVoiceMemory(loadState<VoiceMemory | undefined>('voiceMemory', undefined))
+  const voiceRecords = loadState<VoiceJournalRecord[]>('voiceJournal', [])
+  const journalCount = loadState<JournalEntry[]>('journal', []).length
   const actions = [intelligence.primary, ...intelligence.alternatives]
   const recommendation = actions[recommendationIndex % actions.length]
   const RecommendationIcon = actionIcons[recommendation.id]
   const today = new Date().toLocaleDateString('zh-CN', { month: 'long', day: 'numeric', weekday: 'long' })
+
+  useEffect(() => {
+    const refreshArchive = () => {
+      setArchiveVersion((version) => version + 1)
+      setIntelligence(buildHomeIntelligence())
+    }
+    window.addEventListener('hos:data-updated', refreshArchive)
+    return () => window.removeEventListener('hos:data-updated', refreshArchive)
+  }, [])
 
   const cycleRecommendation = () => {
     setRecommendationIndex((value) => (value + 1) % actions.length)
@@ -149,7 +160,7 @@ export default function Home() {
 
       <section className="home-intelligence-section voice-moment-section">
         <header><div><p>FOR THIS MOMENT</p><h2>此刻，从说出来开始</h2></div><span>不必组织语言</span></header>
-        <button className="home-voice-primary" onClick={() => navigate('/architect?voice=1')}>
+        <button className="home-voice-primary" onClick={() => openVoiceCompanion({ context: '首页 · 此刻状态' })}>
           <span className="home-voice-orb"><i /><Mic size={24} /></span>
           <span><small>VOICE JOURNAL</small><strong>直接说说今天的状态</strong><em>像写日记一样说，HOS 会先听完，再回应并保存。</em></span>
           <AudioLines size={19} />

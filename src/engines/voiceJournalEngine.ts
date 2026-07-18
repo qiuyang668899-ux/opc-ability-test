@@ -30,6 +30,7 @@ export interface VoiceJournalRecord {
   analysis: VoiceStateAnalysis
   coachMode: string
   commitment: string
+  organizedText?: string
   calibration?: -1 | 0 | 1
 }
 
@@ -99,6 +100,18 @@ export function polishVoiceTranscript(value: string) {
     .trim()
 }
 
+export function organizeVoiceDiary(analysis: VoiceStateAnalysis, commitment: string) {
+  const topics = analysis.keywords.filter((keyword) => keyword !== '今日状态').join('、')
+  return [
+    `今天，我注意到自己正在经历「${analysis.stateLabel}」。`,
+    `我说到的核心是：${analysis.summary}${/[。！？]$/.test(analysis.summary) ? '' : '。'}`,
+    topics ? `这段表达主要围绕：${topics}。` : '',
+    `此刻可见的资源状态是：能量 ${analysis.energy}/5，清晰 ${analysis.clarity}/5，压力 ${analysis.pressure}/5。`,
+    `给自己的下一步：${commitment}。`,
+    `原始表达被完整保留在下方，方便以后重新理解当时的自己。`,
+  ].filter(Boolean).join('\n\n')
+}
+
 function inferKeywords(text: string) {
   return topicSignals
     .map((topic) => ({ label: topic.label, count: countSignals(text, topic.words) }))
@@ -109,7 +122,7 @@ function inferKeywords(text: string) {
 }
 
 function buildSummary(text: string) {
-  const compact = text.replace(/[。！？]+/g, '，').replace(/，+/g, '，')
+  const compact = text.replace(/[。！？]+/g, '，').replace(/，+/g, '，').replace(/，+$/g, '')
   if (compact.length <= 62) return compact
   return `${compact.slice(0, 61)}…`
 }

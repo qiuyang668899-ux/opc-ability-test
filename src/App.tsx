@@ -1,21 +1,23 @@
+import { lazy } from 'react'
 import { Routes, Route } from 'react-router-dom'
 import Layout from './components/Layout'
-import Home from './pages/Home'
-import Architect from './pages/Architect'
-import Journal from './pages/Journal'
-import BioSync from './pages/BioSync'
-import SystemReset from './pages/SystemReset'
-import VisualDiag from './pages/VisualDiag'
-import Activation from './pages/Activation'
-import Protocols from './pages/Protocols'
-import FlowLab from './pages/FlowLab'
-import MoodMusic from './pages/MoodMusic'
-import Support from './pages/Support'
-import About from './pages/About'
-import Tools from './pages/Tools'
-import Classics from './pages/Classics'
-import Evolution from './pages/Evolution'
-import DailyRitual from './pages/DailyRitual'
+
+const Home = lazy(() => import('./pages/Home'))
+const Architect = lazy(() => import('./pages/Architect'))
+const Journal = lazy(() => import('./pages/Journal'))
+const BioSync = lazy(() => import('./pages/BioSync'))
+const SystemReset = lazy(() => import('./pages/SystemReset'))
+const VisualDiag = lazy(() => import('./pages/VisualDiag'))
+const Activation = lazy(() => import('./pages/Activation'))
+const Protocols = lazy(() => import('./pages/Protocols'))
+const FlowLab = lazy(() => import('./pages/FlowLab'))
+const MoodMusic = lazy(() => import('./pages/MoodMusic'))
+const Support = lazy(() => import('./pages/Support'))
+const About = lazy(() => import('./pages/About'))
+const Tools = lazy(() => import('./pages/Tools'))
+const Classics = lazy(() => import('./pages/Classics'))
+const Evolution = lazy(() => import('./pages/Evolution'))
+const DailyRitual = lazy(() => import('./pages/DailyRitual'))
 
 export default function App() {
   return (

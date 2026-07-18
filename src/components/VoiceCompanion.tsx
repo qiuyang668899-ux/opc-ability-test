@@ -1,0 +1,208 @@
+import { useCallback, useEffect, useState, type CSSProperties } from 'react'
+import { useNavigate } from 'react-router-dom'
+import {
+  ArrowRight,
+  BookOpenText,
+  BrainCircuit,
+  Check,
+  LockKeyhole,
+  Mic,
+  PencilLine,
+  RotateCcw,
+  Save,
+  ShieldCheck,
+  Sparkles,
+  Square,
+  X,
+} from 'lucide-react'
+import { useVoiceCapture } from '../hooks/useVoiceCapture'
+import {
+  analyzeVoiceJournal,
+  calibrateVoiceMemory,
+  loadVoiceMemory,
+  organizeVoiceDiary,
+  polishVoiceTranscript,
+  updateVoiceMemory,
+  type VoiceJournalRecord,
+  type VoiceMemory,
+} from '../engines/voiceJournalEngine'
+import { buildCoachSnapshot, createCoachPlan, type CoachPlan } from '../engines/coachEngine'
+import { loadState, recomputeUserState, saveState, type JournalEntry } from '../stores/useStore'
+import { openVoiceCompanion, registerVoiceCompanion, type VoiceCompanionRequest } from './voiceCompanionBus'
+
+function todayKey() {
+  return new Date().toLocaleDateString('en-CA')
+}
+
+export default function VoiceCompanion() {
+  const navigate = useNavigate()
+  const voice = useVoiceCapture()
+  const [request, setRequest] = useState<VoiceCompanionRequest | null>(null)
+  const [draft, setDraft] = useState('')
+  const [record, setRecord] = useState<VoiceJournalRecord | null>(null)
+  const [coachPlan, setCoachPlan] = useState<CoachPlan | null>(null)
+  const [calibrationNote, setCalibrationNote] = useState('')
+
+  const begin = useCallback((nextRequest: VoiceCompanionRequest) => {
+    setRequest(nextRequest)
+    setDraft('')
+    setRecord(null)
+    setCoachPlan(null)
+    setCalibrationNote('')
+    void voice.start()
+  }, [voice])
+
+  useEffect(() => registerVoiceCompanion(begin), [begin])
+
+  const close = () => {
+    voice.reset()
+    setRequest(null)
+    setDraft('')
+    setRecord(null)
+    setCoachPlan(null)
+  }
+
+  const stopListening = () => {
+    const heard = `${voice.transcript}${voice.interimTranscript}`
+    setDraft(polishVoiceTranscript(heard) || heard)
+    voice.stop()
+  }
+
+  const saveAndAnalyze = () => {
+    if (!request) return
+    const transcript = polishVoiceTranscript(draft)
+    if (!transcript) return
+    const memory = loadVoiceMemory(loadState<VoiceMemory | undefined>('voiceMemory', undefined))
+    const analysis = analyzeVoiceJournal(transcript, voice.metrics, memory)
+    const now = Date.now()
+    const inferredCheckIn = {
+      date: todayKey(),
+      energy: analysis.energy,
+      clarity: analysis.clarity,
+      pressure: analysis.pressure,
+      intention: analysis.summary,
+      createdAt: now,
+      source: 'voice' as const,
+      confidence: analysis.confidence,
+    }
+    const snapshot = buildCoachSnapshot()
+    const plan = createCoachPlan(transcript, { ...snapshot, checkIn: inferredCheckIn })
+    const organizedText = organizeVoiceDiary(analysis, plan.commitment)
+    const nextRecord: VoiceJournalRecord = {
+      id: `vj-${now}`,
+      timestamp: now,
+      date: inferredCheckIn.date,
+      rawTranscript: voice.transcript || transcript,
+      transcript,
+      metrics: voice.metrics,
+      analysis,
+      coachMode: plan.mode,
+      commitment: plan.commitment,
+      organizedText,
+    }
+    const voiceRecords = loadState<VoiceJournalRecord[]>('voiceJournal', [])
+    saveState('voiceJournal', [nextRecord, ...voiceRecords].slice(0, 180))
+    const nextMemory = updateVoiceMemory(memory, nextRecord)
+    saveState('voiceMemory', nextMemory)
+    saveState('dailyCheckIn', inferredCheckIn)
+
+    const journal = loadState<JournalEntry[]>('journal', [])
+    const journalEntry: JournalEntry = {
+      id: `j-${now}`,
+      timestamp: now,
+      trigger: `语音日记 · ${analysis.stateLabel}`,
+      oldPattern: transcript,
+      newResponse: plan.commitment,
+      somatic: analysis.deliverySignals.join(' · '),
+      distortion: '',
+      analysis: `${analysis.response}\n\n这些是可校准的自我觉察线索，不是医学或心理诊断。`,
+      source: 'voice',
+      voiceRecordId: nextRecord.id,
+      voiceSignals: analysis.deliverySignals,
+      organizedText,
+      rawFragment: voice.transcript || transcript,
+    }
+    saveState('journal', [journalEntry, ...journal].slice(0, 365))
+    recomputeUserState()
+    request.onComplete?.(transcript, nextRecord)
+    setRecord(nextRecord)
+    setCoachPlan(plan)
+    voice.reset()
+    window.dispatchEvent(new CustomEvent('hos:data-updated'))
+    navigator.vibrate?.([20, 28, 44])
+  }
+
+  const calibrate = (value: -1 | 0 | 1) => {
+    if (!record) return
+    const records = loadState<VoiceJournalRecord[]>('voiceJournal', [])
+    saveState('voiceJournal', records.map((item) => item.id === record.id ? { ...item, calibration: value } : item))
+    const memory = calibrateVoiceMemory(loadState<VoiceMemory | undefined>('voiceMemory', undefined), value)
+    saveState('voiceMemory', memory)
+    setRecord({ ...record, calibration: value })
+    setCalibrationNote(value === 0 ? '已确认这次判断' : '已校准，下一次会更贴近你')
+    window.dispatchEvent(new CustomEvent('hos:data-updated'))
+  }
+
+  const openEverywhere = () => openVoiceCompanion({ context: '随时记录 · 此刻的我' })
+
+  return (
+    <>
+      <button className="voice-companion-fab" onClick={openEverywhere} aria-label="随时用语音记录">
+        <span><Mic size={19} /></span><small>说说</small>
+      </button>
+
+      {request && (
+        <div className="voice-companion-layer" role="dialog" aria-modal="true" aria-label="HOS 语音陪伴">
+          <button className="voice-companion-backdrop" onClick={close} aria-label="关闭语音陪伴" />
+          <section className={`voice-companion-sheet ${record ? 'result' : voice.status}`}>
+            <header className="voice-companion-header">
+              <div><span><Sparkles size={16} /></span><div><p>HOS VOICE COMPANION</p><strong>我在，慢慢说</strong></div></div>
+              <button onClick={close} aria-label="关闭"><X size={18} /></button>
+            </header>
+
+            {!record && voice.status === 'requesting' && (
+              <div className="companion-permission"><span><Mic size={27} /></span><h2>正在打开倾听</h2><p>首次使用请允许麦克风。不会保存原始音频。</p></div>
+            )}
+
+            {!record && voice.status === 'listening' && (
+              <div className="companion-listening">
+                <div className="companion-context"><span className="voice-live-dot" />{request.context}<time>{String(Math.floor(voice.elapsedSec / 60)).padStart(2, '0')}:{String(voice.elapsedSec % 60).padStart(2, '0')}</time></div>
+                <div className="companion-orb" style={{ '--companion-level': `${Math.max(108, 108 + voice.liveLevel * 0.62)}px` } as CSSProperties}><i /><span><Mic size={30} /></span></div>
+                <h2>不用组织语言，我会先听完。</h2>
+                <div className="companion-transcript" aria-live="polite">{voice.transcript || voice.interimTranscript ? <p>{voice.transcript}<em>{voice.interimTranscript}</em></p> : <span>可以从“我现在……”开始</span>}</div>
+                {voice.error && <p className="voice-inline-error">{voice.error}</p>}
+                <button className="companion-stop" onClick={stopListening}><Square size={15} />我说完了</button>
+                <p className="companion-privacy"><LockKeyhole size={12} />应用不保存原始音频，转写与分析仅存当前设备</p>
+              </div>
+            )}
+
+            {!record && voice.status === 'review' && (
+              <div className="companion-review">
+                <div className="companion-review-title"><span><PencilLine size={19} /></span><div><h2>确认一下我听到的内容</h2><p>可以修正错字，随后自动整理、分析并归档。</p></div></div>
+                <textarea value={draft} onChange={(event) => setDraft(event.target.value)} rows={6} aria-label="语音转写内容" placeholder="刚才没有听到内容，可以在这里补充" />
+                <div className="companion-review-meta"><span>{Math.round(voice.metrics.durationSec)} 秒</span><span>原始碎片会附在整理日记下方</span></div>
+                <button className="companion-save" onClick={saveAndAnalyze} disabled={!draft.trim()}><Save size={16} />自动整理、分析并归档</button>
+              </div>
+            )}
+
+            {!record && voice.status === 'error' && (
+              <div className="companion-error"><span><Mic size={25} /></span><h2>这次没有连接上麦克风</h2><p>{voice.error}</p><button onClick={() => void voice.start()}><RotateCcw size={15} />重新尝试</button></div>
+            )}
+
+            {record && coachPlan && (
+              <div className="companion-result">
+                <div className="companion-result-mark"><span><Check size={21} /></span><div><p>已自动归入个人档案</p><h2>我听见了，也替你整理好了。</h2></div></div>
+                <blockquote>{record.analysis.response}</blockquote>
+                <div className="companion-state-row"><span>能量 <strong>{record.analysis.energy}/5</strong></span><span>清晰 <strong>{record.analysis.clarity}/5</strong></span><span>压力 <strong>{record.analysis.pressure}/5</strong></span></div>
+                <article className="companion-diary-preview"><header><BookOpenText size={15} /><span>整理后的日记</span></header><p>{record.organizedText}</p><details><summary>查看原始表达碎片</summary><blockquote>{record.rawTranscript}</blockquote></details></article>
+                <div className="companion-calibration"><p>这次判断接近真实的你吗？</p><div><button className={record.calibration === -1 ? 'active' : ''} onClick={() => calibrate(-1)}>我更平静</button><button className={record.calibration === 0 ? 'active' : ''} onClick={() => calibrate(0)}>比较接近</button><button className={record.calibration === 1 ? 'active' : ''} onClick={() => calibrate(1)}>我更紧绷</button></div>{calibrationNote && <span>{calibrationNote}</span>}</div>
+                <button className="companion-next" onClick={close}><span><BrainCircuit size={17} /></span><div><small>此刻最小下一步</small><strong>{coachPlan.commitment}</strong></div><Check size={16} /></button>
+                <button className="companion-open-journal" onClick={() => { close(); navigate('/journal') }}><ShieldCheck size={13} />打开个人日志档案<ArrowRight size={14} /></button>
+              </div>
+            )}
+          </section>
+        </div>
+      )}
+    </>
+  )
+}

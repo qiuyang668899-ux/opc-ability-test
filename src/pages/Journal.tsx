@@ -1,10 +1,10 @@
-import { useState, useCallback, useMemo } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useState, useCallback, useEffect, useMemo } from 'react'
 import { AudioLines, BookOpen, Plus, ChevronDown, Sparkles, FileText, Mic, ShieldCheck, Trash2, ArrowRight } from 'lucide-react'
 import { type JournalEntry, DISTORTIONS, loadState, saveState, recomputeUserState } from '../stores/useStore'
 import { UI } from '../utils/i18n'
 import { loadVoiceMemory, rebuildVoiceMemory, voiceMemoryInsight, type VoiceJournalRecord, type VoiceMemory } from '../engines/voiceJournalEngine'
 import VoiceInputButton from '../components/VoiceInputButton'
+import { openVoiceCompanion } from '../components/voiceCompanionBus'
 
 function analyzeEntry(entry: JournalEntry): string {
   const distortion = entry.distortion || '未指定'
@@ -20,7 +20,6 @@ function analyzeEntry(entry: JournalEntry): string {
 }
 
 export default function Journal() {
-  const navigate = useNavigate()
   const [entries, setEntries] = useState<JournalEntry[]>(() => loadState('journal', []))
   const [voiceRecords, setVoiceRecords] = useState<VoiceJournalRecord[]>(() => loadState('voiceJournal', []))
   const [voiceMemory, setVoiceMemory] = useState<VoiceMemory>(() => loadVoiceMemory(loadState<VoiceMemory | undefined>('voiceMemory', undefined)))
@@ -52,6 +51,16 @@ export default function Journal() {
   const filled = [trigger, oldPattern, newResponse, somatic, distortion].filter(Boolean).length
   const filteredEntries = useMemo(() => entries.filter((entry) => filter === 'all' || (filter === 'voice' ? entry.source === 'voice' : entry.source !== 'voice')), [entries, filter])
   const archiveDays = useMemo(() => new Set(entries.map((entry) => new Date(entry.timestamp).toLocaleDateString('en-CA'))).size, [entries])
+
+  useEffect(() => {
+    const refreshArchive = () => {
+      setEntries(loadState('journal', []))
+      setVoiceRecords(loadState('voiceJournal', []))
+      setVoiceMemory(loadVoiceMemory(loadState<VoiceMemory | undefined>('voiceMemory', undefined)))
+    }
+    window.addEventListener('hos:data-updated', refreshArchive)
+    return () => window.removeEventListener('hos:data-updated', refreshArchive)
+  }, [])
 
   const deleteEntry = (entry: JournalEntry) => {
     if (!window.confirm('删除这条个人日志？此操作无法撤销。')) return
@@ -98,7 +107,7 @@ export default function Journal() {
           <article><strong>{archiveDays}</strong><span>真实记录日</span></article>
         </div>
         <div className="journal-archive-topics"><span>持续出现的关注</span><div>{voiceMemory.recurringTopics.length ? voiceMemory.recurringTopics.slice(0, 4).map((topic) => <em key={topic.label}>{topic.label}<small>{topic.count}</small></em>) : <em>从第一次语音日记开始</em>}</div></div>
-        <button onClick={() => navigate('/architect?voice=1')}><span><Mic size={20} /></span><div><strong>记录此刻的我</strong><small>直接说，HOS 会倾听、整理并保存</small></div><ArrowRight size={16} /></button>
+        <button onClick={() => openVoiceCompanion({ context: '个人档案 · 此刻状态' })}><span><Mic size={20} /></span><div><strong>记录此刻的我</strong><small>直接说，HOS 会倾听、整理并保存</small></div><ArrowRight size={16} /></button>
       </section>
 
       <div className="journal-filter" role="tablist" aria-label="日志类型">
@@ -250,10 +259,18 @@ export default function Journal() {
 
             {expandedId === entry.id && (
               <div className="px-5 pb-5 space-y-3 border-t border-hos-border/50 pt-4">
-                <div>
-                  <p className="text-[10px] text-hos-orange font-medium">{entry.source === 'voice' ? '你当时说' : UI.oldProgram.zh}</p>
-                  <p className="text-[12px] text-hos-text mt-1 leading-relaxed">{entry.oldPattern}</p>
-                </div>
+                {entry.source === 'voice' && (entry.organizedText || entry.rawFragment) ? (
+                  <div className="voice-archive-content">
+                    <p className="voice-archive-label"><BookOpen size={12} />整理后的日记</p>
+                    <p className="voice-organized-copy">{entry.organizedText || entry.oldPattern}</p>
+                    <details><summary>查看原始表达碎片</summary><blockquote>{entry.rawFragment || entry.oldPattern}</blockquote></details>
+                  </div>
+                ) : (
+                  <div>
+                    <p className="text-[10px] text-hos-orange font-medium">{entry.source === 'voice' ? '你当时说' : UI.oldProgram.zh}</p>
+                    <p className="text-[12px] text-hos-text mt-1 leading-relaxed">{entry.oldPattern}</p>
+                  </div>
+                )}
                 {entry.source === 'voice' && entry.voiceSignals && (
                   <div className="voice-journal-signals"><p><AudioLines size={12} />表达线索</p><div>{entry.voiceSignals.map((signal) => <span key={signal}>{signal}</span>)}</div></div>
                 )}

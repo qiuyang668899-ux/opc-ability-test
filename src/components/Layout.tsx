@@ -1,8 +1,9 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { Suspense, useCallback, useEffect, useRef, useState } from 'react'
 import { Outlet, NavLink, useLocation } from 'react-router-dom'
 import { BookOpen, BrainCircuit, Grid3X3, Home, Music2 } from 'lucide-react'
 import MusicPlayer from './MusicPlayer'
 import ThemeSwitcher from './ThemeSwitcher'
+import VoiceCompanion from './VoiceCompanion'
 import { getStoredTheme, saveTheme, type HOSTheme } from '../theme'
 
 const navItems = [
@@ -31,11 +32,14 @@ export default function Layout() {
   return (
     <div className="app-shell">
       <main ref={mainRef} className="flex-1 overflow-y-auto pb-[92px]">
-        <Outlet />
+        <Suspense fallback={<div className="hos-page page-loading"><span /><p>正在展开这一页…</p></div>}>
+          <Outlet />
+        </Suspense>
       </main>
 
       <MusicPlayer />
       <ThemeSwitcher theme={theme} open={themeOpen} onOpenChange={setThemeOpen} onThemeChange={changeTheme} />
+      <VoiceCompanion />
 
       <nav className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[520px] hos-glass z-50">
         <div className="flex justify-around items-center h-[68px] px-1 pb-1">

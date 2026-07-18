@@ -40,6 +40,7 @@ import {
   analyzeVoiceJournal,
   calibrateVoiceMemory,
   loadVoiceMemory,
+  organizeVoiceDiary,
   polishVoiceTranscript,
   updateVoiceMemory,
   voiceMemoryInsight,
@@ -209,16 +210,18 @@ export default function Architect() {
       confidence: analysis.confidence,
     }
     const nextPlan = createCoachPlan(transcript, { ...currentSnapshot, checkIn: inferredCheckIn }, coachPlan)
+    const organizedText = organizeVoiceDiary(analysis, nextPlan.commitment)
     const record: VoiceJournalRecord = {
       id: `vj-${now}`,
       timestamp: now,
       date: new Date().toLocaleDateString('en-CA'),
-      rawTranscript: voice.transcript,
+      rawTranscript: voice.transcript || transcript,
       transcript,
       metrics: voice.metrics,
       analysis,
       coachMode: nextPlan.mode,
       commitment: nextPlan.commitment,
+      organizedText,
     }
     const voiceRecords = loadState<VoiceJournalRecord[]>('voiceJournal', [])
     saveState('voiceJournal', [record, ...voiceRecords].slice(0, 180))
@@ -239,6 +242,8 @@ export default function Architect() {
       source: 'voice',
       voiceRecordId: record.id,
       voiceSignals: analysis.deliverySignals,
+      organizedText,
+      rawFragment: voice.transcript || transcript,
     }
     saveState('journal', [journalEntry, ...journal].slice(0, 365))
     saveState('dailyCheckIn', inferredCheckIn)
@@ -251,6 +256,7 @@ export default function Architect() {
     setVoiceRecord(record)
     setFeedbackStatus('')
     recomputeUserState()
+    window.dispatchEvent(new CustomEvent('hos:data-updated'))
     voice.reset()
     navigator.vibrate?.([24, 36, 48])
   }

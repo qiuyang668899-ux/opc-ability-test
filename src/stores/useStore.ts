@@ -31,6 +31,8 @@ export interface JournalEntry {
   source?: 'manual' | 'voice';
   voiceRecordId?: string;
   voiceSignals?: string[];
+  organizedText?: string;
+  rawFragment?: string;
 }
 
 // Chat message
