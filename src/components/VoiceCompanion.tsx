@@ -31,7 +31,7 @@ import { buildCoachSnapshot, createCoachPlan, refineCoachPlanWithAI, type CoachP
 import { activateRegulationJourney, buildRegulationJourney } from '../engines/stateOrchestrator'
 import { loadState, recomputeUserState, saveState, type JournalEntry } from '../stores/useStore'
 import { openVoiceCompanion, registerVoiceCompanion, type VoiceCompanionRequest } from './voiceCompanionBus'
-import { requestHOSCoachAnalysis } from '../services/aiCoachService'
+import { hasHOSAIEndpoint, requestHOSCoachAnalysis } from '../services/aiCoachService'
 
 function todayKey() {
   return new Date().toLocaleDateString('en-CA')
@@ -59,6 +59,7 @@ export default function VoiceCompanion() {
   const [calibrationNote, setCalibrationNote] = useState('')
   const [autoFinalize, setAutoFinalize] = useState(false)
   const [intelligenceState, setIntelligenceState] = useState<'idle' | 'analyzing' | 'deepseek' | 'local'>('idle')
+  const aiEnhanced = hasHOSAIEndpoint()
 
   const begin = useCallback((nextRequest: VoiceCompanionRequest) => {
     setRequest(nextRequest)
@@ -158,11 +159,13 @@ export default function VoiceCompanion() {
     request.onComplete?.(transcript, nextRecord)
     setRecord(nextRecord)
     setCoachPlan(plan)
-    setIntelligenceState('analyzing')
+    setIntelligenceState(aiEnhanced ? 'analyzing' : 'local')
     setAutoFinalize(false)
     resetVoice()
     window.dispatchEvent(new CustomEvent('hos:data-updated'))
     navigator.vibrate?.([20, 28, 44])
+
+    if (!aiEnhanced) return
 
     void requestHOSCoachAnalysis({ text: transcript, source: 'voice', snapshot })
       .then((insight) => {
@@ -205,7 +208,7 @@ export default function VoiceCompanion() {
         window.dispatchEvent(new CustomEvent('hos:data-updated'))
       })
       .catch(() => setIntelligenceState('local'))
-  }, [draft, request, resetVoice, voiceInterimTranscript, voiceMetrics, voiceTranscript])
+  }, [aiEnhanced, draft, request, resetVoice, voiceInterimTranscript, voiceMetrics, voiceTranscript])
 
   useEffect(() => {
     if (voiceStatus !== 'review') return undefined
@@ -305,7 +308,7 @@ export default function VoiceCompanion() {
                 <div className="companion-result-mark"><span><Check size={21} /></span><div><p>已自动归入个人档案</p><h2>我听见了，也替你整理好了。</h2></div></div>
                 <div className={`companion-intelligence ${intelligenceState}`}>
                   <BrainCircuit size={14} />
-                  <span>{intelligenceState === 'analyzing' ? '正在进行 DeepSeek 深层分析…' : intelligenceState === 'deepseek' ? 'DeepSeek 已完成深层理解与模块编排' : '本地智能已完成分析，网络恢复后可继续深化'}</span>
+                  <span>{intelligenceState === 'analyzing' ? '正在进行 DeepSeek 深层分析…' : intelligenceState === 'deepseek' ? 'DeepSeek 已完成深层理解与模块编排' : 'HOS 本机状态引擎已完成分析 · 无需上传私人记录'}</span>
                 </div>
                 <blockquote>{record.analysis.response}</blockquote>
                 <div className="companion-state-row"><span>能量 <strong>{record.analysis.energy}/5</strong></span><span>清晰 <strong>{record.analysis.clarity}/5</strong></span><span>压力 <strong>{record.analysis.pressure}/5</strong></span></div>

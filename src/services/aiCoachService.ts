@@ -53,6 +53,10 @@ function endpoint() {
   return '/api/hos-coach'
 }
 
+export function hasHOSAIEndpoint() {
+  return Boolean(endpoint())
+}
+
 function contextFromSnapshot(snapshot: CoachSnapshot) {
   return {
     checkIn: snapshot.checkIn

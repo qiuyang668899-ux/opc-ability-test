@@ -25,7 +25,7 @@ export type RegulationJourney = {
 const journeySteps: Record<CoachMode, RegulationStep[]> = {
   stabilize: [
     { id: 'settle-body', title: '先让身体慢下来', reason: '高唤醒时先恢复安全感，思考才会重新可用。', action: '完成一轮温和呼吸重置', route: '/reset/pressure', minutes: 3 },
-    { id: 'sound-buffer', title: '用音景隔开噪声', reason: '减少外部刺激，让注意力从警觉回到稳定。', action: '选择压力释放或雨夜清理', route: '/music', minutes: 8 },
+    { id: 'sound-buffer', title: '用音景隔开噪声', reason: '减少外部刺激，让注意力从警觉回到稳定。', action: '选择压力释放或雨夜清理', route: '/music?intent=pressure', minutes: 8 },
     { id: 'name-one-thing', title: '只收束一件事', reason: '稳定后再把问题缩小，避免重新过载。', action: '让教练帮你确定唯一下一步', route: '/architect', minutes: 4 },
   ],
   clarify: [
@@ -35,12 +35,12 @@ const journeySteps: Record<CoachMode, RegulationStep[]> = {
   ],
   execute: [
     { id: 'tiny-start', title: '把开始缩到两分钟', reason: '启动阻力通常来自任务过大，而不是意志不足。', action: '进入最小行动训练', route: '/flow', minutes: 2 },
-    { id: 'focus-sound', title: '建立行动环境', reason: '稳定的声音线索能减少再次切换和分心。', action: '播放深度专注音景', route: '/music', minutes: 12 },
+    { id: 'focus-sound', title: '建立行动环境', reason: '稳定的声音线索能减少再次切换和分心。', action: '播放深度专注音景', route: '/music?intent=focus', minutes: 12 },
     { id: 'capture-feedback', title: '留下真实反馈', reason: '记录哪里顺、哪里卡，让下一轮推荐更准确。', action: '在日志中说下这一轮感受', route: '/journal', minutes: 2 },
   ],
   recover: [
     { id: 'permit-rest', title: '先允许系统降速', reason: '能量见底时，恢复本身就是最高优先级任务。', action: '完成睡眠与恢复重置', route: '/reset/sleep', minutes: 5 },
-    { id: 'recovery-sound', title: '进入低刺激音景', reason: '用连续、柔和的环境声帮助神经系统退出警觉。', action: '选择睡前修复或晨间启动', route: '/music', minutes: 10 },
+    { id: 'recovery-sound', title: '进入低刺激音景', reason: '用连续、柔和的环境声帮助神经系统退出警觉。', action: '选择睡前修复或晨间启动', route: '/music?intent=sleep', minutes: 10 },
     { id: 'reset-tomorrow', title: '只安排明天第一步', reason: '恢复期不做复杂规划，只给未来留下一个入口。', action: '让教练生成明日保底动作', route: '/architect', minutes: 3 },
   ],
   learn: [
@@ -61,9 +61,9 @@ const moduleSteps: Record<HOSModuleId, RegulationStep> = {
   reset_sleep: { id: 'reset-sleep', title: '允许系统进入恢复', reason: '能量不足时先减载，之后的行动才可持续。', action: '完成睡眠与恢复重置', route: '/reset/sleep', minutes: 5 },
   reset_emotion: { id: 'reset-emotion', title: '先给情绪一点空间', reason: '被看见的情绪才不需要用更强烈的方式表达。', action: '完成情绪整合重置', route: '/reset/emotion', minutes: 4 },
   reset_coherence: { id: 'reset-coherence', title: '清出一个专注通道', reason: '降低无关输入，让注意力重新变得可用。', action: '完成专注校准', route: '/reset/coherence', minutes: 3 },
-  music_pressure: { id: 'music-pressure', title: '用音景缓冲压力', reason: '连续柔和的声音帮助系统从警觉回到稳定。', action: '播放压力释放音景', route: '/music', minutes: 8 },
-  music_sleep: { id: 'music-sleep', title: '进入低刺激音景', reason: '减少新的信息，让身体更容易进入修复节律。', action: '播放睡前修复音景', route: '/music', minutes: 10 },
-  music_focus: { id: 'music-focus', title: '建立专注环境', reason: '稳定的场景音乐可以减少切换和分心。', action: '播放深度专注音景', route: '/music', minutes: 12 },
+  music_pressure: { id: 'music-pressure', title: '用音景缓冲压力', reason: '连续柔和的声音帮助系统从警觉回到稳定。', action: '播放压力释放音景', route: '/music?intent=pressure', minutes: 8 },
+  music_sleep: { id: 'music-sleep', title: '进入低刺激音景', reason: '减少新的信息，让身体更容易进入修复节律。', action: '播放睡前修复音景', route: '/music?intent=sleep', minutes: 10 },
+  music_focus: { id: 'music-focus', title: '建立专注环境', reason: '稳定的场景音乐可以减少切换和分心。', action: '播放深度专注音景', route: '/music?intent=focus', minutes: 12 },
   flow: { id: 'flow', title: '只做一个最小回合', reason: '用低阻力行动获得真实反馈，而不是继续空想。', action: '启动最小专注练习', route: '/flow', minutes: 10 },
   architect: { id: 'architect', title: '把问题收束到一层', reason: '一次只澄清一个关键变量，重新获得选择感。', action: '和状态教练继续梳理', route: '/architect', minutes: 5 },
   journal: { id: 'journal', title: '留下真实反馈', reason: '把感受和结果留下，下一轮推荐会更了解你。', action: '语音说下这一轮感受', route: '/journal', minutes: 2 },

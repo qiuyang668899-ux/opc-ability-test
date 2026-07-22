@@ -22,6 +22,7 @@ import {
   Waves,
 } from 'lucide-react'
 import { buildHomeIntelligence, type SmartAction } from '../engines/homeIntelligence'
+import { buildDailyLoop } from '../engines/dailyLoopEngine'
 import { loadState, saveState, type DailyCheckIn, type JournalEntry } from '../stores/useStore'
 import { loadVoiceMemory, voiceMemoryInsight, type VoiceJournalRecord, type VoiceMemory } from '../engines/voiceJournalEngine'
 import VoiceInputButton from '../components/VoiceInputButton'
@@ -88,6 +89,7 @@ export default function Home() {
   const voiceMemory = loadVoiceMemory(loadState<VoiceMemory | undefined>('voiceMemory', undefined))
   const voiceRecords = loadState<VoiceJournalRecord[]>('voiceJournal', [])
   const journalCount = loadState<JournalEntry[]>('journal', []).length
+  const dailyLoop = buildDailyLoop()
   const actions = [intelligence.primary, ...intelligence.alternatives]
   const recommendation = actions[recommendationIndex % actions.length]
   const RecommendationIcon = actionIcons[recommendation.id]
@@ -117,6 +119,14 @@ export default function Home() {
     setCheckInOpen(false)
     setSavedMessage('已根据新状态更新建议')
     navigator.vibrate?.([24, 32, 46])
+  }
+
+  const continueDailyLoop = () => {
+    if (dailyLoop.action.kind === 'voice') {
+      openVoiceCompanion({ context: dailyLoop.action.context })
+      return
+    }
+    navigate(dailyLoop.action.route)
   }
 
   return (
@@ -168,6 +178,30 @@ export default function Home() {
         <div className="smart-actions-list compact">
           {intelligence.alternatives.slice(0, 2).map((item) => <SmartActionRow key={item.id} item={item} onOpen={navigate} />)}
         </div>
+      </section>
+
+      <section className="home-intelligence-section daily-loop-section">
+        <header>
+          <div><p>DAILY ADAPTIVE LOOP</p><h2>今天只走完这一个闭环</h2></div>
+          <span>{dailyLoop.completedToday}/3</span>
+        </header>
+        <article className="daily-loop-card">
+          <div className="daily-loop-progress" aria-label={`今日闭环完成 ${dailyLoop.progress}%`}>
+            <i style={{ width: `${dailyLoop.progress}%` }} />
+          </div>
+          <div className="daily-loop-steps">
+            {dailyLoop.steps.map((step) => (
+              <div key={step.id} className={step.state}>
+                <span>{step.state === 'complete' ? <Check size={14} /> : step.label.slice(0, 2)}</span>
+                <div><small>{step.label}</small><strong>{step.title}</strong><p>{step.detail}</p></div>
+              </div>
+            ))}
+          </div>
+          <div className="daily-loop-next">
+            <div><small>此刻下一步</small><strong>{dailyLoop.headline}</strong><p>{dailyLoop.summary}</p></div>
+            <button onClick={continueDailyLoop}>{dailyLoop.cta}<ArrowRight size={15} /></button>
+          </div>
+        </article>
       </section>
 
       <section className="system-glance">
