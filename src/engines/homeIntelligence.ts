@@ -82,7 +82,7 @@ const ACTIONS: Record<SmartActionId, SmartAction> = {
     eyebrow: '优先级：恢复',
     title: '今天的进步，从停止透支开始',
     description: '减少输入，选择一段自然音景，让身体重新获得可用资源。',
-    route: '/music', cta: '开始恢复', reason: '今日能量信号偏低', duration: '8 分钟',
+    route: '/music?intent=restore', cta: '开始恢复', reason: '今日能量信号偏低', duration: '8 分钟',
   }),
   clarify: action('clarify', {
     eyebrow: '优先级：清晰',

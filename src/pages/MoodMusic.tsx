@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
-import { Headphones, Info, Music, Play, Radio, Sparkles, Volume2, Waves } from 'lucide-react'
+import { useLocation } from 'react-router-dom'
+import { ArrowRight, Headphones, Info, Music, Play, Radio, Sparkles, Volume2, Waves } from 'lucide-react'
 import { DAILY_AUDIO_TRACKS, FREQUENCY_TRACKS, type MusicTrack } from '../stores/useStore'
 
 type LibraryMode = 'daily' | 'frequency'
@@ -20,6 +21,13 @@ const frequencyGuide = [
   { value: '963Hz', title: '冥想与内省', use: '静坐、价值校准、结束一天' },
 ]
 
+const intentRecommendations = {
+  pressure: { trackId: 'ocean-birds', eyebrow: '压力缓冲', title: '先跟着海浪把呼气放长', reason: '连续海浪没有语言内容，适合先降低外界噪声。' },
+  restore: { trackId: 'valley-sunset', eyebrow: '能量恢复', title: '允许系统从高负荷慢慢退出', reason: '缓慢纯音乐承接疲惫，不要求你立刻进入行动。' },
+  sleep: { trackId: 'rain-long-loop', eyebrow: '睡前降刺激', title: '用长雨声把突发噪音挡在外面', reason: '持续、低变化的环境声更适合作为睡前背景。' },
+  focus: { trackId: 'quiet-cafe', eyebrow: '专注环境', title: '先建立一个不会孤立的工作空间', reason: '轻柔咖啡馆环境声提供陪伴感，同时避免语言内容抢占注意。' },
+} as const
+
 function playTrack(track: MusicTrack, autoPlay = true) {
   window.dispatchEvent(new CustomEvent('hos-open-music', { detail: { trackId: track.id, autoPlay } }))
 }
@@ -31,6 +39,7 @@ function formatDuration(seconds = 0) {
 }
 
 export default function MoodMusic() {
+  const location = useLocation()
   const [library, setLibrary] = useState<LibraryMode>('daily')
   const [category, setCategory] = useState('全部')
   const activeTracks = library === 'daily' ? DAILY_AUDIO_TRACKS : FREQUENCY_TRACKS
@@ -39,6 +48,12 @@ export default function MoodMusic() {
     [activeTracks],
   )
   const filteredTracks = category === '全部' ? activeTracks : activeTracks.filter((track) => track.category.zh === category)
+  const recommendation = useMemo(() => {
+    const intent = new URLSearchParams(location.search).get('intent') as keyof typeof intentRecommendations | null
+    const meta = intent ? intentRecommendations[intent] : undefined
+    const track = meta ? DAILY_AUDIO_TRACKS.find((item) => item.id === meta.trackId) : undefined
+    return meta && track ? { ...meta, track } : undefined
+  }, [location.search])
 
   const switchLibrary = (next: LibraryMode) => {
     setLibrary(next)
@@ -55,6 +70,14 @@ export default function MoodMusic() {
         <h1>心境音乐</h1>
         <p>真实场景音、冥想纯音乐与频率音场分区呈现。日常聆听不需要理解参数，只要选择此刻需要的环境。</p>
       </header>
+
+      {recommendation && (
+        <section className="music-smart-recommendation">
+          <span className="music-smart-icon" style={{ color: recommendation.track.color, background: `${recommendation.track.color}16` }}>{recommendation.track.icon}</span>
+          <div><small>HOS 推荐 · {recommendation.eyebrow}</small><h2>{recommendation.title}</h2><p>{recommendation.reason}</p></div>
+          <button onClick={() => playTrack(recommendation.track)}><Play size={15} />播放 {recommendation.track.name.zh}<ArrowRight size={14} /></button>
+        </section>
+      )}
 
       <section className="music-library-switch" role="tablist" aria-label="声音内容类型">
         <button role="tab" aria-selected={library === 'daily'} className={library === 'daily' ? 'active' : ''} onClick={() => switchLibrary('daily')}>

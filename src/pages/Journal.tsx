@@ -1,10 +1,11 @@
-import { useState, useCallback, useEffect, useMemo } from 'react'
-import { AudioLines, BookOpen, Plus, ChevronDown, Sparkles, FileText, Mic, ShieldCheck, Trash2, ArrowRight } from 'lucide-react'
+import { useState, useCallback, useEffect, useMemo, type CSSProperties } from 'react'
+import { Activity, AudioLines, BookOpen, Plus, ChevronDown, Sparkles, FileText, Mic, ShieldCheck, Trash2, ArrowRight } from 'lucide-react'
 import { type JournalEntry, DISTORTIONS, loadState, saveState, recomputeUserState } from '../stores/useStore'
 import { UI } from '../utils/i18n'
 import { loadVoiceMemory, rebuildVoiceMemory, voiceMemoryInsight, type VoiceJournalRecord, type VoiceMemory } from '../engines/voiceJournalEngine'
 import VoiceInputButton from '../components/VoiceInputButton'
 import { openVoiceCompanion } from '../components/voiceCompanionBus'
+import { buildPersonalTrajectory } from '../engines/personalInsightEngine'
 
 function analyzeEntry(entry: JournalEntry): string {
   const distortion = entry.distortion || '未指定'
@@ -51,6 +52,7 @@ export default function Journal() {
   const filled = [trigger, oldPattern, newResponse, somatic, distortion].filter(Boolean).length
   const filteredEntries = useMemo(() => entries.filter((entry) => filter === 'all' || (filter === 'voice' ? entry.source === 'voice' : entry.source !== 'voice')), [entries, filter])
   const archiveDays = useMemo(() => new Set(entries.map((entry) => new Date(entry.timestamp).toLocaleDateString('en-CA'))).size, [entries])
+  const trajectory = useMemo(() => buildPersonalTrajectory(voiceRecords, voiceMemory), [voiceMemory, voiceRecords])
 
   useEffect(() => {
     const refreshArchive = () => {
@@ -108,6 +110,38 @@ export default function Journal() {
         </div>
         <div className="journal-archive-topics"><span>持续出现的关注</span><div>{voiceMemory.recurringTopics.length ? voiceMemory.recurringTopics.slice(0, 4).map((topic) => <em key={topic.label}>{topic.label}<small>{topic.count}</small></em>) : <em>从第一次语音日记开始</em>}</div></div>
         <button onClick={() => openVoiceCompanion({ context: '个人档案 · 此刻状态' })}><span><Mic size={20} /></span><div><strong>记录此刻的我</strong><small>直接说，HOS 会倾听、整理并保存</small></div><ArrowRight size={16} /></button>
+      </section>
+
+      <section className="journal-trajectory" aria-label="近七天个人状态轨迹">
+        <header>
+          <div><p>YOUR PATTERN · 7 DAYS</p><h2>系统正在学到什么</h2></div>
+          <span><Activity size={14} />{trajectory.samples} 次样本</span>
+        </header>
+        <div className="trajectory-summary">
+          <strong>{trajectory.headline}</strong>
+          <p>{trajectory.observation}</p>
+        </div>
+        <div className="trajectory-grid">
+          {([
+            ['能量', 'energy', trajectory.averages.energy],
+            ['清晰', 'clarity', trajectory.averages.clarity],
+            ['压力', 'pressure', trajectory.averages.pressure],
+          ] as const).map(([label, key, average]) => (
+            <div className={`trajectory-row ${key}`} key={key}>
+              <div><span>{label}</span><strong>{average ? average.toFixed(1) : '—'}<small>/5</small></strong></div>
+              <div className="trajectory-bars">
+                {trajectory.days.map((day) => {
+                  const value = day[key]
+                  return <i key={day.key} className={value ? 'has-value' : ''} style={{ '--trajectory-value': `${value ? Math.max(12, value * 20) : 7}%` } as CSSProperties}><span /> <small>{day.label}</small></i>
+                })}
+              </div>
+            </div>
+          ))}
+        </div>
+        <div className="trajectory-question">
+          <div><small>下一次记录时，可以留意</small><strong>{trajectory.nextQuestion}</strong></div>
+          <button onClick={() => openVoiceCompanion({ context: '个人轨迹 · 此刻校准' })} aria-label="用语音更新个人状态轨迹"><Mic size={17} /></button>
+        </div>
       </section>
 
       <div className="journal-filter" role="tablist" aria-label="日志类型">

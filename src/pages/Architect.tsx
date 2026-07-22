@@ -56,7 +56,7 @@ import {
   buildTextRegulationJourney,
   type RegulationJourney,
 } from '../engines/stateOrchestrator'
-import { requestHOSCoachAnalysis } from '../services/aiCoachService'
+import { hasHOSAIEndpoint, requestHOSCoachAnalysis } from '../services/aiCoachService'
 
 const starterPrompts = [
   { label: '脑子停不下来', desc: '压力、紧绷、想得太多', icon: Waves, text: '我现在压力很大，脑子停不下来，想先稳定状态。' },
@@ -98,6 +98,7 @@ export default function Architect() {
   const [voiceMemory, setVoiceMemory] = useState<VoiceMemory>(() => loadVoiceMemory(loadState<VoiceMemory | undefined>('voiceMemory', undefined)))
   const [coachPlan, setCoachPlan] = useState<CoachPlan>(() => createCoachPlan(initialContext ?? '我需要一个清晰的下一步', initialSnapshot))
   const [coachJourney, setCoachJourney] = useState<RegulationJourney | null>(rememberedVoice?.journey ?? null)
+  const aiEnhanced = hasHOSAIEndpoint()
   const timersRef = useRef<number[]>([])
   const analysisRequestRef = useRef(0)
   const livePlanRef = useRef<HTMLElement>(null)
@@ -168,7 +169,7 @@ export default function Architect() {
       const timer = window.setTimeout(() => finishResponse(nextPlan, currentSnapshot, journey), delay)
       timersRef.current.push(timer)
     }
-    if (localPlan.isCrisis) {
+    if (localPlan.isCrisis || !aiEnhanced) {
       complete(localPlan)
       return
     }
@@ -183,7 +184,7 @@ export default function Architect() {
     })
       .then((insight) => complete(refineCoachPlanWithAI(localPlan, insight), insight))
       .catch(() => complete(localPlan))
-  }, [coachPlan, finishResponse, input, messages, thinkingStage])
+  }, [aiEnhanced, coachPlan, finishResponse, input, messages, thinkingStage])
 
   const chooseReply = (option: CoachReplyOption) => sendMessage(option.value, option.label)
 
@@ -318,13 +319,15 @@ export default function Architect() {
     setCoachJourney(journey)
     setStarted(true)
     setVoiceRecord(record)
-    setVoiceIntelligence('analyzing')
+    setVoiceIntelligence(aiEnhanced ? 'analyzing' : 'local')
     setVoiceAutoFinalize(false)
     setFeedbackStatus('')
     recomputeUserState()
     window.dispatchEvent(new CustomEvent('hos:data-updated'))
     voice.reset()
     navigator.vibrate?.([24, 36, 48])
+
+    if (!aiEnhanced) return
 
     void requestHOSCoachAnalysis({
       text: transcript,
@@ -431,7 +434,7 @@ export default function Architect() {
       <header className="coach-vnext-header">
         <div className="coach-vnext-brand">
           <span><BrainCircuit size={19} /></span>
-          <div><p>HOS ADAPTIVE COACH</p><h1>状态教练</h1><small>连续理解，不急着回答</small></div>
+          <div><p>HOS ADAPTIVE COACH</p><h1>状态教练</h1><small>连续理解，不急着回答 · {aiEnhanced ? 'DeepSeek 增强' : '本机隐私模式'}</small></div>
         </div>
         {started && <button onClick={resetSession} aria-label="开始新对话"><RefreshCw size={17} /></button>}
       </header>
@@ -507,7 +510,7 @@ export default function Architect() {
           <header><div><p>I HEARD YOU</p><h2>我听见了</h2></div><span>{voiceRecord.analysis.confidence}%<small>当前推测</small></span></header>
           <div className={`companion-intelligence ${voiceIntelligence}`}>
             <BrainCircuit size={14} />
-            <span>{voiceIntelligence === 'analyzing' ? '正在进行 DeepSeek 深层分析…' : voiceIntelligence === 'deepseek' ? 'DeepSeek 已完成深层理解与模块编排' : '本地智能已完成分析'}</span>
+            <span>{voiceIntelligence === 'analyzing' ? '正在进行 DeepSeek 深层分析…' : voiceIntelligence === 'deepseek' ? 'DeepSeek 已完成深层理解与模块编排' : 'HOS 本机状态引擎已完成分析 · 私人记录不出设备'}</span>
           </div>
           <blockquote>{voiceRecord.analysis.response}</blockquote>
           <div className="voice-state-cube">
