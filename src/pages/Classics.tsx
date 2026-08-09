@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
 import { createPortal } from 'react-dom'
+import { useSearchParams } from 'react-router-dom'
 import {
   BookMarked,
   BookOpenText,
@@ -78,6 +79,8 @@ function currentTimestamp() {
 }
 
 export default function Classics() {
+  const [searchParams] = useSearchParams()
+  const requestedBook = searchParams.get('book')
   const [dailyIndex] = useState(() => Math.floor(Date.now() / 86400000) % CLASSIC_PASSAGES.length)
   const [category, setCategory] = useState<'全部' | ClassicCategory>('全部')
   const [need, setNeed] = useState<'全部需要' | ClassicNeed>('全部需要')
@@ -95,8 +98,8 @@ export default function Classics() {
   const [completed, setCompleted] = useState(false)
   const [readerOpen, setReaderOpen] = useState(false)
   const [completeBookId, setCompleteBookId] = useState<string | null>(null)
-  const [jingmingOpen, setJingmingOpen] = useState(false)
-  const [openBookName, setOpenBookName] = useState<string | null>(null)
+  const [jingmingOpen, setJingmingOpen] = useState(requestedBook === '净明宗教录')
+  const [openBookName, setOpenBookName] = useState<string | null>(() => findOpenClassic(requestedBook)?.name ?? null)
   const [corpusQuery, setCorpusQuery] = useState('')
   const [canonDivision, setCanonDivision] = useState<CanonDivision>('儒')
   const [religionFilter, setReligionFilter] = useState<ReligionGroup>('全部')

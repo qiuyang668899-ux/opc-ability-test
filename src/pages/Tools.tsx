@@ -13,6 +13,7 @@ import {
   HeartHandshake,
   Info,
   Music2,
+  MountainSnow,
   RotateCcw,
   ShieldCheck,
   WandSparkles,
@@ -57,6 +58,7 @@ const groups: { title: string; desc: string; items: ToolItem[] }[] = [
     title: '训练成长',
     desc: '把变化做成可以持续的小闭环',
     items: [
+      { title: '东方修仙', desc: '道家古籍、仙传故事与安全的性命合修日课', path: '/cultivation', icon: MountainSnow, tone: 'sage' },
       { title: '7 日启动', desc: '循序建立第一套个人操作系统', path: '/activation', icon: CalendarCheck, tone: 'sage' },
       { title: '心流学习舱', desc: '技能拆解、预演、练习与即时反馈', path: '/flow', icon: Focus, tone: 'lavender' },
       { title: '模式日志', desc: '记录触发、反应和新的选择', path: '/journal', icon: BookOpen, tone: 'sand' },

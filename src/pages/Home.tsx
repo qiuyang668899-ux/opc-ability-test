@@ -14,6 +14,7 @@ import {
   Info,
   Leaf,
   Mic,
+  MountainSnow,
   RefreshCw,
   ScanFace,
   ShieldCheck,
@@ -250,6 +251,11 @@ export default function Home() {
 
       <section className="home-intelligence-section">
         <header><div><p>EXPLORE</p><h2>需要时，它们一直在</h2></div></header>
+        <button className="home-cultivation-entry" onClick={() => navigate('/cultivation')}>
+          <span><MountainSnow size={23} /></span>
+          <span><small>NEW · EASTERN CULTIVATION</small><strong>东方修仙</strong><em>古籍、仙传与肉身元神合修</em></span>
+          <ArrowRight size={17} />
+        </button>
         <div className="minimal-tools">
           <button onClick={() => navigate('/visual')}><span><ScanFace size={20} /></span><strong>视觉诊断</strong><small>看见当下</small></button>
           <button onClick={() => navigate('/architect')}><span><BrainCircuit size={20} /></span><strong>AI 教练</strong><small>收束问题</small></button>
