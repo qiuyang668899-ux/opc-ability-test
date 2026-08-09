@@ -3071,3 +3071,221 @@ button:focus-visible, a:focus-visible, input:focus-visible {
 @media (prefers-reduced-motion: reduce) {
   .daily-loop-progress i, .trajectory-bars i > span { transition: none; }
 }
+
+/* ========== Eastern Cultivation ========== */
+.cultivation-page { padding-top: 18px; }
+.cultivation-hero { position: relative; min-height: 530px; padding: 34px 27px 25px; overflow: hidden; border: 1px solid color-mix(in srgb, var(--color-hos-cyan) 18%, var(--color-hos-border)); border-radius: 34px; background: radial-gradient(circle at 78% 8%, color-mix(in srgb, var(--color-hos-gold) 22%, transparent), transparent 24%), radial-gradient(circle at 7% 76%, color-mix(in srgb, var(--color-hos-green) 15%, transparent), transparent 30%), linear-gradient(155deg, color-mix(in srgb, var(--hos-card-bg) 96%, var(--color-hos-gold)) 0%, color-mix(in srgb, var(--hos-surface-bg) 88%, var(--color-hos-green)) 100%); box-shadow: 0 24px 70px color-mix(in srgb, var(--color-hos-text) 9%, transparent); isolation: isolate; }
+.cultivation-hero::after { content: '修'; position: absolute; z-index: -1; right: -16px; bottom: 5px; color: color-mix(in srgb, var(--color-hos-cyan) 6%, transparent); font-family: 'STKaiti', 'KaiTi', serif; font-size: 210px; line-height: 1; transform: rotate(-5deg); }
+.cultivation-sun { position: absolute; top: 23px; right: 24px; width: 72px; height: 72px; }
+.cultivation-sun > span { position: absolute; inset: 15px; border-radius: 50%; background: color-mix(in srgb, var(--color-hos-gold) 62%, #fff); box-shadow: 0 0 42px color-mix(in srgb, var(--color-hos-gold) 26%, transparent); }
+.cultivation-sun > i { position: absolute; inset: 0; border: 1px solid color-mix(in srgb, var(--color-hos-gold) 28%, transparent); border-radius: 50%; }
+.cultivation-hero > .section-kicker { color: var(--color-hos-cyan); font-size: 9px; letter-spacing: .14em; }
+.cultivation-hero h1 { max-width: 390px; margin-top: 27px; color: var(--color-hos-text); font-family: 'STKaiti', 'KaiTi', serif; font-size: clamp(35px, 9.6vw, 48px); font-weight: 650; line-height: 1.25; letter-spacing: .01em; }
+.cultivation-hero h1 span { color: var(--color-hos-cyan-dim); font-size: .6em; font-weight: 520; }
+.cultivation-hero > p:not(.section-kicker) { max-width: 410px; margin-top: 22px; color: var(--color-hos-text-dim); font-size: 12px; line-height: 1.9; }
+.cultivation-hero-actions { margin-top: 26px; display: flex; flex-wrap: wrap; gap: 9px; }
+.cultivation-hero-actions button { min-height: 48px; padding: 0 17px; display: inline-flex; align-items: center; justify-content: center; gap: 7px; border: 1px solid var(--color-hos-border); border-radius: 15px; color: var(--color-hos-text); background: color-mix(in srgb, var(--hos-card-bg) 84%, transparent); font-size: 11px; font-weight: 720; backdrop-filter: blur(10px); }
+.cultivation-hero-actions button:first-child { border-color: var(--color-hos-text); color: var(--hos-card-bg); background: var(--color-hos-text); }
+.cultivation-hero-stats { position: absolute; right: 24px; bottom: 24px; left: 24px; padding: 17px 10px; display: grid; grid-template-columns: repeat(3, 1fr); border: 1px solid color-mix(in srgb, var(--color-hos-border) 86%, transparent); border-radius: 19px; background: color-mix(in srgb, var(--hos-card-bg) 78%, transparent); backdrop-filter: blur(14px); }
+.cultivation-hero-stats > div { min-width: 0; text-align: center; }
+.cultivation-hero-stats > div + div { border-left: 1px solid var(--color-hos-border); }
+.cultivation-hero-stats strong, .cultivation-hero-stats span { display: block; }
+.cultivation-hero-stats strong { color: var(--color-hos-text); font-family: 'STKaiti', 'KaiTi', serif; font-size: 20px; }
+.cultivation-hero-stats span { margin-top: 4px; color: var(--color-hos-text-muted); font-size: 8.5px; }
+
+.cultivation-today, .cultivation-dual-path, .cultivation-routines, .cultivation-classics, .cultivation-stories, .cultivation-sources { margin-top: 38px; }
+.cultivation-today { padding: 23px; border: 1px solid var(--color-hos-border); border-radius: 26px; background: var(--hos-card-bg); box-shadow: 0 18px 52px var(--hos-shadow-color); }
+.cultivation-today > header { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
+.cultivation-today > header h2 { margin-top: 6px; color: var(--color-hos-text); font-size: 20px; line-height: 1.35; }
+.cultivation-today > header > span { min-height: 33px; padding: 0 11px; display: inline-flex; align-items: center; gap: 5px; border-radius: 999px; color: var(--color-hos-cyan); background: var(--hos-accent-faint); font-size: 9px; font-weight: 720; white-space: nowrap; }
+.cultivation-today > article { margin-top: 20px; padding: 17px; display: grid; grid-template-columns: 48px minmax(0, 1fr) auto; align-items: center; gap: 13px; border-radius: 19px; background: var(--hos-feature-bg); }
+.cultivation-recommend-mark { width: 48px; height: 48px; display: flex; align-items: center; justify-content: center; border-radius: 16px; color: var(--color-hos-cyan); background: var(--hos-card-bg); box-shadow: 0 10px 26px var(--hos-shadow-color); }
+.cultivation-today article small, .cultivation-today article h3, .cultivation-today article p { display: block; }
+.cultivation-today article small { color: var(--color-hos-cyan); font-size: 8px; letter-spacing: .06em; }
+.cultivation-today article h3 { margin-top: 4px; color: var(--color-hos-text); font-size: 14px; }
+.cultivation-today article p { margin-top: 5px; color: var(--color-hos-text-dim); font-size: 9px; line-height: 1.65; }
+.cultivation-today article > button { min-width: 70px; min-height: 42px; padding: 0 11px; display: inline-flex; align-items: center; justify-content: center; gap: 4px; border-radius: 12px; color: #fff; background: var(--color-hos-cyan); font-size: 9.5px; font-weight: 720; }
+.cultivation-stage-track { margin-top: 23px; display: grid; grid-template-columns: repeat(5, 1fr); }
+.cultivation-stage-track > span { position: relative; display: grid; justify-items: center; gap: 7px; color: var(--color-hos-text-muted); }
+.cultivation-stage-track > span::before { content: ''; position: absolute; top: 12px; right: 50%; left: -50%; height: 1px; background: var(--color-hos-border); }
+.cultivation-stage-track > span:first-child::before { display: none; }
+.cultivation-stage-track > span.active::before { background: color-mix(in srgb, var(--color-hos-cyan) 48%, var(--color-hos-border)); }
+.cultivation-stage-track i { position: relative; z-index: 1; width: 25px; height: 25px; display: flex; align-items: center; justify-content: center; border: 1px solid var(--color-hos-border); border-radius: 50%; background: var(--hos-card-bg); font-size: 8px; font-style: normal; }
+.cultivation-stage-track .active i { border-color: var(--color-hos-cyan); color: #fff; background: var(--color-hos-cyan); }
+.cultivation-stage-track em { font-size: 8px; font-style: normal; }
+.cultivation-stage-track .active em { color: var(--color-hos-text); font-weight: 680; }
+.cultivation-stage-next { margin-top: 17px; display: flex; align-items: flex-start; justify-content: center; gap: 6px; color: var(--color-hos-text-muted); font-size: 8.5px; line-height: 1.55; text-align: center; }
+
+.cultivation-section-heading > .section-kicker { color: var(--color-hos-cyan); }
+.cultivation-section-heading h2 { margin-top: 7px; color: var(--color-hos-text); font-family: 'STKaiti', 'KaiTi', serif; font-size: 25px; line-height: 1.35; }
+.cultivation-section-heading > p:last-child { margin-top: 10px; color: var(--color-hos-text-dim); font-size: 10.5px; line-height: 1.75; }
+.cultivation-axis-tabs, .cultivation-story-tabs { margin-top: 17px; padding-bottom: 3px; display: flex; gap: 7px; overflow-x: auto; scrollbar-width: none; }
+.cultivation-axis-tabs::-webkit-scrollbar, .cultivation-story-tabs::-webkit-scrollbar { display: none; }
+.cultivation-axis-tabs button, .cultivation-story-tabs button { min-width: 50px; min-height: 38px; padding: 0 12px; flex: 0 0 auto; border: 1px solid var(--color-hos-border); border-radius: 999px; color: var(--color-hos-text-muted); background: var(--hos-card-bg); font-size: 9px; }
+.cultivation-axis-tabs button.active, .cultivation-story-tabs button.active { border-color: var(--color-hos-text); color: var(--hos-card-bg); background: var(--color-hos-text); }
+.cultivation-method-grid { margin-top: 14px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.cultivation-method-grid > article { min-height: 240px; padding: 17px; display: flex; flex-direction: column; border: 1px solid var(--color-hos-border); border-radius: 21px; background: var(--hos-card-bg); }
+.cultivation-method-grid > article.safety-archive { background: color-mix(in srgb, var(--hos-warning-soft) 52%, var(--hos-card-bg)); }
+.cultivation-method-grid header { display: grid; grid-template-columns: 38px minmax(0, 1fr) auto; align-items: center; gap: 9px; }
+.cultivation-method-grid header > span { width: 38px; height: 38px; display: flex; align-items: center; justify-content: center; border-radius: 13px; color: var(--color-hos-cyan); background: var(--hos-accent-faint); }
+.cultivation-method-grid header small { color: var(--color-hos-text-muted); font-size: 7.5px; line-height: 1.35; }
+.cultivation-method-grid header h3 { margin-top: 3px; color: var(--color-hos-text); font-size: 12.5px; }
+.cultivation-method-grid header > em { color: var(--color-hos-cyan); font-size: 8px; font-style: normal; }
+.cultivation-method-grid > article > p { margin-top: 15px; color: var(--color-hos-text-dim); font-size: 9.5px; line-height: 1.75; }
+.cultivation-method-grid > article > div { margin-top: auto; padding: 12px; border-radius: 13px; background: var(--hos-surface-bg); }
+.cultivation-method-grid > article > div strong, .cultivation-method-grid > article > div span { display: block; }
+.cultivation-method-grid > article > div strong { color: var(--color-hos-cyan); font-size: 8px; }
+.cultivation-method-grid > article > div span { margin-top: 5px; color: var(--color-hos-text); font-size: 9px; line-height: 1.55; }
+.cultivation-method-grid footer { margin-top: 12px; display: flex; align-items: center; gap: 5px; color: var(--color-hos-text-muted); font-size: 7px; }
+.cultivation-method-grid footer i { margin-left: auto; max-width: 47%; overflow: hidden; font-style: normal; text-overflow: ellipsis; white-space: nowrap; }
+
+.cultivation-routine-list { margin-top: 16px; display: grid; gap: 9px; }
+.cultivation-routine-list > button { min-height: 98px; padding: 15px; display: grid; grid-template-columns: 43px minmax(0, 1fr) 25px; align-items: center; gap: 12px; border: 1px solid var(--color-hos-border); border-radius: 19px; text-align: left; background: var(--hos-card-bg); }
+.cultivation-routine-number { width: 43px; height: 52px; display: flex; align-items: center; justify-content: center; border-radius: 14px; color: var(--color-hos-cyan); background: var(--hos-accent-faint); font-family: var(--font-family-mono); font-size: 10px; }
+.cultivation-routine-list small, .cultivation-routine-list strong, .cultivation-routine-list em { display: block; }
+.cultivation-routine-list small { color: var(--color-hos-text-muted); font-size: 8px; }
+.cultivation-routine-list strong { margin-top: 5px; color: var(--color-hos-text); font-size: 14px; }
+.cultivation-routine-list em { margin-top: 5px; color: var(--color-hos-text-dim); font-size: 8.5px; font-style: normal; }
+.cultivation-routine-list > button > svg { color: var(--color-hos-cyan); }
+
+.cultivation-classics { padding: 24px 17px; border: 1px solid var(--color-hos-border); border-radius: 28px; background: var(--hos-card-bg); box-shadow: 0 18px 54px var(--hos-shadow-color); }
+.cultivation-library-controls { margin-top: 19px; }
+.cultivation-library-controls > label { min-height: 49px; padding: 0 7px 0 14px; display: grid; grid-template-columns: 18px minmax(0, 1fr) 40px; align-items: center; gap: 7px; border: 1px solid var(--color-hos-border); border-radius: 15px; background: var(--hos-surface-bg); }
+.cultivation-library-controls > label > svg { color: var(--color-hos-text-muted); }
+.cultivation-library-controls input { width: 100%; min-width: 0; outline: none; color: var(--color-hos-text); background: transparent; font-size: 10px; }
+.cultivation-library-controls > div { margin-top: 9px; display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; }
+.cultivation-library-controls > div::-webkit-scrollbar { display: none; }
+.cultivation-library-controls > div button { min-height: 34px; padding: 0 11px; flex: 0 0 auto; border-radius: 999px; color: var(--color-hos-text-muted); background: var(--hos-surface-bg); font-size: 8px; }
+.cultivation-library-controls > div button.active { color: var(--color-hos-cyan); background: var(--hos-accent-faint); font-weight: 700; }
+.cultivation-book-grid { margin-top: 15px; display: grid; gap: 8px; }
+.cultivation-book-grid > button { min-height: 101px; padding: 13px; display: grid; grid-template-columns: 43px minmax(0, 1fr) 32px; align-items: center; gap: 11px; border: 1px solid var(--color-hos-border); border-radius: 17px; text-align: left; background: var(--hos-surface-bg); }
+.cultivation-book-seal { width: 43px; height: 55px; display: flex; align-items: center; justify-content: center; border-radius: 13px 13px 17px 17px; color: var(--color-hos-cyan); background: var(--hos-accent-faint); font-family: 'STKaiti', 'KaiTi', serif; font-size: 20px; }
+.cultivation-book-grid small, .cultivation-book-grid strong, .cultivation-book-grid p, .cultivation-book-grid em { display: block; }
+.cultivation-book-grid small { color: var(--color-hos-text-muted); font-size: 7.5px; }
+.cultivation-book-grid strong { margin-top: 4px; color: var(--color-hos-text); font-family: 'STKaiti', 'KaiTi', serif; font-size: 15px; }
+.cultivation-book-grid p { margin-top: 4px; color: var(--color-hos-text-dim); font-size: 8.5px; }
+.cultivation-book-grid em { width: fit-content; margin-top: 6px; padding: 3px 7px; border-radius: 999px; color: var(--color-hos-green); background: color-mix(in srgb, var(--color-hos-green) 9%, transparent); font-size: 7px; font-style: normal; }
+.cultivation-book-grid em.safety-guided { color: var(--color-hos-gold); background: var(--hos-warning-soft); }
+.cultivation-book-grid em.safety-archive { color: var(--color-hos-red); background: var(--hos-danger-soft); }
+.cultivation-book-index { display: grid; justify-items: end; gap: 10px; color: var(--color-hos-text-muted); font-family: var(--font-family-mono); font-size: 7px; }
+.cultivation-empty { min-height: 150px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; color: var(--color-hos-text-muted); }
+.cultivation-empty strong { color: var(--color-hos-text); font-size: 11px; }
+.cultivation-empty button { min-height: 36px; padding: 0 13px; border-radius: 999px; color: var(--color-hos-cyan); background: var(--hos-accent-faint); font-size: 8.5px; }
+
+.cultivation-story-tabs { margin-top: 16px; }
+.cultivation-story-grid { margin-top: 13px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; }
+.cultivation-story-grid > button { min-height: 170px; padding: 17px; display: flex; flex-direction: column; align-items: flex-start; border: 1px solid var(--color-hos-border); border-radius: 21px; text-align: left; background: var(--hos-card-bg); }
+.cultivation-story-grid > button > span { width: 39px; height: 39px; display: flex; align-items: center; justify-content: center; border-radius: 14px; color: var(--color-hos-cyan); background: var(--hos-accent-faint); }
+.cultivation-story-grid small { margin-top: 14px; color: var(--color-hos-text-muted); font-size: 7.5px; }
+.cultivation-story-grid strong { margin-top: 5px; color: var(--color-hos-text); font-family: 'STKaiti', 'KaiTi', serif; font-size: 16px; }
+.cultivation-story-grid p { margin-top: 5px; color: var(--color-hos-text-dim); font-size: 9px; }
+.cultivation-story-grid em { margin-top: auto; display: flex; align-items: center; gap: 5px; color: var(--color-hos-cyan); font-size: 8px; font-style: normal; }
+.cultivation-boundary { margin-top: 30px; padding: 18px; display: grid; grid-template-columns: 27px minmax(0, 1fr); gap: 11px; border: 1px solid color-mix(in srgb, var(--color-hos-red) 20%, var(--color-hos-border)); border-radius: 19px; color: var(--color-hos-red); background: var(--hos-danger-soft); }
+.cultivation-boundary strong { color: var(--color-hos-text); font-size: 11px; }
+.cultivation-boundary p { margin-top: 6px; color: var(--color-hos-text-dim); font-size: 8.8px; line-height: 1.75; }
+.cultivation-sources > div:last-child { margin-top: 13px; display: grid; gap: 8px; }
+.cultivation-sources a { min-height: 62px; padding: 12px 14px; display: flex; align-items: center; justify-content: space-between; gap: 12px; border: 1px solid var(--color-hos-border); border-radius: 15px; color: var(--color-hos-text); background: var(--hos-card-bg); }
+.cultivation-sources a strong, .cultivation-sources a small { display: block; }
+.cultivation-sources a strong { font-size: 10px; }
+.cultivation-sources a small { margin-top: 4px; color: var(--color-hos-text-muted); font-size: 8px; }
+.cultivation-sources a svg { color: var(--color-hos-cyan); }
+
+.home-cultivation-entry { width: 100%; min-height: 91px; margin: 15px 0 11px; padding: 14px 16px; display: grid; grid-template-columns: 48px minmax(0, 1fr) 20px; align-items: center; gap: 12px; border: 1px solid color-mix(in srgb, var(--color-hos-cyan) 24%, var(--color-hos-border)); border-radius: 20px; text-align: left; background: radial-gradient(circle at 90% 15%, color-mix(in srgb, var(--color-hos-gold) 18%, transparent), transparent 28%), var(--hos-feature-bg); }
+.home-cultivation-entry > span:first-child { width: 48px; height: 48px; display: flex; align-items: center; justify-content: center; border-radius: 16px; color: var(--color-hos-cyan); background: var(--hos-card-bg); box-shadow: 0 8px 22px var(--hos-shadow-color); }
+.home-cultivation-entry small, .home-cultivation-entry strong, .home-cultivation-entry em { display: block; }
+.home-cultivation-entry small { color: var(--color-hos-cyan); font-size: 7.5px; letter-spacing: .08em; }
+.home-cultivation-entry strong { margin-top: 4px; color: var(--color-hos-text); font-family: 'STKaiti', 'KaiTi', serif; font-size: 16px; }
+.home-cultivation-entry em { margin-top: 3px; color: var(--color-hos-text-dim); font-size: 8.5px; font-style: normal; }
+.home-cultivation-entry > svg { color: var(--color-hos-cyan); }
+
+.cultivation-session-layer, .cultivation-detail-layer { position: fixed; inset: 0; z-index: 150; display: flex; align-items: center; justify-content: center; padding: 12px; }
+.cultivation-session-backdrop { position: absolute; inset: 0; width: 100%; height: 100%; background: var(--hos-backdrop); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
+.cultivation-session-sheet { position: relative; width: min(500px, 100%); height: min(760px, calc(100dvh - 24px)); overflow: hidden; display: flex; flex-direction: column; border: 1px solid var(--color-hos-border); border-radius: 31px; background: var(--hos-shell-bg); box-shadow: 0 34px 100px color-mix(in srgb, var(--color-hos-text) 22%, transparent); }
+.cultivation-session-progress { position: absolute; z-index: 2; inset: 0 0 auto; height: 3px; background: var(--color-hos-border); }
+.cultivation-session-progress i { height: 100%; display: block; background: var(--color-hos-cyan); transition: width .3s linear; }
+.cultivation-session-sheet > header { min-height: 64px; padding: 7px 12px; display: grid; grid-template-columns: 42px minmax(0, 1fr) 42px; align-items: center; gap: 8px; border-bottom: 1px solid var(--color-hos-border); background: color-mix(in srgb, var(--hos-card-bg) 90%, transparent); }
+.cultivation-session-sheet > header > button { width: 39px; height: 39px; display: flex; align-items: center; justify-content: center; border: 1px solid var(--color-hos-border); border-radius: 50%; color: var(--color-hos-text); background: var(--hos-card-bg); }
+.cultivation-session-sheet > header > div { min-width: 0; text-align: center; }
+.cultivation-session-sheet > header small, .cultivation-session-sheet > header strong { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cultivation-session-sheet > header small { color: var(--color-hos-cyan); font-size: 7.5px; letter-spacing: .06em; }
+.cultivation-session-sheet > header strong { margin-top: 4px; color: var(--color-hos-text); font-size: 11px; }
+.cultivation-session-body { min-height: 0; flex: 1; overflow-y: auto; padding: 35px 24px 25px; }
+.cultivation-session-orbit { position: relative; width: 194px; height: 194px; margin: 0 auto; display: grid; place-items: center; border-radius: 50%; background: conic-gradient(var(--color-hos-cyan) var(--practice-progress), var(--color-hos-border) 0); }
+.cultivation-session-orbit::before { content: ''; position: absolute; inset: 5px; border-radius: 50%; background: var(--hos-shell-bg); }
+.cultivation-session-orbit::after { content: ''; position: absolute; inset: 17px; border: 1px solid var(--color-hos-border); border-radius: 50%; background: radial-gradient(circle, var(--hos-accent-faint), var(--hos-card-bg)); }
+.cultivation-session-orbit > span { position: relative; z-index: 1; text-align: center; }
+.cultivation-session-orbit strong, .cultivation-session-orbit small { display: block; }
+.cultivation-session-orbit strong { color: var(--color-hos-text); font-family: var(--font-family-mono); font-size: 31px; font-weight: 520; letter-spacing: .04em; }
+.cultivation-session-orbit small { margin-top: 8px; color: var(--color-hos-text-muted); font-size: 8px; }
+.cultivation-current-step { margin: 27px auto 0; max-width: 390px; text-align: center; }
+.cultivation-current-step small { color: var(--color-hos-cyan); font-size: 8px; letter-spacing: .08em; }
+.cultivation-current-step h2 { margin-top: 9px; color: var(--color-hos-text); font-family: 'STKaiti', 'KaiTi', serif; font-size: 25px; }
+.cultivation-current-step p { margin-top: 12px; color: var(--color-hos-text-dim); font-size: 11px; line-height: 1.8; }
+.cultivation-step-dots { margin-top: 28px; display: flex; align-items: flex-start; justify-content: center; gap: 9px; overflow-x: auto; }
+.cultivation-step-dots > span { min-width: 48px; display: grid; justify-items: center; gap: 7px; color: var(--color-hos-text-muted); }
+.cultivation-step-dots i { width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; border: 1px solid var(--color-hos-border); border-radius: 50%; font-size: 8px; font-style: normal; }
+.cultivation-step-dots .active i, .cultivation-step-dots .done i { border-color: var(--color-hos-cyan); color: #fff; background: var(--color-hos-cyan); }
+.cultivation-step-dots em { font-size: 7.5px; font-style: normal; white-space: nowrap; }
+.cultivation-step-dots .active em { color: var(--color-hos-text); font-weight: 700; }
+.cultivation-session-controls { margin-top: 31px; display: grid; grid-template-columns: minmax(0, 1fr) 52px; gap: 8px; }
+.cultivation-session-controls button { min-height: 52px; display: flex; align-items: center; justify-content: center; gap: 7px; border: 1px solid var(--color-hos-border); border-radius: 16px; color: var(--color-hos-text); background: var(--hos-card-bg); }
+.cultivation-session-controls button.primary { border-color: var(--color-hos-text); color: var(--hos-card-bg); background: var(--color-hos-text); font-size: 11px; font-weight: 720; }
+.cultivation-session-safety { margin-top: 15px; display: flex; align-items: flex-start; justify-content: center; gap: 6px; color: var(--color-hos-text-muted); font-size: 8px; line-height: 1.5; text-align: center; }
+.cultivation-session-finish { min-height: 0; flex: 1; overflow-y: auto; padding: 42px 25px 28px; text-align: center; }
+.cultivation-session-finish > span { width: 66px; height: 66px; margin: 0 auto; display: flex; align-items: center; justify-content: center; border-radius: 50%; color: #fff; background: var(--color-hos-green); box-shadow: 0 0 0 9px color-mix(in srgb, var(--color-hos-green) 10%, transparent); }
+.cultivation-session-finish > .section-kicker { margin-top: 26px; color: var(--color-hos-cyan); }
+.cultivation-session-finish h2 { margin-top: 8px; color: var(--color-hos-text); font-family: 'STKaiti', 'KaiTi', serif; font-size: 27px; }
+.cultivation-session-finish > p:not(.section-kicker) { max-width: 370px; margin: 11px auto 0; color: var(--color-hos-text-dim); font-size: 10px; line-height: 1.75; }
+.cultivation-session-finish > label { margin-top: 29px; display: block; text-align: left; }
+.cultivation-session-finish > label > strong { color: var(--color-hos-text); font-size: 10px; }
+.cultivation-session-finish textarea { width: 100%; min-height: 106px; margin-top: 10px; padding: 14px 48px 14px 14px; resize: none; outline: none; border: 1px solid var(--color-hos-border); border-radius: 16px; color: var(--color-hos-text); background: var(--hos-card-bg); font-size: 10px; line-height: 1.65; }
+.cultivation-save-practice { width: 100%; min-height: 50px; margin-top: 12px; display: flex; align-items: center; justify-content: center; gap: 7px; border-radius: 15px; color: #fff; background: var(--color-hos-text); font-size: 10px; font-weight: 720; }
+.cultivation-save-practice:disabled { color: #fff; background: var(--color-hos-green); opacity: 1; }
+.cultivation-close-practice { min-height: 42px; margin-top: 5px; padding: 0 14px; color: var(--color-hos-text-muted); font-size: 9px; }
+
+.cultivation-detail-sheet { position: relative; width: min(500px, 100%); max-height: min(760px, calc(100dvh - 24px)); padding: 20px 23px 27px; overflow-y: auto; border: 1px solid var(--color-hos-border); border-radius: 28px; background: var(--hos-shell-bg); box-shadow: 0 34px 100px color-mix(in srgb, var(--color-hos-text) 22%, transparent); }
+.cultivation-detail-sheet > header { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.cultivation-detail-sheet > header button { min-height: 42px; display: flex; align-items: center; gap: 5px; color: var(--color-hos-text-dim); font-size: 9px; }
+.cultivation-detail-sheet > header > span { min-height: 31px; padding: 0 9px; display: flex; align-items: center; gap: 5px; border-radius: 999px; color: var(--color-hos-green); background: color-mix(in srgb, var(--color-hos-green) 9%, transparent); font-size: 7.5px; }
+.cultivation-detail-sheet > header > span.safety-guided { color: var(--color-hos-gold); background: var(--hos-warning-soft); }
+.cultivation-detail-sheet > header > span.safety-archive { color: var(--color-hos-red); background: var(--hos-danger-soft); }
+.cultivation-detail-title { margin-top: 27px; text-align: center; }
+.cultivation-detail-title small { color: var(--color-hos-text-muted); font-size: 8px; }
+.cultivation-detail-title h1 { margin-top: 9px; color: var(--color-hos-text); font-family: 'STKaiti', 'KaiTi', serif; font-size: 31px; line-height: 1.35; }
+.cultivation-detail-title p { margin-top: 7px; color: var(--color-hos-cyan); font-size: 9px; }
+.cultivation-detail-sheet > blockquote { margin-top: 26px; padding: 23px 18px; border-block: 1px solid var(--color-hos-border); color: var(--color-hos-text); font-family: 'STKaiti', 'KaiTi', serif; font-size: 20px; line-height: 1.8; text-align: center; }
+.cultivation-detail-sheet > section { margin-top: 17px; padding: 17px; border-radius: 16px; background: var(--hos-card-bg); }
+.cultivation-detail-sheet > section small { color: var(--color-hos-cyan); font-size: 8px; font-weight: 720; letter-spacing: .08em; }
+.cultivation-detail-sheet > section p { margin-top: 8px; color: var(--color-hos-text-dim); font-size: 10.5px; line-height: 1.85; }
+.cultivation-detail-sheet > section.story-insight { background: var(--hos-accent-faint); }
+.cultivation-detail-safety { margin-top: 15px; padding: 13px; display: grid; grid-template-columns: 20px minmax(0, 1fr); gap: 8px; border: 1px solid var(--color-hos-border); border-radius: 14px; color: var(--color-hos-gold); }
+.cultivation-detail-safety p { color: var(--color-hos-text-dim); font-size: 8.5px; line-height: 1.65; }
+.cultivation-detail-sheet > a { min-height: 46px; margin-top: 16px; padding: 0 14px; display: flex; align-items: center; justify-content: center; gap: 7px; border-radius: 14px; color: #fff; background: var(--color-hos-cyan); font-size: 9px; font-weight: 700; }
+.cultivation-story-sheet > section:first-of-type { margin-top: 27px; }
+
+:root[data-hos-theme='clear-order'] :is(.cultivation-hero, .cultivation-today, .cultivation-today > article, .cultivation-method-grid > article, .cultivation-routine-list > button, .cultivation-classics, .cultivation-book-grid > button, .cultivation-story-grid > button, .cultivation-boundary, .cultivation-sources a, .home-cultivation-entry, .cultivation-session-sheet, .cultivation-detail-sheet) { border-radius: 6px; box-shadow: none; }
+:root[data-hos-theme='art-bloom'] .cultivation-hero { border-radius: 42px 18px 42px 18px; }
+:root[data-hos-theme='art-bloom'] .cultivation-story-grid > button:nth-child(3n + 2) { transform: translateY(7px); }
+:root[data-hos-theme='rose-velvet'] .cultivation-sun > span { background: color-mix(in srgb, var(--color-hos-cyan) 42%, #fff); }
+
+@media (max-width: 430px) {
+  .cultivation-hero { min-height: 550px; padding: 29px 21px 22px; border-radius: 27px; }
+  .cultivation-hero-stats { right: 19px; bottom: 19px; left: 19px; }
+  .cultivation-today { padding: 19px 15px; }
+  .cultivation-today > article { grid-template-columns: 43px minmax(0, 1fr); padding: 14px; }
+  .cultivation-recommend-mark { width: 43px; height: 43px; }
+  .cultivation-today article > button { grid-column: 1 / -1; width: 100%; }
+  .cultivation-method-grid { grid-template-columns: 1fr; }
+  .cultivation-method-grid > article { min-height: 220px; }
+  .cultivation-classics { padding: 21px 13px; }
+  .cultivation-story-grid { gap: 8px; }
+  .cultivation-story-grid > button { min-height: 165px; padding: 14px; }
+  .cultivation-session-layer, .cultivation-detail-layer { padding: 0; }
+  .cultivation-session-sheet { width: 100%; height: 100dvh; border: 0; border-radius: 0; }
+  .cultivation-detail-sheet { width: 100%; max-height: 100dvh; min-height: 100dvh; border: 0; border-radius: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cultivation-session-progress i { transition: none; }
+  :root[data-hos-theme='art-bloom'] .cultivation-story-grid > button:nth-child(3n + 2) { transform: none; }
+}

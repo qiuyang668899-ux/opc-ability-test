@@ -19,6 +19,7 @@ const Tools = lazy(() => import('./pages/Tools'))
 const Classics = lazy(() => import('./pages/Classics'))
 const Evolution = lazy(() => import('./pages/Evolution'))
 const DailyRitual = lazy(() => import('./pages/DailyRitual'))
+const Cultivation = lazy(() => import('./pages/Cultivation'))
 
 export default function App() {
   return (
@@ -35,6 +36,7 @@ export default function App() {
           <Route path="music" element={<MoodMusic />} />
           <Route path="tools" element={<Tools />} />
           <Route path="classics" element={<Classics />} />
+          <Route path="cultivation" element={<Cultivation />} />
           <Route path="evolution" element={<Evolution />} />
           <Route path="support" element={<Support />} />
           <Route path="about" element={<About />} />
