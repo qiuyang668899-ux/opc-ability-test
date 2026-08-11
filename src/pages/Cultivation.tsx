@@ -39,6 +39,7 @@ import {
   type ImmortalStory,
 } from '../data/cultivation'
 import { loadState, saveState, type DailyCheckIn, type JournalEntry } from '../stores/useStore'
+import CultivationClassicReader from '../components/CultivationClassicReader'
 import VoiceInputButton from '../components/VoiceInputButton'
 
 type PracticeRecord = {
@@ -287,7 +288,7 @@ export default function Cultivation() {
       </section>
 
       <section className="cultivation-classics" id="cultivation-classics">
-        <div className="cultivation-section-heading"><p className="section-kicker">DAOIST CANON · 修仙典藏</p><h2>{CULTIVATION_CLASSICS.length} 部核心古籍</h2><p>从哲学、养形、存思到内丹与仙传。每部都标明阅读层级，能在经典馆全文阅读的会直接打开应用内阅读器。</p></div>
+        <div className="cultivation-section-heading"><p className="section-kicker">DAOIST CANON · 修仙典藏</p><h2>{CULTIVATION_CLASSICS.length} 部核心古籍 · 全部可读</h2><p>从哲学、养形、存思到内丹与仙传。点击任意一部，直接进入应用内全本原文阅读，不再用摘要或外链代替正文。</p></div>
         <div className="cultivation-library-controls">
           <label><Search size={16} /><input value={classicQuery} onChange={(event) => setClassicQuery(event.target.value.slice(0, 50))} placeholder="搜索典籍、作者或修炼主题" /><VoiceInputButton value={classicQuery} onChange={setClassicQuery} maxLength={50} label="说出想寻找的修仙古籍" /></label>
           <div role="tablist" aria-label="按阅读安全层级筛选">
@@ -299,7 +300,7 @@ export default function Cultivation() {
             <button key={book.id} onClick={() => openClassic(book)}>
               <span className="cultivation-book-seal">{book.axis.slice(0, 1)}</span>
               <span><small>{book.era} · {book.attribution}</small><strong>{book.title}</strong><p>{book.focus}</p><em className={`safety-${book.safety}`}>{safetyMeta[book.safety].label}</em></span>
-              <span className="cultivation-book-index">{String(index + 1).padStart(2, '0')}<ChevronRight size={15} /></span>
+              <span className="cultivation-book-index"><small>全本</small>{String(index + 1).padStart(2, '0')}<ChevronRight size={15} /></span>
             </button>
           ))}
         </div>
@@ -366,20 +367,7 @@ export default function Cultivation() {
         </div>
       ), document.body)}
 
-      {selectedClassic && createPortal((
-        <div className="cultivation-detail-layer" role="dialog" aria-modal="true" aria-label={`${selectedClassic.title}导读`}>
-          <button className="cultivation-session-backdrop" onClick={() => setSelectedClassic(null)} aria-label="关闭导读" />
-          <article className="cultivation-detail-sheet">
-            <header><button onClick={() => setSelectedClassic(null)}><ChevronLeft size={19} />返回典藏</button><span className={`safety-${selectedClassic.safety}`}><ShieldCheck size={12} />{safetyMeta[selectedClassic.safety].label}</span></header>
-            <div className="cultivation-detail-title"><small>{selectedClassic.era} · {selectedClassic.attribution}</small><h1>{selectedClassic.title}</h1><p>{selectedClassic.focus}</p></div>
-            <blockquote>{selectedClassic.excerpt}</blockquote>
-            <section><small>今读</small><p>{selectedClassic.modernReading}</p></section>
-            <section><small>典籍位置</small><p>{selectedClassic.description}</p></section>
-            <div className="cultivation-detail-safety"><ShieldAlert size={16} /><p>{safetyMeta[selectedClassic.safety].detail}</p></div>
-            <a href={selectedClassic.sourceUrl} target="_blank" rel="noreferrer">核对原典来源 · {selectedClassic.sourceLabel}<ExternalLink size={14} /></a>
-          </article>
-        </div>
-      ), document.body)}
+      {selectedClassic && <CultivationClassicReader book={selectedClassic} onClose={() => setSelectedClassic(null)} />}
 
       {selectedStory && createPortal((
         <div className="cultivation-detail-layer" role="dialog" aria-modal="true" aria-label={`${selectedStory.title}故事`}>
