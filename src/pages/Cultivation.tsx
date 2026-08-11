@@ -38,6 +38,7 @@ import {
   type CultivationSafety,
   type ImmortalStory,
 } from '../data/cultivation'
+import { CULTIVATION_TEXT_SOURCES } from '../data/cultivationReader'
 import { loadState, saveState, type DailyCheckIn, type JournalEntry } from '../stores/useStore'
 import CultivationClassicReader from '../components/CultivationClassicReader'
 import VoiceInputButton from '../components/VoiceInputButton'
@@ -203,11 +204,14 @@ export default function Cultivation() {
   }
 
   const openClassic = (book: CultivationClassic) => {
+    if (CULTIVATION_TEXT_SOURCES[book.id]) {
+      setSelectedClassic(book)
+      return
+    }
     if (book.readerBook) {
       navigate(`/classics?book=${encodeURIComponent(book.readerBook)}`)
       return
     }
-    setSelectedClassic(book)
   }
 
   const sessionProgress = selectedRoutine && session
@@ -288,7 +292,7 @@ export default function Cultivation() {
       </section>
 
       <section className="cultivation-classics" id="cultivation-classics">
-        <div className="cultivation-section-heading"><p className="section-kicker">DAOIST CANON · 修仙典藏</p><h2>{CULTIVATION_CLASSICS.length} 部核心古籍 · 全部可读</h2><p>从哲学、养形、存思到内丹与仙传。点击任意一部，直接进入应用内全本原文阅读，不再用摘要或外链代替正文。</p></div>
+        <div className="cultivation-section-heading"><p className="section-kicker">DAOIST CANON · 修仙典藏</p><h2>{CULTIVATION_CLASSICS.length} 部核心古籍 · 原文与译文</h2><p>从哲学、养形、存思到内丹与仙传。点击任意一部，直接阅读全本原文、对应现代译文或逐段对照，不再用摘要代替正文。</p></div>
         <div className="cultivation-library-controls">
           <label><Search size={16} /><input value={classicQuery} onChange={(event) => setClassicQuery(event.target.value.slice(0, 50))} placeholder="搜索典籍、作者或修炼主题" /><VoiceInputButton value={classicQuery} onChange={setClassicQuery} maxLength={50} label="说出想寻找的修仙古籍" /></label>
           <div role="tablist" aria-label="按阅读安全层级筛选">
@@ -300,7 +304,7 @@ export default function Cultivation() {
             <button key={book.id} onClick={() => openClassic(book)}>
               <span className="cultivation-book-seal">{book.axis.slice(0, 1)}</span>
               <span><small>{book.era} · {book.attribution}</small><strong>{book.title}</strong><p>{book.focus}</p><em className={`safety-${book.safety}`}>{safetyMeta[book.safety].label}</em></span>
-              <span className="cultivation-book-index"><small>全本</small>{String(index + 1).padStart(2, '0')}<ChevronRight size={15} /></span>
+              <span className="cultivation-book-index"><small>文译</small>{String(index + 1).padStart(2, '0')}<ChevronRight size={15} /></span>
             </button>
           ))}
         </div>
