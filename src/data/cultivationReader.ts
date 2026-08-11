@@ -130,6 +130,16 @@ export const CULTIVATION_TEXT_SOURCES: Record<string, CultivationTextSource> = {
     branch: 'master',
     volumes: [{ id: 'xingming-full', title: '全本 · 元亨利贞四集', sourceFile: 'KR5i0012_001.txt' }],
   },
+  jingming: {
+    kind: 'kanripo',
+    edition: '《重刊道藏辑要》两卷公版数字底本',
+    sourceLabel: 'Kanripo 汉籍开放数字底本',
+    sourceUrl: 'https://www.kanripo.org/text/KR5i0041/',
+    catalogUrl: 'https://crta.info/wiki/%E5%A4%AA%E4%B8%8A%E9%9D%88%E5%AF%B6%E6%B7%A8%E6%98%8E%E5%AE%97%E6%95%99%E9%8C%84_-_A152',
+    repo: 'kanripo/KR5i0041',
+    branch: 'CK-KZ-jye',
+    volumes: volumes('KR5i0041', ['卷一 · 净明法序与入道品', '卷二 · 经典集成']),
+  },
   liexian: {
     kind: 'kanripo',
     edition: '《正统道藏》两卷公版数字底本',
