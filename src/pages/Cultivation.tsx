@@ -41,6 +41,7 @@ import {
 import { CULTIVATION_TEXT_SOURCES } from '../data/cultivationReader'
 import { loadState, saveState, type DailyCheckIn, type JournalEntry } from '../stores/useStore'
 import CultivationClassicReader from '../components/CultivationClassicReader'
+import MindMatterPractice from '../components/MindMatterPractice'
 import VoiceInputButton from '../components/VoiceInputButton'
 
 type PracticeRecord = {
@@ -253,6 +254,8 @@ export default function Cultivation() {
         </div>
         <p className="cultivation-stage-next"><ShieldCheck size={13} />{stage.next} · 境阶只记录持续性，不代表超自然能力</p>
       </section>
+
+      <MindMatterPractice />
 
       <section className="cultivation-dual-path">
         <div className="cultivation-section-heading">
