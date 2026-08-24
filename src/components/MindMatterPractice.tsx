@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
 import { createPortal } from 'react-dom'
-import { ArrowRight, Brain, Check, ChevronLeft, ChevronRight, Pause, Play, RotateCcw, Save, ShieldAlert, Sparkles, TimerReset, X } from 'lucide-react'
+import { ArrowRight, BellRing, Brain, Check, ChevronLeft, ChevronRight, Pause, Play, RotateCcw, Save, ShieldAlert, Sparkles, X } from 'lucide-react'
 import { MIND_MATTER_MANTRA, MIND_MATTER_PHASES, MIND_MATTER_STEPS } from '../data/mindMatterPractice'
 import { loadState, saveState, type JournalEntry } from '../stores/useStore'
 import VoiceInputButton from './VoiceInputButton'
+import { playCultivationChime, prepareCultivationChime } from '../utils/cultivationChime'
 
 type Observation = 'none' | 'uncertain' | 'directional'
 type Interference = 'none' | 'air' | 'heat' | 'vibration' | 'touch' | 'other'
@@ -87,6 +88,7 @@ export default function MindMatterPractice() {
   const testRound = Math.min(15, Math.floor(activeElapsed / 60) + 1)
   const testMode = activeElapsed % 60 < 30 ? '聚 · 发' : '松'
   const contentRef = useRef<HTMLDivElement>(null)
+  const previousSessionRef = useRef<ActiveSession | null>(null)
 
   const stageMessage = useMemo(() => {
     if (phase.id === 1) return '今天不以转物为目标，只练低噪声、稳定和清晰。'
@@ -104,12 +106,23 @@ export default function MindMatterPractice() {
         if (nextIndex >= MIND_MATTER_STEPS.length) {
           return { ...current, remaining: 0, running: false }
         }
-        navigator.vibrate?.([30, 25, 30])
         return { ...current, stepIndex: nextIndex, remaining: MIND_MATTER_STEPS[nextIndex].minutes * 60, running: false }
       })
     }, 1000)
     return () => window.clearInterval(timer)
   }, [complete, open, session.running])
+
+  useEffect(() => {
+    const previous = previousSessionRef.current
+    const endedNaturally = Boolean(open && previous?.running && previous.remaining === 1 && (
+      session.stepIndex !== previous.stepIndex || session.remaining === 0
+    ))
+    if (endedNaturally) {
+      playCultivationChime()
+      navigator.vibrate?.([45, 90, 45, 90, 70])
+    }
+    previousSessionRef.current = session
+  }, [open, session])
 
   useEffect(() => {
     if (session.stepIndex === MIND_MATTER_STEPS.length - 1 && session.remaining === 0) setComplete(true)
@@ -158,6 +171,11 @@ export default function MindMatterPractice() {
       return
     }
     chooseStep(session.stepIndex + 1)
+  }
+
+  const toggleTimer = () => {
+    if (!session.running) void prepareCultivationChime()
+    setSession((current) => ({ ...current, running: !current.running }))
   }
 
   const savePractice = () => {
@@ -238,8 +256,8 @@ export default function MindMatterPractice() {
               <div className="mind-matter-timer" style={{ '--mind-progress': `${Math.max(2, 100 - (session.remaining / (activeStep.minutes * 60)) * 100)}%` } as CSSProperties}><span><small>{activeStep.character}</small><strong>{formatTimer(session.remaining)}</strong><em>{session.running ? '正在修习' : '准备好再开始'}</em></span></div>
               {activeStep.id === 'test' && <div className={`mind-matter-rhythm ${testMode === '松' ? 'release' : ''}`}><span>第 {testRound}/15 轮</span><strong>{testMode}</strong><em>{testMode === '松' ? '完全放松 30 秒' : '只保留预设结果 30 秒'}</em></div>}
               <div className="mind-matter-step-copy"><small>第 {session.stepIndex + 1}/6 步 · {activeStep.objective}</small><h2>{activeStep.title}</h2><ol>{activeStep.instruction.map((item) => <li key={item}>{item}</li>)}</ol><blockquote>{activeStep.cue}</blockquote>{activeStep.safety && <p className="safety"><ShieldAlert size={14} />{activeStep.safety}</p>}</div>
-              <div className="mind-matter-session-controls"><button className="primary" onClick={() => setSession((current) => ({ ...current, running: !current.running }))}>{session.running ? <Pause size={17} /> : <Play size={17} />}{session.running ? '暂停' : session.remaining === activeStep.minutes * 60 ? '开始这一步' : '继续'}</button><button onClick={nextStep}>{session.stepIndex === 5 ? '完成' : '下一步'}<ArrowRight size={16} /></button><button onClick={restart} aria-label="重新开始"><RotateCcw size={16} /></button></div>
-              <p className="mind-matter-exit"><TimerReset size={13} />可随时暂停；退出会保留今天的进度。任何不适立即停止并进入“收”。</p>
+              <div className="mind-matter-session-controls"><button className="primary" onClick={toggleTimer}>{session.running ? <Pause size={17} /> : <Play size={17} />}{session.running ? '暂停' : session.remaining === activeStep.minutes * 60 ? '开始这一步' : '继续'}</button><button onClick={nextStep}>{session.stepIndex === 5 ? '完成' : '下一步'}<ArrowRight size={16} /></button><button onClick={restart} aria-label="重新开始"><RotateCcw size={16} /></button></div>
+              <p className="mind-matter-exit"><BellRing size={13} />本环节结束会响三声引磬；可暂停，退出会保留进度。</p>
             </div> : <div className="mind-matter-finish">
               <span><Check size={24} /></span><p className="section-kicker">PRACTICE COMPLETE</p><h2>一念已止，回到日常</h2><p>记录的目标不是证明能力，而是让长期数据逐渐比期待更可靠。</p>
               <label><strong>今天的专注稳定度</strong><div className="mind-matter-rating">{[1, 2, 3, 4, 5].map((value) => <button key={value} className={focus === value ? 'active' : ''} onClick={() => setFocus(value)}>{value}</button>)}</div></label>

@@ -1,9 +1,10 @@
-import { useEffect, useMemo, useState, type CSSProperties } from 'react'
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
 import { createPortal } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
 import {
   ArrowRight,
   BookOpenText,
+  BellRing,
   Check,
   ChevronLeft,
   ChevronRight,
@@ -43,6 +44,7 @@ import { loadState, saveState, type DailyCheckIn, type JournalEntry } from '../s
 import CultivationClassicReader from '../components/CultivationClassicReader'
 import MindMatterPractice from '../components/MindMatterPractice'
 import VoiceInputButton from '../components/VoiceInputButton'
+import { playCultivationChime, prepareCultivationChime } from '../utils/cultivationChime'
 
 type PracticeRecord = {
   id: string
@@ -129,6 +131,7 @@ export default function Cultivation() {
   }), [classicQuery, classicSafety])
   const motifs = useMemo(() => ['全部', ...new Set(IMMORTAL_STORIES.map((story) => story.motif))] as Array<'全部' | ImmortalStory['motif']>, [])
   const visibleStories = storyMotif === '全部' ? IMMORTAL_STORIES : IMMORTAL_STORIES.filter((story) => story.motif === storyMotif)
+  const previousSessionRef = useRef<SessionState | null>(null)
 
   useEffect(() => {
     if (!session?.running) return undefined
@@ -143,6 +146,18 @@ export default function Cultivation() {
     }, 1000)
     return () => window.clearInterval(timer)
   }, [selectedRoutine, session?.running])
+
+  useEffect(() => {
+    const previous = previousSessionRef.current
+    const endedNaturally = Boolean(previous?.running && previous.remaining === 1 && session && (
+      session.stepIndex !== previous.stepIndex || session.complete
+    ))
+    if (endedNaturally) {
+      playCultivationChime()
+      navigator.vibrate?.([45, 90, 45, 90, 70])
+    }
+    previousSessionRef.current = session
+  }, [session])
 
   useEffect(() => {
     if (!selectedRoutine && !selectedClassic && !selectedStory) return undefined
@@ -167,6 +182,11 @@ export default function Cultivation() {
     if (!selectedRoutine) return
     setSession({ stepIndex: 0, remaining: selectedRoutine.steps[0].durationSec, running: false, complete: false })
     setSavedSession(false)
+  }
+
+  const toggleRoutineTimer = () => {
+    if (!session?.running) void prepareCultivationChime()
+    setSession((current) => current ? { ...current, running: !current.running } : current)
   }
 
   const saveCompletedSession = () => {
@@ -354,10 +374,10 @@ export default function Cultivation() {
                 <div className="cultivation-current-step"><small>第 {session.stepIndex + 1} / {selectedRoutine.steps.length} 步 · {selectedRoutine.steps[session.stepIndex].axis}</small><h2>{selectedRoutine.steps[session.stepIndex].title}</h2><p>{selectedRoutine.steps[session.stepIndex].instruction}</p></div>
                 <div className="cultivation-step-dots">{selectedRoutine.steps.map((step, index) => <span key={step.title} className={index < session.stepIndex ? 'done' : index === session.stepIndex ? 'active' : ''}><i>{index < session.stepIndex ? <Check size={10} /> : index + 1}</i><em>{step.title}</em></span>)}</div>
                 <div className="cultivation-session-controls">
-                  <button className="primary" onClick={() => setSession((current) => current ? { ...current, running: !current.running } : current)}>{session.running ? <Pause size={18} /> : <Play size={18} />}{session.running ? '暂停' : session.remaining === selectedRoutine.steps[session.stepIndex].durationSec ? '开始修习' : '继续'}</button>
+                  <button className="primary" onClick={toggleRoutineTimer}>{session.running ? <Pause size={18} /> : <Play size={18} />}{session.running ? '暂停' : session.remaining === selectedRoutine.steps[session.stepIndex].durationSec ? '开始修习' : '继续'}</button>
                   <button onClick={restartRoutine} aria-label="从头开始"><RotateCcw size={17} /></button>
                 </div>
-                <p className="cultivation-session-safety"><ShieldCheck size={13} />全程自然呼吸；疼痛、眩晕或明显不适时立即停止。</p>
+                <p className="cultivation-session-safety"><BellRing size={13} />本环节结束会响三声引磬 · 全程自然呼吸，不适立即停止。</p>
               </div>
             ) : (
               <div className="cultivation-session-finish">
