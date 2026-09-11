@@ -14,8 +14,8 @@
 .app-shell .nav-item > span:last-child { font-size: 12px; }
 .cultivation-session-sheet .cultivation-current-step p { font-size: 16px; line-height: 1.9; }
 .cultivation-session-sheet .cultivation-current-step > small { font-size: 13px; }
-.cultivation-session-sheet > header strong, .mind-matter-sheet > header strong { font-size: 16px; }
-.cultivation-session-sheet > header small, .mind-matter-sheet > header small { font-size: 12px; }
+.cultivation-session-layer .cultivation-session-sheet > header strong, .mind-matter-layer .mind-matter-sheet > header strong { font-size: 16px; }
+.cultivation-session-layer .cultivation-session-sheet > header small, .mind-matter-layer .mind-matter-sheet > header small { font-size: 12px; }
 .cultivation-session-sheet .cultivation-step-dots em { font-size: 12px; }
 .cultivation-session-sheet .cultivation-session-safety, .mind-matter-sheet .mind-matter-exit { font-size: 12px; line-height: 1.7; }
 .mind-matter-sheet .mind-matter-step-copy li { font-size: 16px; line-height: 1.85; }
