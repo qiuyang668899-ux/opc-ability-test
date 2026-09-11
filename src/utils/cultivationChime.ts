@@ -1,5 +1,12 @@
 let cultivationAudioContext: AudioContext | null = null
 
+export function getChimeVolume() {
+  try { return Math.max(0.1, Math.min(1, Number(localStorage.getItem('hos_chimeVolume') ?? 0.7))) || 0.7 } catch { return 0.7 }
+}
+export function setChimeVolume(value: number) {
+  try { localStorage.setItem('hos_chimeVolume', String(value)) } catch { /* preference only */ }
+}
+
 type AudioWindow = Window & typeof globalThis & {
   webkitAudioContext?: typeof AudioContext
 }
@@ -15,7 +22,7 @@ function getAudioContext() {
 function strike(context: AudioContext, startAt: number, strength: number) {
   const master = context.createGain()
   master.gain.setValueAtTime(0.0001, startAt)
-  master.gain.exponentialRampToValueAtTime(0.34 * strength, startAt + 0.012)
+  master.gain.exponentialRampToValueAtTime(0.34 * strength * getChimeVolume(), startAt + 0.012)
   master.gain.exponentialRampToValueAtTime(0.0001, startAt + 3.2)
   master.connect(context.destination)
 
@@ -39,6 +46,7 @@ function strike(context: AudioContext, startAt: number, strength: number) {
     envelope.connect(master)
     oscillator.start(startAt)
     oscillator.stop(startAt + partial.decay + 0.08)
+    oscillator.onended = () => { oscillator.disconnect(); envelope.disconnect(); if (index === 0) master.disconnect() }
   })
 }
 
@@ -66,13 +74,10 @@ export async function prepareCultivationChime() {
 }
 
 /** 环节自然结束时播放三声清脆引磬，不依赖外部音频文件。 */
-export function playCultivationChime() {
+export async function playCultivationChime() {
+  if (!await prepareCultivationChime()) return false
   const context = getAudioContext()
-  if (!context) return
-  const play = () => scheduleThreeChimes(context)
-  if (context.state === 'running') {
-    play()
-    return
-  }
-  void context.resume().then(play).catch(() => undefined)
+  if (!context) return false
+  scheduleThreeChimes(context)
+  return true
 }

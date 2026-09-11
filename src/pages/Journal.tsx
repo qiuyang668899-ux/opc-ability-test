@@ -6,18 +6,12 @@ import { loadVoiceMemory, rebuildVoiceMemory, voiceMemoryInsight, type VoiceJour
 import VoiceInputButton from '../components/VoiceInputButton'
 import { openVoiceCompanion } from '../components/voiceCompanionBus'
 import { buildPersonalTrajectory } from '../engines/personalInsightEngine'
+import PracticeLearningCard from '../components/PracticeLearningCard'
+import ArchiveExport from '../components/ArchiveExport'
 
 function analyzeEntry(entry: JournalEntry): string {
   const distortion = entry.distortion || '未指定'
-  return `[内核诊断报告 / Kernel Diagnostic Report]
-
->> 触发 "${entry.trigger}" 激活了自动响应 "${entry.oldPattern}"。
-   认知扭曲类型："${distortion}"
-
->> 新响应 "${entry.newResponse || '待定'}" 引入前额叶有意识参与，
-   打断杏仁核自动回路。有效率：72%
-
->> 建议：触发时增加3次深呼吸缓冲区，为新神经回路激活创造空间。`
+  return `我的觉察记录\n\n发生了什么：${entry.trigger}\n当时的自动反应：${entry.oldPattern}\n我标记的思维习惯：${distortion}\n\n下次愿意尝试：${entry.newResponse || '先停一下，辨认自己的感受与需要。'}\n\n先选一个做得到的小动作，下次记录它是否有帮助。这是对你填写内容的整理，不是心理诊断，也没有预设有效率。`
 }
 
 export default function Journal() {
@@ -42,11 +36,12 @@ export default function Journal() {
     }
     entry.analysis = analyzeEntry(entry)
     const updated = [entry, ...entries]
+    if (!saveState('journal', updated)) return
     setEntries(updated)
-    saveState('journal', updated)
     recomputeUserState()
     setTrigger(''); setOldPattern(''); setNewResponse(''); setSomatic(''); setDistortion('')
     setShowForm(false); setExpandedId(entry.id)
+    window.dispatchEvent(new CustomEvent('hos:data-updated'))
   }, [trigger, oldPattern, newResponse, somatic, distortion, entries])
 
   const filled = [trigger, oldPattern, newResponse, somatic, distortion].filter(Boolean).length
@@ -67,8 +62,8 @@ export default function Journal() {
   const deleteEntry = (entry: JournalEntry) => {
     if (!window.confirm('删除这条个人日志？此操作无法撤销。')) return
     const nextEntries = entries.filter((item) => item.id !== entry.id)
+    if (!saveState('journal', nextEntries)) return
     setEntries(nextEntries)
-    saveState('journal', nextEntries)
     if (entry.voiceRecordId) {
       const nextVoiceRecords = voiceRecords.filter((record) => record.id !== entry.voiceRecordId)
       const nextMemory = rebuildVoiceMemory(nextVoiceRecords)
@@ -78,6 +73,7 @@ export default function Journal() {
       saveState('voiceMemory', nextMemory)
     }
     recomputeUserState()
+    window.dispatchEvent(new CustomEvent('hos:data-updated'))
   }
 
   return (
@@ -144,8 +140,10 @@ export default function Journal() {
         </div>
       </section>
 
+      <PracticeLearningCard />
+      <ArchiveExport />
       <div className="journal-filter" role="tablist" aria-label="日志类型">
-        {([['all', '全部'], ['voice', '语音日记'], ['manual', '重塑记录']] as const).map(([value, label]) => (
+        {([['all', '全部'], ['voice', '语音日记'], ['manual', '练习与手记']] as const).map(([value, label]) => (
           <button key={value} role="tab" aria-selected={filter === value} className={filter === value ? 'active' : ''} onClick={() => setFilter(value)}>{label}</button>
         ))}
       </div>

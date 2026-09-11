@@ -1,7 +1,11 @@
-import { useEffect, useMemo, useState } from 'react'
-import { CheckCircle2, Clock, Focus, Play, RotateCcw, Save, TimerReset } from 'lucide-react'
-import { loadState, recomputeUserState, saveState, type FlowSession } from '../stores/useStore'
+import { useMemo, useState } from 'react'
+import { CheckCircle2, Clock, Focus, Pause, Play, RotateCcw, Save, TimerReset } from 'lucide-react'
+import { loadState, recomputeUserState, saveStateBatch, type FlowSession, type JournalEntry } from '../stores/useStore'
 import VoiceInputButton from '../components/VoiceInputButton'
+import { usePracticeTimer } from '../hooks/usePracticeTimer'
+import PracticeFeeling from '../components/PracticeFeeling'
+import PracticeTimerSupport from '../components/PracticeTimerSupport'
+import { appendPracticeOutcome } from '../engines/practiceOutcomeEngine'
 
 const stages = [
   {
@@ -34,37 +38,27 @@ export default function FlowLab() {
   const [rehearsal, setRehearsal] = useState('')
   const [practiceMinutes, setPracticeMinutes] = useState(15)
   const [feedback, setFeedback] = useState('')
-  const [remaining, setRemaining] = useState(0)
-  const [running, setRunning] = useState(false)
+  const timer = usePracticeTimer([practiceMinutes * 60], true, false)
+  const { remaining, running } = timer.session
+  const actualSeconds = timer.session.spent[0]
+  const [beforeFeeling, setBeforeFeeling] = useState<number | null>(null)
+  const [afterFeeling, setAfterFeeling] = useState<number | null>(null)
+  const [savedMessage, setSavedMessage] = useState('')
 
   const filled = useMemo(() => [skill, target, keyNode, rehearsal, feedback].filter(Boolean).length, [skill, target, keyNode, rehearsal, feedback])
 
-  useEffect(() => {
-    if (!running) return undefined
-    const timer = setInterval(() => {
-      setRemaining((value) => {
-        if (value <= 1) {
-          setRunning(false)
-          return 0
-        }
-        return value - 1
-      })
-    }, 1000)
-    return () => clearInterval(timer)
-  }, [running])
-
   const startTimer = () => {
-    setRemaining(practiceMinutes * 60)
-    setRunning(true)
+    setSavedMessage('')
+    if (timer.session.complete) timer.startFor([practiceMinutes * 60])
+    else timer.toggle()
   }
 
   const resetTimer = () => {
-    setRunning(false)
-    setRemaining(0)
+    timer.reset()
   }
 
   const saveSession = () => {
-    if (!skill.trim() || !target.trim() || !keyNode.trim()) return
+    if (!skill.trim() || !target.trim() || !keyNode.trim() || running) return
     const session: FlowSession = {
       id: `flow-${Date.now()}`,
       timestamp: Date.now(),
@@ -72,18 +66,25 @@ export default function FlowLab() {
       target: target.trim(),
       keyNode: keyNode.trim(),
       rehearsal: rehearsal.trim(),
-      practiceMinutes,
+      practiceMinutes: Math.floor(actualSeconds / 60),
+      actualSeconds,
       feedback: feedback.trim(),
     }
     const updated = [session, ...sessions]
+    const journalEntry: JournalEntry = { id: session.id, practiceOutcomeId: session.id, timestamp: session.timestamp, trigger: `专注练习 · ${session.skill}`, oldPattern: session.target, newResponse: session.keyNode, somatic: '', distortion: '', source: 'manual', organizedText: `本次目标：${session.target}。实际练习 ${actualSeconds} 秒。${feedback.trim() || '尚未补充感受。'}`, rawFragment: feedback.trim(), analysis: beforeFeeling !== null && afterFeeling !== null ? `舒适度自评 ${beforeFeeling} → ${afterFeeling}/5。` : '本次未完成前后自评。' }
+    const values = { flowSessions: updated, ...(actualSeconds > 0 ? { journal: [journalEntry, ...loadState<JournalEntry[]>('journal', [])].slice(0, 500), practiceOutcomes: appendPracticeOutcome({ id: session.id, title: '专注 · 最小行动', route: '/flow', completedAt: session.timestamp, seconds: actualSeconds, before: beforeFeeling, after: afterFeeling, note: feedback.trim() }) } : {}) }
+    if (!saveStateBatch(values)) { setSavedMessage('还没有保存成功，请先复制内容，检查存储空间后重试。'); return }
     setSessions(updated)
-    saveState('flowSessions', updated)
     recomputeUserState()
     setTarget('')
     setKeyNode('')
     setRehearsal('')
     setFeedback('')
     resetTimer()
+    setBeforeFeeling(null)
+    setAfterFeeling(null)
+    setSavedMessage(actualSeconds > 0 ? '实际练习与反馈已归档。回首页可查看今日闭环。' : '已保存为练习计划，尚未计入完成次数。')
+    window.dispatchEvent(new CustomEvent('hos:data-updated'))
   }
 
   const minutes = Math.floor(remaining / 60)
@@ -179,15 +180,15 @@ export default function FlowLab() {
             <div>
               <p className="text-[11px] text-hos-text-dim">最小闭环计时 / Practice Loop</p>
               <p className="text-[24px] font-mono font-bold text-hos-text mt-1">
-                {remaining > 0 ? `${minutes}:${seconds}` : `${practiceMinutes}:00`}
+                {`${minutes}:${seconds}`}
               </p>
             </div>
-            <div className="flex gap-2">
-              {[15, 25, 45, 90].map((item) => (
+            <div className="flex gap-2 flex-wrap justify-end max-w-[210px]">
+              {[2, 5, 15, 25, 45, 90].map((item) => (
                 <button
                   key={item}
                   disabled={running}
-                  onClick={() => setPracticeMinutes(item)}
+                  onClick={() => { setPracticeMinutes(item); timer.resetFor([item * 60]) }}
                   className={`px-2.5 py-1.5 rounded-lg border text-[11px] transition-colors ${
                     practiceMinutes === item
                       ? 'border-hos-cyan/45 bg-hos-cyan/12 text-hos-cyan'
@@ -199,23 +200,27 @@ export default function FlowLab() {
               ))}
             </div>
           </div>
+          {actualSeconds === 0 && !running && <PracticeFeeling value={beforeFeeling} onChange={setBeforeFeeling} phase="before" />}
           <div className="flex gap-2">
             <button
               onClick={startTimer}
-              disabled={running}
               className="flex-1 rounded-xl bg-hos-purple/15 border border-hos-purple/25 text-hos-purple px-4 py-2.5 text-[13px] font-semibold flex items-center justify-center gap-2 disabled:opacity-35 active:scale-[0.98] transition-all"
             >
-              <Play size={14} />
-              开始练习
+              {running ? <Pause size={14} /> : <Play size={14} />}
+              {running ? '暂停练习' : actualSeconds > 0 && !timer.session.complete ? '继续练习' : '开始练习'}
             </button>
             <button
               onClick={resetTimer}
+              aria-label="重置本次练习计时"
               className="w-11 rounded-xl border border-hos-border text-hos-text-muted flex items-center justify-center hover:border-hos-border-light hover:text-hos-text transition-colors"
             >
               <RotateCcw size={15} />
             </button>
           </div>
+          <PracticeTimerSupport running={running} audioReady={timer.audioReady} />
         </div>
+
+        {actualSeconds > 0 && !running && <PracticeFeeling value={afterFeeling} onChange={setAfterFeeling} phase="after" />}
 
         <div>
           <label className="text-[11px] text-hos-text-dim mb-1.5 block">反馈固化 / Feedback</label>
@@ -240,13 +245,14 @@ export default function FlowLab() {
 
         <button
           onClick={saveSession}
-          disabled={!skill.trim() || !target.trim() || !keyNode.trim()}
+          disabled={!skill.trim() || !target.trim() || !keyNode.trim() || running}
           className="w-full rounded-xl px-4 py-3 text-[#fffdf9] font-semibold text-[13px] flex items-center justify-center gap-2 disabled:opacity-25 active:scale-[0.97] transition-all"
           style={{ background: 'linear-gradient(135deg, var(--color-hos-purple), var(--color-hos-cyan))' }}
         >
           <Save size={15} />
-          保存训练闭环
+          {running ? '先暂停，再保存实际练习' : actualSeconds > 0 ? '保存真实练习与反馈' : '保存练习计划'}
         </button>
+        {savedMessage && <p role="status" className="text-sm text-hos-cyan leading-relaxed">{savedMessage}</p>}
       </section>
 
       <section>
@@ -269,7 +275,7 @@ export default function FlowLab() {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between gap-3">
                       <h3 className="text-[14px] font-semibold text-hos-text truncate">{session.skill}</h3>
-                      <span className="text-[10px] text-hos-text-muted font-mono whitespace-nowrap">{session.practiceMinutes}m</span>
+                      <span className="text-[10px] text-hos-text-muted font-mono whitespace-nowrap">{session.actualSeconds === 0 ? '计划' : `${session.practiceMinutes}m`}</span>
                     </div>
                     <p className="text-[12px] text-hos-text-dim mt-1 leading-relaxed">{session.target}</p>
                     <p className="text-[11px] text-hos-cyan mt-2">关键节点：{session.keyNode}</p>

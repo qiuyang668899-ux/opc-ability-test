@@ -7,6 +7,7 @@ import {
   type JournalEntry,
 } from '../stores/useStore'
 import type { VoiceJournalRecord } from './voiceJournalEngine'
+import type { PracticeOutcome } from './practiceOutcomeEngine'
 
 type StepState = 'complete' | 'current' | 'upcoming'
 
@@ -65,18 +66,24 @@ export function buildDailyLoop(): DailyLoopSnapshot {
   const journeyHistory = loadState<RegulationJourney[]>('regulationJourneyHistory', [])
   const hasJourneyToday = journeyHistory.some((journey) => isToday(journey.createdAt, today))
   const flow = loadState<FlowSession[]>('flowSessions', [])
-  const flowToday = flow.find((session) => isToday(session.timestamp, today))
+  const flowToday = flow.find((session) => isToday(session.timestamp, today) && session.actualSeconds !== 0)
   const ritual = getTodayRitualRecord()
   const feedback = loadState<CoachFeedback[]>('coachFeedback', [])
   const journal = loadState<JournalEntry[]>('journal', [])
-  const hasManualReflection = journal.some((entry) => isToday(entry.timestamp, today) && entry.source !== 'voice')
+  const outcomes = loadState<PracticeOutcome[]>('practiceOutcomes', [])
+  const outcomesToday = outcomes.filter((item) => isToday(item.completedAt, today) && item.seconds > 0)
+  const cultivationToday = loadState<Array<{ completedAt: number }>>('cultivationPracticeRecords', []).some((item) => isToday(item.completedAt, today))
+  const reflectionVoice = voice.some((record) => record.date === today && /反馈|回写|练习后|实践后/.test(record.context ?? ''))
+  const hasManualReflection = journal.some((entry) => isToday(entry.timestamp, today) && entry.source !== 'voice' && !entry.practiceOutcomeId)
   const hasFeedback = feedback.some((entry) => entry.date === today)
     || Boolean(flowToday?.feedback.trim())
     || hasManualReflection
+    || reflectionVoice
+    || outcomesToday.some((item) => item.after !== null || Boolean(item.note.trim()))
   const activeJourney = loadActiveRegulationJourney()
 
-  const sensed = Boolean(checkIn || hasVoiceToday)
-  const practiced = Boolean(hasJourneyToday || flowToday || ritual)
+  const sensed = Boolean(checkIn || hasVoiceToday || outcomesToday.some((item) => item.before !== null))
+  const practiced = Boolean(hasJourneyToday || flowToday || ritual || cultivationToday || outcomesToday.length)
   const reflected = Boolean(hasFeedback && practiced)
   const completedToday = [sensed, practiced, reflected].filter(Boolean).length
   const practice = choosePractice(checkIn)
@@ -101,7 +108,7 @@ export function buildDailyLoop(): DailyLoopSnapshot {
 
   if (!sensed) {
     return {
-      progress: 0,
+      progress: Math.round(completedToday / 3 * 100),
       headline: '先让系统真正听见你',
       summary: '一次真实表达，比填写更多表格更能生成贴近此刻的路径。',
       cta: '说说我现在的状态',

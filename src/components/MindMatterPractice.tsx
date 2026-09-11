@@ -2,9 +2,13 @@ import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
 import { createPortal } from 'react-dom'
 import { ArrowRight, BellRing, Brain, Check, ChevronLeft, ChevronRight, Pause, Play, RotateCcw, Save, ShieldAlert, Sparkles, X } from 'lucide-react'
 import { MIND_MATTER_MANTRA, MIND_MATTER_PHASES, MIND_MATTER_STEPS } from '../data/mindMatterPractice'
-import { loadState, saveState, type JournalEntry } from '../stores/useStore'
+import { loadState, saveState, saveStateBatch, type JournalEntry } from '../stores/useStore'
 import VoiceInputButton from './VoiceInputButton'
-import { playCultivationChime, prepareCultivationChime } from '../utils/cultivationChime'
+import { usePracticeTimer } from '../hooks/usePracticeTimer'
+import { type PracticeTimerState } from '../utils/practiceTimer'
+import PracticeTimerSupport from './PracticeTimerSupport'
+import PracticeFeeling from './PracticeFeeling'
+import { appendPracticeOutcome } from '../engines/practiceOutcomeEngine'
 
 type Observation = 'none' | 'uncertain' | 'directional'
 type Interference = 'none' | 'air' | 'heat' | 'vibration' | 'touch' | 'other'
@@ -17,13 +21,8 @@ type MindMatterRecord = {
   observation: Observation
   interference: Interference
   notes: string
-}
-
-type ActiveSession = {
-  date: string
-  stepIndex: number
-  remaining: number
-  running: boolean
+  seconds?: number
+  fullSession?: boolean
 }
 
 const RECORD_KEY = 'mindMatterPracticeRecords'
@@ -43,10 +42,6 @@ function phaseFor(day: number) {
   return MIND_MATTER_PHASES[2]
 }
 
-function emptySession(): ActiveSession {
-  return { date: todayKey(), stepIndex: 0, remaining: MIND_MATTER_STEPS[0].minutes * 60, running: false }
-}
-
 function streakFor(records: MindMatterRecord[]) {
   const dates = new Set(records.map((record) => new Date(record.completedAt).toLocaleDateString('en-CA')))
   const cursor = new Date()
@@ -63,32 +58,34 @@ export default function MindMatterPractice() {
   const [records, setRecords] = useState(() => loadState<MindMatterRecord[]>(RECORD_KEY, []))
   const [open, setOpen] = useState(false)
   const [showTheory, setShowTheory] = useState(false)
-  const [session, setSession] = useState<ActiveSession>(() => {
-    const stored = loadState<ActiveSession | null>(SESSION_KEY, null)
-    return stored?.date === todayKey() ? stored : emptySession()
-  })
-  const [complete, setComplete] = useState(false)
+  const timer = usePracticeTimer(MIND_MATTER_STEPS.map((step) => step.minutes * 60), open, false, loadState<Partial<PracticeTimerState> | null>(SESSION_KEY, null))
+  const session = timer.session
+  const complete = session.complete
+  const [beforeFeeling, setBeforeFeeling] = useState<number | null>(null)
+  const [afterFeeling, setAfterFeeling] = useState<number | null>(null)
+  const [saveError, setSaveError] = useState('')
   const [focus, setFocus] = useState(3)
   const [observation, setObservation] = useState<Observation>('none')
   const [interference, setInterference] = useState<Interference>('none')
   const [notes, setNotes] = useState('')
   const [saved, setSaved] = useState(false)
   const activeStep = MIND_MATTER_STEPS[session.stepIndex]
-  const completedDays = Math.min(100, new Set(records.map((record) => new Date(record.completedAt).toLocaleDateString('en-CA'))).size)
-  const currentDay = Math.min(100, completedDays + (records.some((record) => new Date(record.completedAt).toLocaleDateString('en-CA') === todayKey()) ? 0 : 1))
+  const fullRecords = records.filter((record) => record.fullSession !== false)
+  const completedDays = Math.min(100, new Set(fullRecords.map((record) => new Date(record.completedAt).toLocaleDateString('en-CA'))).size)
+  const currentDay = Math.min(100, completedDays + (fullRecords.some((record) => new Date(record.completedAt).toLocaleDateString('en-CA') === todayKey()) ? 0 : 1))
   const phase = phaseFor(Math.max(1, currentDay))
-  const completedToday = records.some((record) => new Date(record.completedAt).toLocaleDateString('en-CA') === todayKey())
+  const completedToday = fullRecords.some((record) => new Date(record.completedAt).toLocaleDateString('en-CA') === todayKey())
   const totalSeconds = MIND_MATTER_STEPS.reduce((sum, step) => sum + step.minutes * 60, 0)
-  const elapsedPrior = MIND_MATTER_STEPS.slice(0, session.stepIndex).reduce((sum, step) => sum + step.minutes * 60, 0)
-  const progress = complete ? 100 : Math.round(((elapsedPrior + activeStep.minutes * 60 - session.remaining) / totalSeconds) * 100)
+  const actualSeconds = session.spent.reduce((sum, seconds) => sum + seconds, 0)
+  const fullSession = session.completedSteps.length === MIND_MATTER_STEPS.length && actualSeconds >= totalSeconds
+  const progress = Math.round(actualSeconds / totalSeconds * 100)
   const cleanSessions = records.filter((record) => record.interference === 'none').length
   const averageFocus = records.length ? (records.reduce((sum, record) => sum + record.focus, 0) / records.length).toFixed(1) : '—'
-  const streak = streakFor(records)
+  const streak = streakFor(fullRecords)
   const activeElapsed = activeStep.minutes * 60 - session.remaining
   const testRound = Math.min(15, Math.floor(activeElapsed / 60) + 1)
   const testMode = activeElapsed % 60 < 30 ? '聚 · 发' : '松'
   const contentRef = useRef<HTMLDivElement>(null)
-  const previousSessionRef = useRef<ActiveSession | null>(null)
 
   const stageMessage = useMemo(() => {
     if (phase.id === 1) return '今天不以转物为目标，只练低噪声、稳定和清晰。'
@@ -97,41 +94,9 @@ export default function MindMatterPractice() {
   }, [phase.id])
 
   useEffect(() => {
-    if (!open || !session.running || complete) return undefined
-    const timer = window.setInterval(() => {
-      setSession((current) => {
-        if (!current.running) return current
-        if (current.remaining > 1) return { ...current, remaining: current.remaining - 1 }
-        const nextIndex = current.stepIndex + 1
-        if (nextIndex >= MIND_MATTER_STEPS.length) {
-          return { ...current, remaining: 0, running: false }
-        }
-        return { ...current, stepIndex: nextIndex, remaining: MIND_MATTER_STEPS[nextIndex].minutes * 60, running: false }
-      })
-    }, 1000)
-    return () => window.clearInterval(timer)
-  }, [complete, open, session.running])
-
-  useEffect(() => {
-    const previous = previousSessionRef.current
-    const endedNaturally = Boolean(open && previous?.running && previous.remaining === 1 && (
-      session.stepIndex !== previous.stepIndex || session.remaining === 0
-    ))
-    if (endedNaturally) {
-      playCultivationChime()
-      navigator.vibrate?.([45, 90, 45, 90, 70])
-    }
-    previousSessionRef.current = session
-  }, [open, session])
-
-  useEffect(() => {
-    if (session.stepIndex === MIND_MATTER_STEPS.length - 1 && session.remaining === 0) setComplete(true)
-  }, [session.remaining, session.stepIndex])
-
-  useEffect(() => {
     if (!open) return
-    saveState(SESSION_KEY, session)
-  }, [open, session])
+    saveState(SESSION_KEY, { ...session, running: false, deadline: null, beforeFeeling, notes })
+  }, [beforeFeeling, notes, open, session])
 
   useEffect(() => {
     if (!open) return undefined
@@ -142,68 +107,67 @@ export default function MindMatterPractice() {
 
   const start = () => {
     if (completedToday) return
-    const stored = loadState<ActiveSession | null>(SESSION_KEY, null)
-    const next = stored?.date === todayKey() ? stored : emptySession()
-    setSession(next)
-    setComplete(false)
+    const stored = loadState<(Partial<PracticeTimerState> & { beforeFeeling?: number; notes?: string }) | null>(SESSION_KEY, null)
+    timer.reset(stored)
+    setBeforeFeeling(stored?.date === todayKey() ? stored.beforeFeeling ?? null : null)
+    setNotes(stored?.date === todayKey() ? stored.notes ?? '' : '')
+    setAfterFeeling(null)
+    setSaveError('')
     setSaved(false)
     setOpen(true)
   }
 
   const chooseStep = (index: number) => {
-    setSession({ date: todayKey(), stepIndex: index, remaining: MIND_MATTER_STEPS[index].minutes * 60, running: false })
-    setComplete(false)
+    timer.chooseStep(index)
     contentRef.current?.scrollTo({ top: 0 })
   }
 
   const restart = () => {
-    const next = emptySession()
-    setSession(next)
-    saveState(SESSION_KEY, next)
-    setComplete(false)
+    timer.reset()
     setSaved(false)
   }
 
   const nextStep = () => {
     if (session.stepIndex >= MIND_MATTER_STEPS.length - 1) {
-      setComplete(true)
-      setSession((current) => ({ ...current, remaining: 0, running: false }))
+      timer.finish()
       return
     }
     chooseStep(session.stepIndex + 1)
   }
 
   const toggleTimer = () => {
-    if (!session.running) void prepareCultivationChime()
-    setSession((current) => ({ ...current, running: !current.running }))
+    timer.toggle()
   }
 
-  const savePractice = () => {
-    if (saved || completedToday) return
-    const now = Date.now()
-    const record: MindMatterRecord = { id: `mind-matter-${now}`, day: Math.max(1, currentDay), completedAt: now, focus, observation, interference, notes: notes.trim() }
-    const nextRecords = [record, ...records].slice(0, 180)
-    saveState(RECORD_KEY, nextRecords)
-    setRecords(nextRecords)
-    saveState(SESSION_KEY, null)
+  const close = () => { timer.pause(); setOpen(false) }
 
+  const savePractice = () => {
+    if (saved || completedToday || actualSeconds < 1) return
+    const now = Date.now()
+    const record: MindMatterRecord = { id: `mind-matter-${now}`, day: Math.max(1, currentDay), completedAt: now, focus, observation, interference, notes: notes.trim(), seconds: actualSeconds, fullSession }
+    const nextRecords = [record, ...records].slice(0, 180)
     const observationLabel = observation === 'none' ? '未观察到移动' : observation === 'uncertain' ? '观察不确定' : '观察到与预设方向一致的微动'
     const interferenceLabel = interference === 'none' ? '未发现明显环境干扰' : `记录到干扰：${interference}`
     const journal = loadState<JournalEntry[]>('journal', [])
     const entry: JournalEntry = {
       id: record.id,
+      practiceOutcomeId: record.id,
       timestamp: now,
       trigger: `东方修仙 · 守一百日 · 第 ${record.day} 日`,
       oldPattern: '训练前的注意状态由本人觉察',
       newResponse: notes.trim() || `${observationLabel}；${interferenceLabel}。`,
-      somatic: '完成自然呼吸、凝视、观想、聚合、实验与收功',
+      somatic: fullSession ? '完成六步修习' : '部分修习，未完成所有计时环节',
       distortion: '不把主观强度、偶然微动或期待当作能力证据',
-      analysis: `完成 60 分钟六步修习；专注自评 ${focus}/5；${observationLabel}；${interferenceLabel}。`,
+      analysis: `实际计时 ${Math.floor(actualSeconds / 60)} 分 ${actualSeconds % 60} 秒；${fullSession ? '完整六步' : '部分练习，不计入百日完成'}；专注自评 ${focus}/5；${observationLabel}；${interferenceLabel}。${beforeFeeling !== null && afterFeeling !== null ? `舒适度自评 ${beforeFeeling} → ${afterFeeling}/5。` : ''}`,
       source: 'manual',
-      organizedText: notes.trim() || `守一百日第 ${record.day} 日完成。${observationLabel}。`,
-      regulationPath: ['静', '定', '观', '合', '发', '收'],
+      organizedText: notes.trim() || `守一百日第 ${record.day} 日${fullSession ? '完成' : '部分练习'}。${observationLabel}。`,
+      regulationPath: session.completedSteps.map((index) => MIND_MATTER_STEPS[index].character),
     }
-    saveState('journal', [entry, ...journal].slice(0, 500))
+    if (!saveStateBatch({ [RECORD_KEY]: nextRecords, [SESSION_KEY]: null, journal: [entry, ...journal].slice(0, 500), practiceOutcomes: appendPracticeOutcome({ id: record.id, title: '守一 · 百日修习', route: '/cultivation', completedAt: now, seconds: actualSeconds, before: beforeFeeling, after: afterFeeling, note: notes.trim() }) })) {
+      setSaveError('还没有保存成功，请先复制笔记，清理设备空间后重试。')
+      return
+    }
+    setRecords(nextRecords)
     window.dispatchEvent(new CustomEvent('hos:data-updated'))
     navigator.vibrate?.([30, 40, 65])
     setSaved(true)
@@ -246,26 +210,31 @@ export default function MindMatterPractice() {
 
       {open && createPortal((
         <div className="mind-matter-layer" role="dialog" aria-modal="true" aria-label="守一百日意识训练">
-          <button className="cultivation-session-backdrop" onClick={() => setOpen(false)} aria-label="暂存并关闭" />
+          <button className="cultivation-session-backdrop" onClick={close} aria-label="暂存并关闭" />
           <section className="mind-matter-sheet">
             <div className="mind-matter-session-progress"><i style={{ width: `${progress}%` }} /></div>
-            <header><button onClick={() => setOpen(false)} aria-label="暂存并返回"><ChevronLeft size={20} /></button><div><small>守一百日 · 第 {currentDay} 日 · 阶段 {phase.id}</small><strong>{complete ? '如实记录，彻底收功' : `${activeStep.character} · ${activeStep.title}`}</strong></div><button onClick={() => setOpen(false)} aria-label="关闭"><X size={19} /></button></header>
+            <header><button onClick={close} aria-label="暂存并返回"><ChevronLeft size={20} /></button><div><small>守一百日 · 第 {currentDay} 日 · 阶段 {phase.id}</small><strong>{complete ? '如实记录，彻底收功' : `${activeStep.character} · ${activeStep.title}`}</strong></div><button onClick={close} aria-label="关闭"><X size={19} /></button></header>
 
             {!complete ? <div className="mind-matter-session-body" ref={contentRef}>
-              <nav className="mind-matter-step-nav">{MIND_MATTER_STEPS.map((step, index) => <button key={step.id} className={index === session.stepIndex ? 'active' : index < session.stepIndex ? 'done' : ''} onClick={() => chooseStep(index)}><i>{index < session.stepIndex ? <Check size={11} /> : step.character}</i><span>{step.minutes}′</span></button>)}</nav>
+              <nav className="mind-matter-step-nav">{MIND_MATTER_STEPS.map((step, index) => <button key={step.id} className={index === session.stepIndex ? 'active' : session.completedSteps.includes(index) ? 'done' : ''} onClick={() => chooseStep(index)}><i>{session.completedSteps.includes(index) ? <Check size={11} /> : step.character}</i><span>{step.minutes}′</span></button>)}</nav>
+              {actualSeconds === 0 && !session.running && <PracticeFeeling value={beforeFeeling} onChange={setBeforeFeeling} phase="before" />}
               <div className="mind-matter-timer" style={{ '--mind-progress': `${Math.max(2, 100 - (session.remaining / (activeStep.minutes * 60)) * 100)}%` } as CSSProperties}><span><small>{activeStep.character}</small><strong>{formatTimer(session.remaining)}</strong><em>{session.running ? '正在修习' : '准备好再开始'}</em></span></div>
               {activeStep.id === 'test' && <div className={`mind-matter-rhythm ${testMode === '松' ? 'release' : ''}`}><span>第 {testRound}/15 轮</span><strong>{testMode}</strong><em>{testMode === '松' ? '完全放松 30 秒' : '只保留预设结果 30 秒'}</em></div>}
               <div className="mind-matter-step-copy"><small>第 {session.stepIndex + 1}/6 步 · {activeStep.objective}</small><h2>{activeStep.title}</h2><ol>{activeStep.instruction.map((item) => <li key={item}>{item}</li>)}</ol><blockquote>{activeStep.cue}</blockquote>{activeStep.safety && <p className="safety"><ShieldAlert size={14} />{activeStep.safety}</p>}</div>
               <div className="mind-matter-session-controls"><button className="primary" onClick={toggleTimer}>{session.running ? <Pause size={17} /> : <Play size={17} />}{session.running ? '暂停' : session.remaining === activeStep.minutes * 60 ? '开始这一步' : '继续'}</button><button onClick={nextStep}>{session.stepIndex === 5 ? '完成' : '下一步'}<ArrowRight size={16} /></button><button onClick={restart} aria-label="重新开始"><RotateCcw size={16} /></button></div>
-              <p className="mind-matter-exit"><BellRing size={13} />本环节结束会响三声引磬；可暂停，退出会保留进度。</p>
+              <p className="mind-matter-exit"><BellRing size={13} />到时三声引磬后暂停，准备好再开始下一步。跳过的时间不会算作完成。</p>
+              <PracticeTimerSupport running={session.running} audioReady={timer.audioReady} />
             </div> : <div className="mind-matter-finish">
               <span><Check size={24} /></span><p className="section-kicker">PRACTICE COMPLETE</p><h2>一念已止，回到日常</h2><p>记录的目标不是证明能力，而是让长期数据逐渐比期待更可靠。</p>
+              <p className="practice-actual-time">实际计时 {Math.floor(actualSeconds / 60)} 分 {actualSeconds % 60} 秒 · {fullSession ? '完整修习' : '部分练习，不计入百日完成'}</p>
+              <PracticeFeeling value={afterFeeling} onChange={setAfterFeeling} phase="after" />
               <label><strong>今天的专注稳定度</strong><div className="mind-matter-rating">{[1, 2, 3, 4, 5].map((value) => <button key={value} className={focus === value ? 'active' : ''} onClick={() => setFocus(value)}>{value}</button>)}</div></label>
               <label><strong>目标物观察</strong><div className="mind-matter-choice">{([['none', '未移动'], ['uncertain', '不确定'], ['directional', '与预设方向一致']] as const).map(([value, label]) => <button key={value} className={observation === value ? 'active' : ''} onClick={() => setObservation(value)}>{label}</button>)}</div></label>
               <label><strong>是否发现环境干扰</strong><select value={interference} onChange={(event) => setInterference(event.target.value as Interference)}><option value="none">未发现明显干扰</option><option value="air">气流</option><option value="heat">热对流</option><option value="vibration">桌面或地面振动</option><option value="touch">触碰或无意识动作</option><option value="other">其他干扰</option></select></label>
               <label><strong>如实记录，可以直接说</strong><div className="voice-enabled-control textarea"><textarea value={notes} onChange={(event) => setNotes(event.target.value.slice(0, 1000))} placeholder="例如：第8轮出现微动，但同时有人走过；今天观想容易散……" /><VoiceInputButton value={notes} onChange={setNotes} maxLength={1000} label="用语音记录本次修习" /></div></label>
-              <button className="mind-matter-save" onClick={savePractice} disabled={saved || completedToday}><Save size={15} />{saved || completedToday ? '已存入个人日志档案' : '如实归档第 ' + currentDay + ' 日'}</button>
-              <button className="mind-matter-close" onClick={() => setOpen(false)}>完成</button>
+              <button className="mind-matter-save" onClick={savePractice} disabled={saved || completedToday || actualSeconds < 1}><Save size={15} />{saved || completedToday ? '已存入个人日志档案' : actualSeconds < 1 ? '尚未开始计时' : fullSession ? '如实归档第 ' + currentDay + ' 日' : '保存本次部分练习'}</button>
+              {saveError && <p role="alert">{saveError}</p>}
+              <button className="mind-matter-close" onClick={close}>完成</button>
             </div>}
           </section>
         </div>

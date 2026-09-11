@@ -28,6 +28,7 @@ import { loadState, saveState, type DailyCheckIn, type JournalEntry } from '../s
 import { loadVoiceMemory, voiceMemoryInsight, type VoiceJournalRecord, type VoiceMemory } from '../engines/voiceJournalEngine'
 import VoiceInputButton from '../components/VoiceInputButton'
 import { openVoiceCompanion } from '../components/voiceCompanionBus'
+import PracticeLearningCard from '../components/PracticeLearningCard'
 
 const stateLabels = {
   energy: ['耗尽', '偏低', '平稳', '充足', '饱满'],
@@ -113,7 +114,7 @@ export default function Home() {
 
   const saveCheckIn = () => {
     const next: DailyCheckIn = { date: todayKey(), energy, clarity, pressure, intention: intention.trim(), createdAt: Date.now() }
-    saveState('dailyCheckIn', next)
+    if (!saveState('dailyCheckIn', next)) return
     const refreshed = buildHomeIntelligence()
     setIntelligence(refreshed)
     setRecommendationIndex(0)
@@ -140,6 +141,15 @@ export default function Home() {
         </div>
         <button onClick={() => navigate('/about')} className="apple-icon-button" aria-label="了解 HOS"><Info size={18} /></button>
       </header>
+
+      <section className="home-intelligence-section voice-moment-section">
+        <header><div><p>FOR THIS MOMENT</p><h2>此刻，从说出来开始</h2></div><span>不必组织语言</span></header>
+        <button className="home-voice-primary" onClick={() => openVoiceCompanion({ context: '首页 · 此刻状态' })}>
+          <span className="home-voice-orb"><i /><Mic size={24} /></span>
+          <span><small>我在，慢慢说</small><strong>今天的你，怎么样？</strong><em>先听你说，再一起找个小小的下一步。</em></span>
+          <AudioLines size={19} />
+        </button>
+      </section>
 
       <section className="intelligence-hero">
         <div className="intelligence-material" aria-hidden="true"><i /><i /></div>
@@ -169,13 +179,8 @@ export default function Home() {
         {savedMessage && <p className="intelligence-updated"><Check size={13} />{savedMessage}</p>}
       </section>
 
-      <section className="home-intelligence-section voice-moment-section">
-        <header><div><p>FOR THIS MOMENT</p><h2>此刻，从说出来开始</h2></div><span>不必组织语言</span></header>
-        <button className="home-voice-primary" onClick={() => openVoiceCompanion({ context: '首页 · 此刻状态' })}>
-          <span className="home-voice-orb"><i /><Mic size={24} /></span>
-          <span><small>VOICE JOURNAL</small><strong>直接说说今天的状态</strong><em>像写日记一样说，HOS 会先听完，再回应并保存。</em></span>
-          <AudioLines size={19} />
-        </button>
+      <section className="home-intelligence-section">
+        <header><div><h2>也可以自己选</h2></div></header>
         <div className="smart-actions-list compact">
           {intelligence.alternatives.slice(0, 2).map((item) => <SmartActionRow key={item.id} item={item} onOpen={navigate} />)}
         </div>
@@ -205,6 +210,7 @@ export default function Home() {
         </article>
       </section>
 
+      <PracticeLearningCard />
       <section className="system-glance">
         <header>
           <div><p>此刻状态</p><h2>{intelligence.isCheckedIn ? '系统已获得今日信号' : '告诉系统，你现在怎么样'}</h2></div>

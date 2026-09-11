@@ -69,7 +69,7 @@ export const CULTIVATION_ROUTINES: CultivationRoutine[] = [
     axes: ['肉身', '元神', '德行'],
     suitableFor: ['日常筑基', '心神散乱', '久坐疲惫'],
     steps: [
-      { title: '松形', instruction: '站稳或坐稳，缓慢活动肩、颈、腕、髋；只到舒适范围，不追求拉伸幅度。', durationSec: 180, axis: '肉身' },
+      { title: '松形', instruction: '站稳或坐稳，缓慢活动肩、颈、腕、髋；只到舒适范围，不追求拉伸幅度。', durationSec: 120, axis: '肉身' },
       { title: '调息', instruction: '鼻吸口呼或自然鼻息，呼气略从容；不憋气、不数极限、不追逐特殊感觉。', durationSec: 180, axis: '肉身' },
       { title: '收心', instruction: '把注意放在身体接触地面的感觉。念头出现，只标记“想法”，再轻轻回来。', durationSec: 240, axis: '元神' },
       { title: '内观', instruction: '依次觉察额头、下颌、胸口、腹部。只看见，不解释，也不压制。', durationSec: 120, axis: '元神' },

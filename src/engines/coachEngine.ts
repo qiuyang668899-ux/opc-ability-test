@@ -16,6 +16,7 @@ import {
 import { getTodayRitualRecord } from './ritualEngine'
 import type { VoiceJournalRecord } from './voiceJournalEngine'
 import type { HOSAIInsight, HOSModuleId } from '../services/aiCoachService'
+import { practiceLearning, type PracticeOutcome } from './practiceOutcomeEngine'
 
 export type CoachMode = 'stabilize' | 'clarify' | 'execute' | 'recover' | 'learn' | 'reflect'
 
@@ -32,6 +33,8 @@ export interface CoachSnapshot {
   ritualKeyword?: string
   ritualAction?: string
   latestVoice?: VoiceJournalRecord
+  recentPracticeOutcomes?: PracticeOutcome[]
+  helpfulPractice?: { title: string; route: string; count: number; delta: number }
 }
 
 export interface CoachReplyOption {
@@ -216,7 +219,7 @@ export function buildCoachSnapshot(): CoachSnapshot {
   const user = loadState('user', defaultUserState)
   const activation = loadState('activation', defaultActivationProgress)
   const journal = loadState<JournalEntry[]>('journal', [])
-  const flow = loadState<FlowSession[]>('flowSessions', [])
+  const flow = loadState<FlowSession[]>('flowSessions', []).filter((session) => session.actualSeconds !== 0)
   const storedCheckIn = loadState<DailyCheckIn | undefined>('dailyCheckIn', undefined)
   const today = new Date().toLocaleDateString('en-CA')
   const checkIn = storedCheckIn?.date === today ? storedCheckIn : undefined
@@ -224,6 +227,7 @@ export function buildCoachSnapshot(): CoachSnapshot {
   const nextTask = activeDay.tasks.find((task) => !activation.completedTaskIds.includes(task.id))
   const ritual = getTodayRitualRecord()
   const voiceJournal = loadState<VoiceJournalRecord[]>('voiceJournal', [])
+  const learning = practiceLearning()
   return {
     user,
     activationCompletion: getActivationCompletion(activation),
@@ -237,6 +241,8 @@ export function buildCoachSnapshot(): CoachSnapshot {
     ritualKeyword: ritual?.keyword,
     ritualAction: ritual?.microAction,
     latestVoice: voiceJournal[0],
+    recentPracticeOutcomes: learning.records.slice(0, 3),
+    helpfulPractice: learning.best,
   }
 }
 
@@ -275,6 +281,10 @@ export function createCoachPlan(input: string, snapshot: CoachSnapshot, previous
     route: mode === 'learn' || mode === 'execute' ? '/flow' : `/reset/${protocol.routeProtocol}`,
   }
   const learnedDifficulty = loadState<CoachFeedbackSignal[]>('coachFeedback', []).find((item) => item.mode === mode)
+  if (snapshot.helpfulPractice && (mode === 'recover' || mode === 'learn')) {
+    plan.signals.push(`你在「${snapshot.helpfulPractice.title}」的 ${snapshot.helpfulPractice.count} 次自评中感受有所改善，可作为备选。`)
+    plan.reflectionStep = '和练习前的自己比较一次：舒适度有变化吗？如实记录，不追求一定变好。'
+  }
   return learnedDifficulty?.result === 'tiny' ? shrinkCoachPlan(plan) : plan
 }
 

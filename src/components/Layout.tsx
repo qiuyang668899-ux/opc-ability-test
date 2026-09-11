@@ -19,6 +19,12 @@ export default function Layout() {
   const mainRef = useRef<HTMLElement>(null)
   const [theme, setTheme] = useState<HOSTheme>(getStoredTheme)
   const [themeOpen, setThemeOpen] = useState(false)
+  const [storageError, setStorageError] = useState(false)
+  useEffect(() => {
+    const warn = () => setStorageError(true)
+    window.addEventListener('hos:storage-error', warn)
+    return () => window.removeEventListener('hos:storage-error', warn)
+  }, [])
 
   const changeTheme = useCallback((nextTheme: HOSTheme) => {
     setTheme(nextTheme)
@@ -31,6 +37,7 @@ export default function Layout() {
 
   return (
     <div className="app-shell">
+      {storageError && <div className="storage-warning" role="alert"><span>设备未能保存新记录。请先复制当前文字，或到日志导出备份后检查存储空间。</span><button onClick={() => setStorageError(false)} aria-label="关闭保存提醒">知道了</button></div>}
       <main ref={mainRef} className="flex-1 overflow-y-auto pb-[92px]">
         <Suspense fallback={<div className="hos-page page-loading"><span /><p>正在展开这一页…</p></div>}>
           <Outlet />

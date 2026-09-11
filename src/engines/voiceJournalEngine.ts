@@ -34,6 +34,7 @@ export interface VoiceJournalRecord {
   calibration?: -1 | 0 | 1
   journey?: import('./stateOrchestrator').RegulationJourney
   intelligence?: 'local' | 'deepseek'
+  context?: string
 }
 
 export interface VoiceMemory {
@@ -97,6 +98,7 @@ export function polishVoiceTranscript(value: string) {
   return value
     .replace(/\s+/g, '')
     .replace(/^(嗯+|呃+|额+|那个[，,]?|就是[，,]?)+/g, '')
+    .replace(/^[，,、。\s]+/, '')
     .replace(/([，。！？])\1+/g, '$1')
     .replace(/(嗯|呃|额)(?=[，。！？])/g, '')
     .trim()

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState, type CSSProperties } from 'react'
+import { useCallback, useEffect, useRef, useState, type CSSProperties } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   ArrowRight,
@@ -29,7 +29,7 @@ import {
 } from '../engines/voiceJournalEngine'
 import { buildCoachSnapshot, createCoachPlan, refineCoachPlanWithAI, type CoachPlan } from '../engines/coachEngine'
 import { activateRegulationJourney, buildRegulationJourney } from '../engines/stateOrchestrator'
-import { loadState, recomputeUserState, saveState, type JournalEntry } from '../stores/useStore'
+import { loadState, recomputeUserState, saveState, saveStateBatch, type JournalEntry } from '../stores/useStore'
 import { openVoiceCompanion, registerVoiceCompanion, type VoiceCompanionRequest } from './voiceCompanionBus'
 import { hasHOSAIEndpoint, requestHOSCoachAnalysis } from '../services/aiCoachService'
 
@@ -60,21 +60,33 @@ export default function VoiceCompanion() {
   const [autoFinalize, setAutoFinalize] = useState(false)
   const [intelligenceState, setIntelligenceState] = useState<'idle' | 'analyzing' | 'deepseek' | 'local'>('idle')
   const aiEnhanced = hasHOSAIEndpoint()
+  const requestVersion = useRef(0)
+  const saving = useRef(false)
+  const [saveError, setSaveError] = useState('')
+  const [recoveredDraft, setRecoveredDraft] = useState(false)
 
   const begin = useCallback((nextRequest: VoiceCompanionRequest) => {
+    requestVersion.current += 1
+    saving.current = false
+    setSaveError('')
     setRequest(nextRequest)
-    setDraft('')
+    const stored = loadState<{ text: string } | null>('voiceDraft', null)
+    setDraft(stored?.text ?? '')
+    setRecoveredDraft(Boolean(stored?.text))
     setRecord(null)
     setCoachPlan(null)
     setCalibrationNote('')
     setAutoFinalize(false)
     setIntelligenceState('idle')
-    void startVoice()
-  }, [startVoice])
+    if (stored?.text) openManualFallback()
+    else void startVoice()
+  }, [openManualFallback, startVoice])
 
   useEffect(() => registerVoiceCompanion(begin), [begin])
 
   const close = () => {
+    requestVersion.current += 1
+    if (!record && draft.trim()) saveState('voiceDraft', { text: draft, context: request?.context, updatedAt: Date.now() })
     resetVoice()
     setRequest(null)
     setDraft('')
@@ -95,11 +107,19 @@ export default function VoiceCompanion() {
     if (heard) setDraft(heard)
   }, [record, request, voiceInterimTranscript, voiceTranscript])
 
+  useEffect(() => {
+    if (!request || record || !draft.trim()) return
+    const timer = window.setTimeout(() => saveState('voiceDraft', { text: draft, context: request.context, updatedAt: Date.now() }), 400)
+    return () => window.clearTimeout(timer)
+  }, [draft, record, request])
+
   const saveAndAnalyze = useCallback((override?: string) => {
-    if (!request) return
+    if (!request || saving.current) return
     const transcript = polishVoiceTranscript(override ?? draft)
     if (!transcript) return
-    const rawHeard = polishVoiceTranscript(`${voiceTranscript}${voiceInterimTranscript}`) || transcript
+    saving.current = true
+    const version = requestVersion.current
+    const rawHeard = `${voiceTranscript}${voiceInterimTranscript}`.trim() || (override ?? draft).trim()
     const memory = loadVoiceMemory(loadState<VoiceMemory | undefined>('voiceMemory', undefined))
     const analysis = analyzeVoiceJournal(transcript, voiceMetrics, memory)
     const now = Date.now()
@@ -130,12 +150,10 @@ export default function VoiceCompanion() {
       organizedText,
       journey,
       intelligence: 'local',
+      context: request.context,
     }
     const voiceRecords = loadState<VoiceJournalRecord[]>('voiceJournal', [])
-    saveState('voiceJournal', [nextRecord, ...voiceRecords].slice(0, 180))
     const nextMemory = updateVoiceMemory(memory, nextRecord)
-    saveState('voiceMemory', nextMemory)
-    saveState('dailyCheckIn', inferredCheckIn)
 
     const journal = loadState<JournalEntry[]>('journal', [])
     const journalEntry: JournalEntry = {
@@ -154,7 +172,13 @@ export default function VoiceCompanion() {
       rawFragment: rawHeard,
       regulationPath: journey.steps.map((step) => step.title),
     }
-    saveState('journal', [journalEntry, ...journal].slice(0, 365))
+    if (!saveStateBatch({ voiceJournal: [nextRecord, ...voiceRecords].slice(0, 180), voiceMemory: nextMemory, dailyCheckIn: inferredCheckIn, journal: [journalEntry, ...journal].slice(0, 500), voiceDraft: null })) {
+      saving.current = false
+      setAutoFinalize(false)
+      setSaveError('还没有保存成功。文字仍在这里，请先复制备份，检查设备空间后重试。')
+      return
+    }
+    setSaveError('')
     recomputeUserState()
     request.onComplete?.(transcript, nextRecord)
     setRecord(nextRecord)
@@ -167,7 +191,7 @@ export default function VoiceCompanion() {
 
     if (!aiEnhanced) return
 
-    void requestHOSCoachAnalysis({ text: transcript, source: 'voice', snapshot })
+    void requestHOSCoachAnalysis({ text: transcript, source: 'voice', snapshot: { ...snapshot, checkIn: inferredCheckIn } })
       .then((insight) => {
         const refinedPlan = refineCoachPlanWithAI(plan, insight)
         const refinedAnalysis = {
@@ -201,13 +225,15 @@ export default function VoiceCompanion() {
               regulationPath: refinedJourney.steps.map((step) => step.title),
             }
           : entry))
-        setRecord((current) => current?.id === refinedRecord.id ? refinedRecord : current)
-        setCoachPlan(refinedPlan)
-        setIntelligenceState('deepseek')
+        if (version === requestVersion.current) {
+          setRecord((current) => current?.id === refinedRecord.id ? refinedRecord : current)
+          setCoachPlan(refinedPlan)
+          setIntelligenceState('deepseek')
+        }
         recomputeUserState()
         window.dispatchEvent(new CustomEvent('hos:data-updated'))
       })
-      .catch(() => setIntelligenceState('local'))
+      .catch(() => { if (version === requestVersion.current) setIntelligenceState('local') })
   }, [aiEnhanced, draft, request, resetVoice, voiceInterimTranscript, voiceMetrics, voiceTranscript])
 
   useEffect(() => {
@@ -260,6 +286,7 @@ export default function VoiceCompanion() {
               <div><span><Sparkles size={16} /></span><div><p>HOS VOICE COMPANION</p><strong>我在，慢慢说</strong></div></div>
               <button onClick={close} aria-label="关闭"><X size={18} /></button>
             </header>
+            {saveError && <p className="voice-save-error" role="alert">{saveError}</p>}
 
             {!record && voiceStatus === 'requesting' && (
               <div className="companion-permission"><span><Mic size={27} /></span><h2>正在打开倾听</h2><p>首次使用请允许麦克风。不会保存原始音频。</p></div>
@@ -273,7 +300,8 @@ export default function VoiceCompanion() {
                 <div className="companion-transcript" aria-live="polite">{voiceTranscript || voiceInterimTranscript ? <p>{voiceTranscript}<em>{voiceInterimTranscript}</em></p> : <span>可以从“我现在……”开始</span>}</div>
                 {voiceError && <p className="voice-inline-error">{voiceError}</p>}
                 <button className="companion-stop" onClick={stopListening}><Square size={15} />我说完了</button>
-                <p className="companion-privacy"><LockKeyhole size={12} />应用不保存原始音频，转写与分析仅存当前设备</p>
+                <p className="companion-privacy"><LockKeyhole size={12} />HOS 不保存原始音频。浏览器可能联网转写；{aiEnhanced ? '文字会发送到已配置的 AI 服务分析。' : '文字分析在本机完成。'}</p>
+                {voiceElapsedSec > 12 && !voiceTranscript && !voiceInterimTranscript && <button className="companion-open-journal" onClick={openManualFallback}>还没有文字？切换到键盘话筒输入</button>}
               </div>
             )}
 
@@ -292,10 +320,11 @@ export default function VoiceCompanion() {
 
             {!record && voiceStatus === 'manual' && (
               <div className="companion-review companion-manual">
-                <div className="companion-review-title"><span><Mic size={19} /></span><div><h2>用手机自带的话筒继续说</h2><p>{voiceError}</p></div></div>
+                <div className="companion-review-title"><span><Mic size={19} /></span><div><h2>{recoveredDraft ? '刚才的话还在，继续就好' : '用手机自带的话筒继续说'}</h2><p>{recoveredDraft ? '已恢复上次未保存的草稿。可以补充、修改，再整理归档。' : voiceError}</p></div></div>
                 <textarea autoFocus value={draft} onChange={(event) => setDraft(event.target.value)} rows={6} aria-label="语音转写内容" placeholder="点这里，再点手机键盘上的话筒开始说……" />
                 <div className="companion-review-meta"><span>仍在当前页面</span><span>完成后会归入个人档案</span></div>
                 <button className="companion-save" onClick={() => saveAndAnalyze()} disabled={!draft.trim()}><Save size={16} />整理并保存到日志</button>
+                {recoveredDraft && <button className="companion-open-journal" onClick={() => { if (!window.confirm('放弃这份未保存的草稿，重新开始录入？')) return; saveState('voiceDraft', null); setDraft(''); setRecoveredDraft(false); void startVoice() }}>放弃草稿，重新说</button>}
               </div>
             )}
 

@@ -83,6 +83,8 @@ function contextFromSnapshot(snapshot: CoachSnapshot) {
       activationCompletion: snapshot.activationCompletion,
       journalCount: snapshot.journalCount,
       flowCount: snapshot.flowCount,
+      selfReportedOutcomes: snapshot.recentPracticeOutcomes?.map(({ title, seconds, before, after }) => ({ title, seconds, before, after })) ?? [],
+      personallyHelpful: snapshot.helpfulPractice ? { title: snapshot.helpfulPractice.title, samples: snapshot.helpfulPractice.count, averageSelfReportedChange: snapshot.helpfulPractice.delta / snapshot.helpfulPractice.count } : null,
     },
   }
 }
@@ -91,9 +93,11 @@ function isInsight(value: unknown): value is HOSAIInsight {
   if (!value || typeof value !== 'object') return false
   const insight = value as Partial<HOSAIInsight>
   return insight.engine === 'deepseek'
-    && typeof insight.response === 'string'
-    && typeof insight.mode === 'string'
+    && ['stabilize', 'clarify', 'execute', 'recover', 'learn', 'reflect'].includes(insight.mode ?? '')
+    && ['stateLabel', 'coreNeed', 'response', 'hypothesis', 'bodyStep', 'actionStep', 'reflectionStep', 'reframe', 'question', 'commitment', 'rationale'].every((key) => typeof (insight as Record<string, unknown>)[key] === 'string')
+    && typeof insight.confidence === 'number' && Number.isFinite(insight.confidence) && insight.confidence >= 0 && insight.confidence <= 100
     && Array.isArray(insight.recommendedModules)
+    && insight.recommendedModules.every((moduleId) => HOS_MODULE_IDS.includes(moduleId))
 }
 
 export async function requestHOSCoachAnalysis({
