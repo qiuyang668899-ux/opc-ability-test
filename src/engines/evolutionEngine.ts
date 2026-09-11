@@ -240,7 +240,7 @@ export function buildEvolutionSnapshot(
   const checkIn = storedCheckIn?.date === date ? storedCheckIn : undefined
   const activation = loadState<ActivationProgress>('activation', defaultActivationProgress)
   const journal = loadState<JournalEntry[]>('journal', [])
-  const flow = loadState<FlowSession[]>('flowSessions', [])
+  const flow = loadState<FlowSession[]>('flowSessions', []).filter((session) => session.actualSeconds !== 0)
   const classicNotes = loadState<ClassicPracticeNote[]>('classicPracticeNotes', [])
   const ritualRecords = loadState<RitualRecordSignal[]>('ritualRecords', [])
   const feedback = loadState<EvolutionFeedback[]>('evolutionFeedback', [])

@@ -1,0 +1,64 @@
+/* Personal feedback loop: quiet surfaces, generous spacing, readable controls. */
+.home-intelligence-page .intelligence-hero { min-height: 0; padding: 24px; box-shadow: none; }
+.home-intelligence-page .intelligence-copy { margin-top: 28px; }
+.home-intelligence-page .intelligence-copy h2 { font-size: 25px; line-height: 1.45; }
+.home-intelligence-page .intelligence-copy > span { font-size: 15px; line-height: 1.85; }
+.home-intelligence-page .intelligence-primary { font-size: 16px; }
+.home-intelligence-page .intelligence-reason { font-size: 12px; }
+.home-intelligence-page .home-voice-primary { min-height: 174px; padding: 24px 20px; grid-template-columns: 66px minmax(0, 1fr) 18px; }
+.home-intelligence-page .home-voice-primary strong { font-size: 21px; line-height: 1.5; }
+.home-intelligence-page .home-voice-primary small { font-size: 13px; }
+.home-intelligence-page .home-voice-primary em { font-size: 14px; line-height: 1.75; color: var(--color-hos-text-dim); }
+.home-intelligence-page .voice-moment-section > header > span { font-size: 12px; }
+.home-intelligence-page .practice-learning-card { margin: 0; }
+.app-shell .nav-item > span:last-child { font-size: 12px; }
+.cultivation-session-sheet .cultivation-current-step p { font-size: 16px; line-height: 1.9; }
+.cultivation-session-sheet .cultivation-current-step > small { font-size: 13px; }
+.cultivation-session-sheet > header strong, .mind-matter-sheet > header strong { font-size: 16px; }
+.cultivation-session-sheet > header small, .mind-matter-sheet > header small { font-size: 12px; }
+.cultivation-session-sheet .cultivation-step-dots em { font-size: 12px; }
+.cultivation-session-sheet .cultivation-session-safety, .mind-matter-sheet .mind-matter-exit { font-size: 12px; line-height: 1.7; }
+.mind-matter-sheet .mind-matter-step-copy li { font-size: 16px; line-height: 1.85; }
+.practice-learning-card, .archive-export {
+  margin: 24px 0; padding: 24px; border: 1px solid var(--color-hos-border);
+  border-radius: var(--hos-radius-panel, 24px); background: var(--hos-card-bg);
+  color: var(--color-hos-text);
+}
+.practice-learning-card header, .archive-export header { display: flex; align-items: center; gap: 10px; font-size: 14px; color: var(--color-hos-cyan); }
+.practice-learning-card header small { margin-left: auto; font-size: 12px; color: var(--color-hos-text-dim); }
+.practice-learning-card h2 { font-size: 23px; line-height: 1.5; margin: 20px 0 10px; letter-spacing: -.025em; }
+.practice-learning-card p, .archive-export p { font-size: 15px; line-height: 1.85; color: var(--color-hos-text-dim); margin: 12px 0; }
+.practice-learning-stats { display: flex; gap: 20px; flex-wrap: wrap; border-top: 1px solid var(--color-hos-border); padding: 20px 0; margin-top: 20px; }
+.practice-learning-stats span { font-size: 13px; color: var(--color-hos-text-dim); }
+.practice-learning-stats strong { font-size: 24px; color: var(--color-hos-text); font-variant-numeric: tabular-nums; margin-right: 3px; }
+.practice-learning-card > button, .archive-export button { display: inline-flex; align-items: center; justify-content: center; gap: 10px; min-height: 44px; padding: 10px 16px; border-radius: 14px; background: var(--hos-accent-soft); color: var(--color-hos-cyan); font-size: 14px; font-weight: 600; }
+.archive-export > div { display: flex; gap: 10px; flex-wrap: wrap; }
+.practice-feeling { border: 0; padding: 0; margin: 24px 0; width: 100%; text-align: left; }
+.practice-feeling legend { font-size: 16px; line-height: 1.6; font-weight: 650; color: var(--color-hos-text); }
+.practice-feeling legend small { font-size: 12px; font-weight: 400; color: var(--color-hos-text-dim); margin-left: 6px; }
+.practice-feeling > div { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 7px; margin-top: 14px; }
+.practice-feeling button { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 12px 2px; border: 1px solid var(--color-hos-border); border-radius: 14px; background: var(--hos-card-bg); color: var(--color-hos-text-dim); min-height: 70px; }
+.practice-feeling button[aria-pressed='true'] { border-color: var(--color-hos-cyan); color: var(--color-hos-cyan); background: var(--hos-accent-soft); box-shadow: inset 0 0 0 1px var(--color-hos-cyan); }
+.practice-feeling button strong { font-size: 20px; line-height: 1; }
+.practice-feeling button span { font-size: 12px; line-height: 1.4; }
+.practice-feeling p { margin: 10px 0 0; font-size: 13px; color: var(--color-hos-text-dim); line-height: 1.7; }
+.practice-timer-support { border-top: 1px solid var(--color-hos-border); padding-top: 16px; margin-top: 24px; text-align: left; }
+.practice-timer-support > div { display: flex; justify-content: space-between; align-items: center; gap: 14px; flex-wrap: wrap; }
+.practice-timer-support button { display: inline-flex; align-items: center; gap: 8px; font-size: 14px; color: var(--color-hos-cyan); min-height: 44px; }
+.practice-timer-support label { display: flex; align-items: center; gap: 10px; font-size: 14px; color: var(--color-hos-text-dim); }
+.practice-timer-support input[type='range'] { width: 96px; accent-color: var(--color-hos-cyan); }
+.practice-timer-support .practice-awake { margin: 12px 0; min-height: 32px; flex-wrap: wrap; }
+.practice-awake input { width: 18px; height: 18px; accent-color: var(--color-hos-cyan); }
+.practice-awake span { font-size: 12px; }
+.practice-timer-support p, .practice-actual-time { font-size: 13px; line-height: 1.7; color: var(--color-hos-text-dim); margin-top: 8px; }
+.storage-warning { position: fixed; z-index: 1000; top: 12px; left: 50%; transform: translateX(-50%); width: min(480px, calc(100% - 24px)); padding: 18px; border: 1px solid var(--color-hos-orange); border-radius: 18px; background: var(--hos-warning-soft); color: var(--color-hos-text); box-shadow: var(--hos-shadow-soft); font-size: 14px; line-height: 1.6; }
+.storage-warning button { display: block; margin-top: 8px; min-height: 40px; color: var(--color-hos-cyan); font-weight: 700; }
+.voice-save-error { padding: 15px 22px; font-size: 14px; line-height: 1.6; color: var(--color-hos-red); }
+button:focus-visible, a:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-visible { outline: 3px solid var(--color-hos-cyan); outline-offset: 4px; }
+@media (max-width: 400px) {
+  .practice-learning-card, .archive-export { padding: 20px 17px; }
+  .practice-learning-card header { flex-wrap: wrap; }
+  .practice-learning-card header small { width: 100%; margin-left: 30px; }
+  .practice-learning-card h2 { font-size: 21px; }
+  .practice-feeling > div { gap: 4px; }
+}

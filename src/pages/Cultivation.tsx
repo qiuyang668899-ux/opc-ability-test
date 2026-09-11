@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
+import { useEffect, useMemo, useState, type CSSProperties } from 'react'
 import { createPortal } from 'react-dom'
 import { useNavigate } from 'react-router-dom'
 import {
@@ -40,11 +40,14 @@ import {
   type ImmortalStory,
 } from '../data/cultivation'
 import { CULTIVATION_TEXT_SOURCES } from '../data/cultivationReader'
-import { loadState, saveState, type DailyCheckIn, type JournalEntry } from '../stores/useStore'
+import { loadState, saveStateBatch, type DailyCheckIn, type JournalEntry } from '../stores/useStore'
 import CultivationClassicReader from '../components/CultivationClassicReader'
 import MindMatterPractice from '../components/MindMatterPractice'
 import VoiceInputButton from '../components/VoiceInputButton'
-import { playCultivationChime, prepareCultivationChime } from '../utils/cultivationChime'
+import { usePracticeTimer } from '../hooks/usePracticeTimer'
+import PracticeTimerSupport from '../components/PracticeTimerSupport'
+import PracticeFeeling from '../components/PracticeFeeling'
+import { appendPracticeOutcome } from '../engines/practiceOutcomeEngine'
 
 type PracticeRecord = {
   id: string
@@ -53,13 +56,6 @@ type PracticeRecord = {
   minutes: number
   reflection: string
   completedAt: number
-}
-
-type SessionState = {
-  stepIndex: number
-  remaining: number
-  running: boolean
-  complete: boolean
 }
 
 const axisIcons = {
@@ -106,7 +102,11 @@ export default function Cultivation() {
   const navigate = useNavigate()
   const [records, setRecords] = useState(() => loadState<PracticeRecord[]>('cultivationPracticeRecords', []))
   const [selectedRoutine, setSelectedRoutine] = useState<CultivationRoutine | null>(null)
-  const [session, setSession] = useState<SessionState | null>(null)
+  const timer = usePracticeTimer((selectedRoutine ?? CULTIVATION_ROUTINES[0]).steps.map((step) => step.durationSec), Boolean(selectedRoutine), true)
+  const session = timer.session
+  const [beforeFeeling, setBeforeFeeling] = useState<number | null>(null)
+  const [afterFeeling, setAfterFeeling] = useState<number | null>(null)
+  const [saveError, setSaveError] = useState('')
   const [reflection, setReflection] = useState('')
   const [savedSession, setSavedSession] = useState(false)
   const [axis, setAxis] = useState<'全部' | CultivationAxis>('全部')
@@ -131,34 +131,6 @@ export default function Cultivation() {
   }), [classicQuery, classicSafety])
   const motifs = useMemo(() => ['全部', ...new Set(IMMORTAL_STORIES.map((story) => story.motif))] as Array<'全部' | ImmortalStory['motif']>, [])
   const visibleStories = storyMotif === '全部' ? IMMORTAL_STORIES : IMMORTAL_STORIES.filter((story) => story.motif === storyMotif)
-  const previousSessionRef = useRef<SessionState | null>(null)
-
-  useEffect(() => {
-    if (!session?.running) return undefined
-    const timer = window.setInterval(() => {
-      setSession((current) => {
-        if (!current?.running || !selectedRoutine) return current
-        if (current.remaining > 1) return { ...current, remaining: current.remaining - 1 }
-        const nextIndex = current.stepIndex + 1
-        if (nextIndex >= selectedRoutine.steps.length) return { ...current, remaining: 0, running: false, complete: true }
-        return { stepIndex: nextIndex, remaining: selectedRoutine.steps[nextIndex].durationSec, running: true, complete: false }
-      })
-    }, 1000)
-    return () => window.clearInterval(timer)
-  }, [selectedRoutine, session?.running])
-
-  useEffect(() => {
-    const previous = previousSessionRef.current
-    const endedNaturally = Boolean(previous?.running && previous.remaining === 1 && session && (
-      session.stepIndex !== previous.stepIndex || session.complete
-    ))
-    if (endedNaturally) {
-      playCultivationChime()
-      navigator.vibrate?.([45, 90, 45, 90, 70])
-    }
-    previousSessionRef.current = session
-  }, [session])
-
   useEffect(() => {
     if (!selectedRoutine && !selectedClassic && !selectedStory) return undefined
     const prior = document.body.style.overflow
@@ -168,57 +140,63 @@ export default function Cultivation() {
 
   const openRoutine = (routine: CultivationRoutine) => {
     setSelectedRoutine(routine)
-    setSession({ stepIndex: 0, remaining: routine.steps[0].durationSec, running: false, complete: false })
+    timer.resetFor(routine.steps.map((step) => step.durationSec))
     setReflection('')
     setSavedSession(false)
+    setBeforeFeeling(null)
+    setAfterFeeling(null)
+    setSaveError('')
   }
 
   const closeRoutine = () => {
     setSelectedRoutine(null)
-    setSession(null)
+    timer.pause()
   }
 
   const restartRoutine = () => {
     if (!selectedRoutine) return
-    setSession({ stepIndex: 0, remaining: selectedRoutine.steps[0].durationSec, running: false, complete: false })
+    timer.reset()
     setSavedSession(false)
   }
 
   const toggleRoutineTimer = () => {
-    if (!session?.running) void prepareCultivationChime()
-    setSession((current) => current ? { ...current, running: !current.running } : current)
+    timer.toggle()
   }
 
   const saveCompletedSession = () => {
-    if (!selectedRoutine || savedSession) return
+    if (!selectedRoutine || savedSession || !session.complete) return
     const now = Date.now()
+    const seconds = session.spent.reduce((sum, value) => sum + value, 0)
     const record: PracticeRecord = {
       id: `cultivation-${now}`,
       routineId: selectedRoutine.id,
       routineTitle: selectedRoutine.title,
-      minutes: selectedRoutine.duration,
+      minutes: Math.round(seconds / 60),
       reflection: reflection.trim(),
       completedAt: now,
     }
     const nextRecords = [record, ...records].slice(0, 365)
-    saveState('cultivationPracticeRecords', nextRecords)
-    setRecords(nextRecords)
-
     const journal = loadState<JournalEntry[]>('journal', [])
     const entry: JournalEntry = {
       id: record.id,
+      practiceOutcomeId: record.id,
       timestamp: now,
       trigger: `东方修仙 · ${selectedRoutine.title}`,
       oldPattern: '开始前的状态由本人觉察',
       newResponse: reflection.trim() || '完成一次形神合修，先把体验留在身体里。',
       somatic: selectedRoutine.axes.includes('肉身') ? '已完成温和肉身练习' : '本次以心神修习为主',
       distortion: '不追逐神异，以日常变化验证',
-      analysis: `完成 ${selectedRoutine.duration} 分钟修习：${selectedRoutine.steps.map((step) => step.title).join('、')}。`,
+      analysis: `实际计时 ${Math.floor(seconds / 60)} 分钟：${selectedRoutine.steps.map((step) => step.title).join('、')}。${beforeFeeling !== null && afterFeeling !== null ? `舒适度自评 ${beforeFeeling} → ${afterFeeling}/5。` : ''}`,
       source: 'manual',
       organizedText: reflection.trim() || `完成${selectedRoutine.title}。`,
       regulationPath: ['东方修仙', ...selectedRoutine.steps.map((step) => step.title)],
     }
-    saveState('journal', [entry, ...journal].slice(0, 500))
+    if (!saveStateBatch({ cultivationPracticeRecords: nextRecords, journal: [entry, ...journal].slice(0, 500), practiceOutcomes: appendPracticeOutcome({ id: record.id, title: selectedRoutine.title, route: '/cultivation', completedAt: now, seconds, before: beforeFeeling, after: afterFeeling, note: reflection.trim() }) })) {
+      setSaveError('还没有保存成功，请先复制感受文字，清理设备空间后重试。')
+      return
+    }
+    setRecords(nextRecords)
+    setSaveError('')
     setSavedSession(true)
     window.dispatchEvent(new CustomEvent('hos:data-updated'))
     navigator.vibrate?.([24, 30, 44])
@@ -370,6 +348,7 @@ export default function Cultivation() {
             <header><button onClick={closeRoutine} aria-label="返回"><ChevronLeft size={20} /></button><div><small>东方修仙 · 安全日课</small><strong>{selectedRoutine.title}</strong></div><button onClick={closeRoutine} aria-label="关闭"><X size={19} /></button></header>
             {!session.complete ? (
               <div className="cultivation-session-body">
+                {!session.running && session.spent.every((value) => value === 0) && <PracticeFeeling value={beforeFeeling} onChange={setBeforeFeeling} phase="before" />}
                 <div className="cultivation-session-orbit" style={{ '--practice-progress': `${Math.max(4, sessionProgress)}%` } as CSSProperties}><span><strong>{formatTimer(session.remaining)}</strong><small>{session.running ? '正在修习' : '准备好再开始'}</small></span></div>
                 <div className="cultivation-current-step"><small>第 {session.stepIndex + 1} / {selectedRoutine.steps.length} 步 · {selectedRoutine.steps[session.stepIndex].axis}</small><h2>{selectedRoutine.steps[session.stepIndex].title}</h2><p>{selectedRoutine.steps[session.stepIndex].instruction}</p></div>
                 <div className="cultivation-step-dots">{selectedRoutine.steps.map((step, index) => <span key={step.title} className={index < session.stepIndex ? 'done' : index === session.stepIndex ? 'active' : ''}><i>{index < session.stepIndex ? <Check size={10} /> : index + 1}</i><em>{step.title}</em></span>)}</div>
@@ -378,6 +357,7 @@ export default function Cultivation() {
                   <button onClick={restartRoutine} aria-label="从头开始"><RotateCcw size={17} /></button>
                 </div>
                 <p className="cultivation-session-safety"><BellRing size={13} />本环节结束会响三声引磬 · 全程自然呼吸，不适立即停止。</p>
+                <PracticeTimerSupport running={session.running} audioReady={timer.audioReady} />
               </div>
             ) : (
               <div className="cultivation-session-finish">
@@ -385,8 +365,10 @@ export default function Cultivation() {
                 <p className="section-kicker">PRACTICE COMPLETE</p>
                 <h2>这一炉，已经收好</h2>
                 <p>不用评价有没有“感觉”。能清醒地完成、回到生活，本身就是修行。</p>
+                <PracticeFeeling value={afterFeeling} onChange={setAfterFeeling} phase="after" />
                 <label><strong>此刻身心有什么变化？可以直接说</strong><div className="voice-enabled-control textarea"><textarea value={reflection} onChange={(event) => setReflection(event.target.value.slice(0, 500))} placeholder="例如：肩膀松了一点，思路没有那么挤……" /><VoiceInputButton value={reflection} onChange={setReflection} maxLength={500} label="用语音记录本次修行感受" /></div></label>
                 <button className="cultivation-save-practice" onClick={saveCompletedSession} disabled={savedSession}>{savedSession ? <Check size={16} /> : <Mic size={16} />}{savedSession ? '已存入个人日志档案' : '收功并存入档案'}</button>
+                {saveError && <p role="alert">{saveError}</p>}
                 <button className="cultivation-close-practice" onClick={closeRoutine}>{savedSession ? '完成' : '稍后再记录'}</button>
               </div>
             )}

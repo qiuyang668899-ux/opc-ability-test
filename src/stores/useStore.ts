@@ -34,6 +34,7 @@ export interface JournalEntry {
   organizedText?: string;
   rawFragment?: string;
   regulationPath?: string[];
+  practiceOutcomeId?: string;
 }
 
 // Chat message
@@ -455,6 +456,7 @@ export interface FlowSession {
   rehearsal: string;
   practiceMinutes: number;
   feedback: string;
+  actualSeconds?: number;
 }
 
 // Music tracks
@@ -1045,7 +1047,7 @@ export function recomputeUserState(): UserState {
   const user = loadState('user', defaultUserState);
   const activation = loadState('activation', defaultActivationProgress);
   const journal = loadState<JournalEntry[]>('journal', []);
-  const flow = loadState<FlowSession[]>('flowSessions', []);
+  const flow = loadState<FlowSession[]>('flowSessions', []).filter((session) => session.actualSeconds !== 0);
   const activationCompletion = getActivationCompletion(activation);
   const practiceScore = Math.min(100, activationCompletion * 0.55 + journal.length * 7 + flow.length * 8);
   user.journalCount = journal.length;
@@ -1066,11 +1068,29 @@ export function loadState<T>(key: string, fallback: T): T {
   }
 }
 
-export function saveState<T>(key: string, value: T): void {
+export function saveState<T>(key: string, value: T): boolean {
   try {
     localStorage.setItem(`hos_${key}`, JSON.stringify(value));
+    return true;
   } catch {
-    // ignore
+    window.dispatchEvent(new CustomEvent('hos:storage-error'));
+    return false;
+  }
+}
+
+/** Keep related archive records together. Never report a partial write as saved. */
+export function saveStateBatch(values: Record<string, unknown>): boolean {
+  const previous: Record<string, string | null> = {};
+  try {
+    for (const key of Object.keys(values)) previous[key] = localStorage.getItem(`hos_${key}`);
+    for (const [key, value] of Object.entries(values)) localStorage.setItem(`hos_${key}`, JSON.stringify(value));
+    return true;
+  } catch {
+    for (const [key, value] of Object.entries(previous)) {
+      try { if (value === null) localStorage.removeItem(`hos_${key}`); else localStorage.setItem(`hos_${key}`, value); } catch { /* storage unavailable */ }
+    }
+    window.dispatchEvent(new CustomEvent('hos:storage-error'));
+    return false;
   }
 }
 

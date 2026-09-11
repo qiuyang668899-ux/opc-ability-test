@@ -123,7 +123,7 @@ export function buildHomeIntelligence(now = new Date()): HomeIntelligence {
   const ritual = getTodayRitualRecord()
   const evolution = buildEvolutionSnapshot()
   const journal = loadState<JournalEntry[]>('journal', [])
-  const flow = loadState<FlowSession[]>('flowSessions', [])
+  const flow = loadState<FlowSession[]>('flowSessions', []).filter((session) => session.actualSeconds !== 0)
   const voiceJournal = loadState<VoiceJournalRecord[]>('voiceJournal', [])
   const voiceMemory = loadState<VoiceMemory | undefined>('voiceMemory', undefined)
 
