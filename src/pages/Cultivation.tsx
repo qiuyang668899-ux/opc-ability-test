@@ -48,6 +48,7 @@ import { usePracticeTimer } from '../hooks/usePracticeTimer'
 import PracticeTimerSupport from '../components/PracticeTimerSupport'
 import PracticeFeeling from '../components/PracticeFeeling'
 import { appendPracticeOutcome } from '../engines/practiceOutcomeEngine'
+import '../qimen.css'
 
 type PracticeRecord = {
   id: string
@@ -251,6 +252,13 @@ export default function Cultivation() {
           {['启炉', '筑基', '炼己', '凝神', '合修'].map((item, index) => <span key={item} className={index <= stage.level ? 'active' : ''}><i>{index < stage.level ? <Check size={10} /> : index + 1}</i><em>{item}</em></span>)}
         </div>
         <p className="cultivation-stage-next"><ShieldCheck size={13} />{stage.next} · 境阶只记录持续性，不代表超自然能力</p>
+      </section>
+
+      <section className="qimen-entry">
+        <p>新增日课 · 六门修习</p>
+        <h2>奇门修运</h2>
+        <span>净身净居，逆思三吉，正念善行。<br />读完整口诀，把修行落进真实生活。</span>
+        <button onClick={() => navigate('/cultivation/qimen')}>进入修运试炼<ArrowRight size={17} /></button>
       </section>
 
       <MindMatterPractice />

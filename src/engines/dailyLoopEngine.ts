@@ -8,6 +8,7 @@ import {
 } from '../stores/useStore'
 import type { VoiceJournalRecord } from './voiceJournalEngine'
 import type { PracticeOutcome } from './practiceOutcomeEngine'
+import type { QimenRecord } from '../data/qimenPractice'
 
 type StepState = 'complete' | 'current' | 'upcoming'
 
@@ -73,17 +74,19 @@ export function buildDailyLoop(): DailyLoopSnapshot {
   const outcomes = loadState<PracticeOutcome[]>('practiceOutcomes', [])
   const outcomesToday = outcomes.filter((item) => isToday(item.completedAt, today) && item.seconds > 0)
   const cultivationToday = loadState<Array<{ completedAt: number }>>('cultivationPracticeRecords', []).some((item) => isToday(item.completedAt, today))
+  const qimenToday = loadState<QimenRecord[]>('qimenRecords', []).filter((item) => item.date === today && item.done.length > 0)
   const reflectionVoice = voice.some((record) => record.date === today && /反馈|回写|练习后|实践后/.test(record.context ?? ''))
   const hasManualReflection = journal.some((entry) => isToday(entry.timestamp, today) && entry.source !== 'voice' && !entry.practiceOutcomeId)
   const hasFeedback = feedback.some((entry) => entry.date === today)
     || Boolean(flowToday?.feedback.trim())
     || hasManualReflection
     || reflectionVoice
+    || qimenToday.some((item) => item.after !== null || item.reflection.trim() || item.notes.some((note) => note.trim()) || item.joys.some((joy) => joy.trim()))
     || outcomesToday.some((item) => item.after !== null || Boolean(item.note.trim()))
   const activeJourney = loadActiveRegulationJourney()
 
-  const sensed = Boolean(checkIn || hasVoiceToday || outcomesToday.some((item) => item.before !== null))
-  const practiced = Boolean(hasJourneyToday || flowToday || ritual || cultivationToday || outcomesToday.length)
+  const sensed = Boolean(checkIn || hasVoiceToday || outcomesToday.some((item) => item.before !== null) || qimenToday.some((item) => item.before !== null))
+  const practiced = Boolean(hasJourneyToday || flowToday || ritual || cultivationToday || outcomesToday.length || qimenToday.length)
   const reflected = Boolean(hasFeedback && practiced)
   const completedToday = [sensed, practiced, reflected].filter(Boolean).length
   const practice = choosePractice(checkIn)
