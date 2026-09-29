@@ -20,6 +20,7 @@ const Classics = lazy(() => import('./pages/Classics'))
 const Evolution = lazy(() => import('./pages/Evolution'))
 const DailyRitual = lazy(() => import('./pages/DailyRitual'))
 const Cultivation = lazy(() => import('./pages/Cultivation'))
+const QimenPractice = lazy(() => import('./pages/QimenPractice'))
 
 export default function App() {
   return (
@@ -37,6 +38,7 @@ export default function App() {
           <Route path="tools" element={<Tools />} />
           <Route path="classics" element={<Classics />} />
           <Route path="cultivation" element={<Cultivation />} />
+          <Route path="cultivation/qimen" element={<QimenPractice />} />
           <Route path="evolution" element={<Evolution />} />
           <Route path="support" element={<Support />} />
           <Route path="about" element={<About />} />

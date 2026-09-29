@@ -1,0 +1,78 @@
+.qimen-page { color: var(--color-hos-text); }
+.qimen-page button, .qimen-page a { -webkit-tap-highlight-color: transparent; }
+.qimen-back { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; font-size: 14px; color: var(--color-hos-text-dim); }
+.qimen-hero { position: relative; padding: 30px 4px 28px; }
+.qimen-eyebrow { color: var(--color-hos-cyan); font-size: 12px; letter-spacing: .12em; line-height: 1.8; margin: 0 0 12px; }
+.qimen-hero h1 { font-family: 'Songti SC', 'Noto Serif SC', serif; font-size: clamp(36px, 9vw, 46px); font-weight: 600; letter-spacing: .08em; line-height: 1.4; margin: 8px 0 20px; }
+.qimen-lead { font-size: 18px; line-height: 1.9; color: var(--color-hos-text-dim); }
+.qimen-seal { position: absolute; right: 6px; top: 35px; font-family: serif; padding: 8px 9px; border: 1px solid var(--color-hos-cyan); border-radius: 4px; color: var(--color-hos-cyan); opacity: .7; line-height: 1.4; }
+.qimen-hero-meta { margin-top: 24px; display: flex; justify-content: space-between; gap: 12px; font-size: 12px; color: var(--color-hos-text-dim); flex-wrap: wrap; }
+.qimen-tabs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; padding: 5px; background: var(--hos-neutral-soft); border-radius: 17px; margin-bottom: 22px; }
+.qimen-tabs button { min-height: 48px; font-size: 13px; display: flex; align-items: center; justify-content: center; gap: 6px; border-radius: 12px; color: var(--color-hos-text-dim); }
+.qimen-tabs button[aria-selected='true'] { background: var(--hos-card-bg); color: var(--color-hos-cyan); box-shadow: 0 2px 7px #00000006; font-weight: 650; }
+.qimen-intro { display: flex; align-items: flex-start; gap: 10px; margin: 22px 0 28px; font-size: 13px; line-height: 1.85; color: var(--color-hos-text-dim); }
+.qimen-intro svg { flex: 0 0 18px; margin-top: 3px; color: var(--color-hos-cyan); }
+.qimen-progress > div { display: flex; justify-content: space-between; gap: 12px; font-size: 15px; }
+.qimen-progress span { font-size: 13px; color: var(--color-hos-cyan); }
+.qimen-progress progress { display: block; width: 100%; height: 5px; border: 0; border-radius: 9px; margin: 15px 0; overflow: hidden; accent-color: var(--color-hos-cyan); }
+.qimen-progress progress::-webkit-progress-bar { background: var(--color-hos-border); }
+.qimen-progress progress::-webkit-progress-value { background: var(--color-hos-cyan); }
+.qimen-progress p { font-size: 13px; color: var(--color-hos-text-dim); line-height: 1.7; }
+.qimen-gates { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 28px 0 20px; }
+.qimen-gates button { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 17px 4px; min-height: 98px; background: var(--hos-card-bg); border: 1px solid var(--color-hos-border); border-radius: 18px; }
+.qimen-gates button[aria-current='step'] { border-color: var(--color-hos-cyan); background: var(--hos-accent-soft); color: var(--color-hos-cyan); box-shadow: inset 0 0 0 1px var(--color-hos-cyan); }
+.qimen-gates button > span { height: 28px; font-family: serif; font-size: 24px; line-height: 28px; }
+.qimen-gates small { font-size: 13px; }
+.qimen-card { background: var(--hos-card-bg); border: 1px solid var(--color-hos-border); border-radius: var(--hos-radius-panel, 24px); padding: 26px 22px; margin: 20px 0; }
+.qimen-card h2 { font-size: 23px; line-height: 1.55; font-weight: 650; letter-spacing: -.02em; margin: 0 0 18px; }
+.qimen-card h3 { font-size: 16px; font-weight: 600; margin: 26px 0 14px; line-height: 1.7; }
+.qimen-card p { font-size: 15px; line-height: 1.9; overflow-wrap: anywhere; }
+.qimen-card > p:not(.qimen-eyebrow) { color: var(--color-hos-text-dim); margin: 14px 0; }
+.qimen-card .qimen-eyebrow { font-size: 12px; }
+.qimen-current blockquote { padding: 18px 18px; margin: 20px 0; border-left: 2px solid var(--color-hos-cyan); background: var(--hos-accent-faint, var(--hos-accent-soft)); border-radius: 0 14px 14px 0; }
+.qimen-current blockquote p { font-family: 'Songti SC', serif; font-size: 18px; line-height: 1.9; }
+.qimen-actions { counter-reset: qimen; display: grid; gap: 17px; margin: 18px 0 28px; padding: 0; list-style: none; }
+.qimen-actions li { counter-increment: qimen; display: grid; grid-template-columns: 24px 1fr; gap: 10px; font-size: 15px; line-height: 1.85; }
+.qimen-actions li::before { content: counter(qimen, decimal-leading-zero); color: var(--color-hos-cyan); font-size: 12px; font-variant-numeric: tabular-nums; padding-top: 3px; }
+.qimen-field { margin: 22px 0; }
+.qimen-field > div { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 10px; }
+.qimen-field label { font-size: 14px; font-weight: 550; line-height: 1.7; }
+.qimen-field .voice-field-action { position: static; transform: none; flex: 0 0 auto; }
+.qimen-field .voice-field-action button { width: 44px; height: 44px; border-radius: 50%; background: var(--hos-accent-soft); color: var(--color-hos-cyan); display: grid; place-items: center; }
+.qimen-field textarea { width: 100%; min-height: 120px; resize: vertical; border: 1px solid var(--color-hos-border); background: var(--hos-surface-bg); color: var(--color-hos-text); border-radius: 16px; padding: 15px; line-height: 1.85; font-size: 16px; box-sizing: border-box; }
+.qimen-field textarea::placeholder { color: var(--color-hos-text-muted); }
+.qimen-boundary { border-top: 1px solid var(--color-hos-border); padding: 16px 0; margin: 20px 0 12px; color: var(--color-hos-text-dim); }
+.qimen-page summary { cursor: pointer; min-height: 36px; line-height: 1.8; font-size: 14px; }
+.qimen-boundary p { font-size: 13px; margin-top: 10px; }
+.qimen-page .qimen-primary { display: flex; width: 100%; justify-content: center; align-items: center; gap: 9px; min-height: 54px; padding: 14px; border-radius: 16px; background: var(--color-hos-cyan); color: #fff; font-size: 15px; font-weight: 600; line-height: 1.6; }
+.qimen-primary[aria-pressed='true'] { background: var(--hos-accent-soft); color: var(--color-hos-cyan); }
+.qimen-step-nav { display: flex; justify-content: space-between; margin-top: 15px; }
+.qimen-step-nav button { display: flex; align-items: center; gap: 8px; min-height: 44px; color: var(--color-hos-cyan); font-size: 14px; }
+.qimen-page button:disabled { opacity: .45; cursor: default; }
+.qimen-timer summary span { display: block; color: var(--color-hos-cyan); font-size: 12px; margin-left: 16px; }
+.qimen-clock { text-align: center; padding: 20px 0 4px; }
+.qimen-clock output { display: block; font-variant-numeric: tabular-nums; font-size: 42px; font-weight: 400; letter-spacing: .05em; }
+.qimen-clock button { margin: 20px auto 0; display: flex; align-items: center; justify-content: center; gap: 10px; min-height: 48px; padding: 10px 20px; background: var(--hos-accent-soft); color: var(--color-hos-cyan); border-radius: 15px; }
+.qimen-card .qimen-storage { font-size: 12px; margin: 16px 0 22px; }
+.qimen-feedback { padding: 20px; border-radius: 18px; background: var(--hos-accent-soft); color: var(--color-hos-cyan); font-size: 14px; line-height: 1.85; margin: 20px 0; }
+.qimen-feedback a, .qimen-archive-link { display: flex; align-items: center; gap: 8px; min-height: 44px; margin-top: 10px; color: var(--color-hos-cyan); font-size: 14px; }
+.qimen-verses { padding: 0; margin: 20px 0 0; list-style: none; }
+.qimen-verses li { display: grid; grid-template-columns: 25px 1fr; gap: 12px; padding: 17px 0; border-bottom: 1px solid var(--color-hos-border); }
+.qimen-verses li:last-child { border: 0; }
+.qimen-verses span { font-size: 12px; color: var(--color-hos-cyan); padding-top: 5px; }
+.qimen-verses p { font-family: 'Songti SC', serif; font-size: 18px; }
+.qimen-source-note { border-top: 1px solid var(--color-hos-border); padding: 18px 0; }
+.qimen-quoted { padding-top: 12px; }
+.qimen-quoted small { color: var(--color-hos-cyan); font-size: 12px; }
+.qimen-quoted p { white-space: pre-line; margin-top: 12px; }
+.qimen-original img { display: block; width: 100%; height: auto; border-radius: 10px; margin-top: 18px; }
+.qimen-history-item { padding: 20px 0; border-top: 1px solid var(--color-hos-border); }
+.qimen-history-item summary span + span { float: right; color: var(--color-hos-cyan); }
+.qimen-history-item pre { white-space: pre-wrap; overflow-wrap: anywhere; font-family: inherit; font-size: 14px; line-height: 1.9; padding-top: 20px; }
+.qimen-empty { padding: 20px 0; }
+.qimen-entry { margin: 24px 0; padding: 26px; border-radius: var(--hos-radius-panel, 26px); border: 1px solid var(--color-hos-border); background: var(--hos-card-bg); }
+.qimen-entry > p { font-size: 12px; color: var(--color-hos-cyan); letter-spacing: .14em; }
+.qimen-entry h2 { font-family: 'Songti SC', serif; font-size: 28px; margin: 13px 0; }
+.qimen-entry > span { display: block; font-size: 15px; line-height: 1.85; color: var(--color-hos-text-dim); }
+.qimen-entry button { display: flex; align-items: center; justify-content: space-between; gap: 12px; width: 100%; min-height: 50px; margin-top: 20px; padding: 12px 16px; border-radius: 14px; color: var(--color-hos-cyan); background: var(--hos-accent-soft); font-size: 15px; }
+@media (max-width: 370px) { .qimen-card { padding: 22px 17px; } .qimen-tabs button { font-size: 12px; gap: 4px; } .qimen-tabs svg { display: none; } }
