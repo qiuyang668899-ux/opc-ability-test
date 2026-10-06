@@ -489,7 +489,7 @@ export default function Architect() {
       </header>
       <details className="coach-engine-status">
         <summary><ShieldCheck size={15} />{aiEnhanced ? '云端通道已配置 · 可检查连接' : '本机陪伴模式 · 云端尚未连接'}</summary>
-        <p>{aiEnhanced ? '发送时会将本次文字、近期对话和状态摘要交给已配置的 AI 服务。原始录音不保存。云端失败会明确提示，并提供本机建议。' : '当前建议由本机规则生成，并非云端大模型回复。语音转写仍依赖浏览器能力；全部原有工具和档案照常使用。'}</p>
+        <p>{aiEnhanced ? '发送时会将本次文字、近期对话和状态摘要交给 DeepSeek 分析，档案仍保存在本机，原始录音不保存。云端设有公平用量保护，暂不可用时会明确提示并保留本机建议。请不要发送密码等敏感信息。' : '当前建议由本机规则生成，并非云端大模型回复。语音转写仍依赖浏览器能力；全部原有工具和档案照常使用。'}</p>
         <button type="button" onClick={async () => { setConnectionStatus('正在检查…'); setConnectionStatus(await checkHOSAIConnection()) }}>检查 AI 连接</button>
         {connectionStatus && <p role="status">{connectionStatus}</p>}
       </details>

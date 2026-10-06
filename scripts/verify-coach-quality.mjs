@@ -78,6 +78,9 @@ abortController.abort()
 await assert.rejects(pending, { name: 'AbortError' })
 
 const worker = (await import('../worker/hos-worker.js')).default
+// Quota SQL/concurrency are covered by hos-ai-service/tests/worker.test.mjs.
+const quotaDB = { prepare: () => ({ bind: () => ({}) }), batch: async () => [{ results: [] }, { results: [{ id: 'test-reservation' }] }] }
+const workerEnv = { DEEPSEEK_API_KEY: 'test-only', DB: quotaDB }
 const req = (body, origin = 'https://qiuyang668899-ux.github.io') => new Request('https://hos.example/api/hos-coach', { method: 'POST', headers: { Origin: origin, 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
 assert.equal((await worker.fetch(new Request('https://hos.example/api/hos-coach'), {})).status, 503)
 assert.equal((await worker.fetch(req({ text: 'hello' }, 'https://untrusted.example'), { DEEPSEEK_API_KEY: 'test-only' })).status, 403)
@@ -89,11 +92,11 @@ globalThis.fetch = async (_url, options) => {
   assert.equal(input.model, 'deepseek-flash')
   return new Response(JSON.stringify({ choices: [{ message: { content: JSON.stringify({ mode: 'learn', recommendedModules: ['flow', 'made-up'], stateLabel: '学习', response: '一起找到一个小动作', hypothesis: '可能需要反馈', actionStep: '回忆一个知识点' }) } }] }), { status: 200 })
 }
-const response = await worker.fetch(req({ text: '我想学习英语' }), { DEEPSEEK_API_KEY: 'test-only' })
+const response = await worker.fetch(req({ text: '我想学习英语' }), workerEnv)
 assert.equal(response.status, 200)
 const insight = await response.json()
 assert.equal(insight.engine, 'deepseek')
 assert.equal(insight.recommendedModules.includes('made-up'), false)
 globalThis.fetch = async () => new Response(JSON.stringify({ choices: [{ message: { content: '{}' } }] }))
-assert.equal((await worker.fetch(req({ text: 'hello' }), { DEEPSEEK_API_KEY: 'test-only' })).status, 502, 'Empty model JSON must not masquerade as successful AI analysis')
+assert.equal((await worker.fetch(req({ text: 'hello' }), workerEnv)).status, 502, 'Empty model JSON must not masquerade as successful AI analysis')
 console.log('PASS: current intent, negation, task relevance, crisis routing, tiny plan, music routes, bilingual text, stale memory, idempotent history, worker readiness/origin/body limits/model output')

@@ -119,8 +119,36 @@ function sanitizeInsight(raw) {
   }
 }
 
+// A durable, atomic reservation bounds spend even across concurrent Workers.
+// Store no journal text, raw IP address or audio; the daily network ID is HMACed.
+async function reserveAnalysis(request, env) {
+  if (!env.DB) return { error: 'Usage protection unavailable', code: 'usage_unavailable', status: 503 }
+  const now = Date.now()
+  const day = new Date(now).toISOString().slice(0, 10)
+  const key = await crypto.subtle.importKey('raw', new TextEncoder().encode(env.DEEPSEEK_API_KEY), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign'])
+  const ip = request.headers.get('CF-Connecting-IP') || 'unidentified-shared-network'
+  const signature = await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(`${day}:${ip}`))
+  const bucket = Array.from(new Uint8Array(signature), (byte) => byte.toString(16).padStart(2, '0')).join('')
+  const limit = (value, fallback, max) => Math.max(1, Math.min(max, Math.floor(Number(value)) || fallback))
+  const globalLimit = limit(env.AI_GLOBAL_DAILY_LIMIT, 300, 2000)
+  const clientLimit = limit(env.AI_CLIENT_DAILY_LIMIT, 30, 200)
+  const results = await env.DB.batch([
+    env.DB.prepare('DELETE FROM ai_usage WHERE created_at < ?').bind(now - 172800000),
+    env.DB.prepare(`INSERT INTO ai_usage (id, day, bucket, created_at)
+      SELECT ?, ?, ?, ? WHERE
+        (SELECT COUNT(*) FROM ai_usage WHERE day = ?) < ?
+        AND (SELECT COUNT(*) FROM ai_usage WHERE day = ? AND bucket = ?) < ?
+        AND (SELECT COUNT(*) FROM ai_usage WHERE created_at >= ? AND bucket = ?) < 4
+        AND (SELECT COUNT(*) FROM ai_usage WHERE created_at >= ?) < 20
+      RETURNING id`).bind(crypto.randomUUID(), day, bucket, now, day, globalLimit, day, bucket, clientLimit, now - 60000, bucket, now - 60000),
+  ])
+  if (!results[1]?.results?.length) return { error: 'Usage limit reached', code: 'usage_limit', status: 429 }
+  return null
+}
+
 async function handleCoach(request, env) {
   if (!env.DEEPSEEK_API_KEY) return json(request, { error: 'AI coach is not configured' }, 503)
+  if (!request.headers.get('Content-Type')?.toLowerCase().startsWith('application/json')) return json(request, { error: 'JSON required' }, 415)
   const contentLength = Number(request.headers.get('Content-Length') || 0)
   if (contentLength > 24_000) return json(request, { error: 'Request is too large' }, 413)
 
@@ -147,6 +175,8 @@ async function handleCoach(request, env) {
   }
   const userText = text(payload?.text, '', 4000)
   if (!userText) return json(request, { error: 'Missing user state' }, 400)
+  const usageError = await reserveAnalysis(request, env)
+  if (usageError) return json(request, usageError, usageError.status)
 
   const userPayload = {
     source: payload?.source === 'voice' ? 'voice' : 'text',
@@ -171,10 +201,11 @@ async function handleCoach(request, env) {
       max_tokens: 1400,
       stream: false,
     }),
-    signal: AbortSignal.timeout(10_000),
+    signal: AbortSignal.timeout(25_000),
   })
   if (!response.ok) {
-    return json(request, { error: 'AI analysis is temporarily unavailable' }, response.status === 429 ? 429 : 502)
+    const code = response.status === 402 ? 'provider_balance' : response.status === 401 ? 'provider_auth' : response.status === 429 ? 'provider_busy' : 'provider_unavailable'
+    return json(request, { error: 'AI analysis is temporarily unavailable', code }, response.status === 429 ? 429 : 502)
   }
   const completion = await response.json()
   try {
@@ -192,7 +223,7 @@ export default {
     if (url.pathname === '/api/hos-coach') {
       const origin = request.headers.get('Origin')
       if (origin && origin !== GITHUB_ORIGIN && origin !== url.origin) return json(request, { error: 'Origin is not allowed' }, 403)
-      if (request.method === 'GET') return json(request, { ready: Boolean(env.DEEPSEEK_API_KEY), engine: 'deepseek' }, env.DEEPSEEK_API_KEY ? 200 : 503)
+      if (request.method === 'GET') return json(request, { ready: Boolean(env.DEEPSEEK_API_KEY && env.DB), engine: 'deepseek', protected: Boolean(env.DB) }, env.DEEPSEEK_API_KEY && env.DB ? 200 : 503)
     }
     if (request.method === 'OPTIONS' && url.pathname === '/api/hos-coach') {
       return new Response(null, { status: 204, headers: corsHeaders(request) })
@@ -201,7 +232,7 @@ export default {
       try {
         return await handleCoach(request, env)
       } catch (error) {
-        return json(request, { error: 'AI coach is temporarily unavailable' }, error?.name === 'TimeoutError' ? 504 : 500)
+        return json(request, { error: 'AI coach is temporarily unavailable', code: error?.name === 'TimeoutError' ? 'provider_timeout' : 'service_unavailable' }, error?.name === 'TimeoutError' ? 504 : 503)
       }
     }
     return env.ASSETS ? env.ASSETS.fetch(request) : json(request, { error: 'Not found' }, 404)
