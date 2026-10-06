@@ -6,15 +6,19 @@ interface VoiceInputButtonProps {
   onChange: (value: string) => void
   label?: string
   maxLength?: number
+  onComplete?: (value: string) => void
 }
 
-export default function VoiceInputButton({ value, onChange, label = '用语音输入', maxLength }: VoiceInputButtonProps) {
+export default function VoiceInputButton({ value, onChange, label = '用语音输入', maxLength, onComplete }: VoiceInputButtonProps) {
   const open = () => {
     openVoiceCompanion({
       context: label,
+      mode: 'dictation',
       onComplete: (transcript) => {
         const separator = value.trim() ? '，' : ''
-        onChange(`${value}${separator}${transcript}`.slice(0, maxLength ?? 2000))
+        const next = `${value}${separator}${transcript}`.slice(0, maxLength ?? 2000)
+        onChange(next)
+        onComplete?.(next)
       },
     })
     navigator.vibrate?.(14)

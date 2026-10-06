@@ -26,7 +26,7 @@ import {
   Volume2,
   Waves,
 } from 'lucide-react'
-import { type ChatMessage, type JournalEntry, loadState, recomputeUserState, saveState } from '../stores/useStore'
+import { type ChatMessage, type JournalEntry, loadState, recomputeUserState, saveState, saveStateBatch } from '../stores/useStore'
 import {
   buildCoachGreeting,
   buildCoachSnapshot,
@@ -56,7 +56,7 @@ import {
   buildTextRegulationJourney,
   type RegulationJourney,
 } from '../engines/stateOrchestrator'
-import { hasHOSAIEndpoint, requestHOSCoachAnalysis } from '../services/aiCoachService'
+import { checkHOSAIConnection, coachErrorMessage, hasHOSAIEndpoint, requestHOSCoachAnalysis } from '../services/aiCoachService'
 
 const starterPrompts = [
   { label: '脑子停不下来', desc: '压力、紧绷、想得太多', icon: Waves, text: '我现在压力很大，脑子停不下来，想先稳定状态。' },
@@ -83,7 +83,7 @@ export default function Architect() {
   const rememberedVoice = initialSnapshot.latestVoice?.date === new Date().toLocaleDateString('en-CA')
     ? initialSnapshot.latestVoice
     : undefined
-  const initialContext = initialUser?.content ?? rememberedVoice?.transcript
+  const initialContext = initialUser && Date.now() - initialUser.timestamp < 6 * 60 * 60 * 1000 ? initialUser.content : rememberedVoice?.transcript
   const [messages, setMessages] = useState<ChatMessage[]>(initialMessages)
   const [input, setInput] = useState('')
   const [started, setStarted] = useState(Boolean(initialContext))
@@ -101,10 +101,21 @@ export default function Architect() {
   const aiEnhanced = hasHOSAIEndpoint()
   const timersRef = useRef<number[]>([])
   const analysisRequestRef = useRef(0)
+  const analysisAbortRef = useRef<AbortController | null>(null)
+  const voiceSavingRef = useRef(false)
+  const pendingLocalRef = useRef<(() => void) | null>(null)
+  const [engineNotice, setEngineNotice] = useState('')
+  const [engineSource, setEngineSource] = useState<'local' | 'deepseek'>('local')
+  const [connectionStatus, setConnectionStatus] = useState('')
   const livePlanRef = useRef<HTMLElement>(null)
   const saveVoiceJournalRef = useRef<(override?: string) => void>(() => undefined)
   const snapshot = buildCoachSnapshot()
   const userTrail = messages.filter((message) => message.role === 'user').slice(-3)
+  useEffect(() => {
+    if (!started || thinkingStage !== null) return
+    const frame = window.requestAnimationFrame(() => livePlanRef.current?.scrollIntoView({ behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' }))
+    return () => window.cancelAnimationFrame(frame)
+  }, [coachPlan, started, thinkingStage])
 
   useEffect(() => { saveState('chat', messages.slice(-20)) }, [messages])
   useEffect(() => {
@@ -113,6 +124,7 @@ export default function Architect() {
   }, [voice.interimTranscript, voice.transcript])
   useEffect(() => () => {
     analysisRequestRef.current += 1
+    analysisAbortRef.current?.abort()
     timersRef.current.forEach((timer) => window.clearTimeout(timer))
     window.speechSynthesis?.cancel()
   }, [])
@@ -150,6 +162,11 @@ export default function Architect() {
     const currentSnapshot = buildCoachSnapshot()
     const localPlan = createCoachPlan(content, currentSnapshot, coachPlan)
     const requestId = ++analysisRequestRef.current
+    analysisAbortRef.current?.abort()
+    analysisAbortRef.current = new AbortController()
+    setEngineNotice('')
+    setEngineSource('local')
+    setVoiceRecord(null)
     const startedAt = Date.now()
     setMessages((previous) => [...previous, userMsg])
     setInput('')
@@ -166,24 +183,35 @@ export default function Architect() {
       const checkIn = currentSnapshot.checkIn
       const journey = buildTextRegulationJourney(content, nextPlan, checkIn, deepInsight)
       const delay = Math.max(0, 880 - (Date.now() - startedAt))
-      const timer = window.setTimeout(() => finishResponse(nextPlan, currentSnapshot, journey), delay)
+      const timer = window.setTimeout(() => {
+        if (analysisRequestRef.current !== requestId) return
+        pendingLocalRef.current = null
+        setEngineSource(deepInsight ? 'deepseek' : 'local')
+        finishResponse(nextPlan, currentSnapshot, journey)
+      }, delay)
       timersRef.current.push(timer)
     }
     if (localPlan.isCrisis || !aiEnhanced) {
       complete(localPlan)
       return
     }
+    pendingLocalRef.current = () => analysisAbortRef.current?.abort()
     void requestHOSCoachAnalysis({
       text: content,
       source: 'text',
       snapshot: currentSnapshot,
+      signal: analysisAbortRef.current.signal,
       recentUserMessages: [
         ...messages.filter((message) => message.role === 'user').slice(-3).map((message) => message.content),
         content,
       ],
     })
       .then((insight) => complete(refineCoachPlanWithAI(localPlan, insight), insight))
-      .catch(() => complete(localPlan))
+      .catch((error) => {
+        if (analysisRequestRef.current !== requestId) return
+        setEngineNotice(coachErrorMessage(error))
+        complete(localPlan)
+      })
   }, [aiEnhanced, coachPlan, finishResponse, input, messages, thinkingStage])
 
   const chooseReply = (option: CoachReplyOption) => sendMessage(option.value, option.label)
@@ -224,6 +252,10 @@ export default function Architect() {
     setMessages([])
     saveState('chat', [])
     analysisRequestRef.current += 1
+    analysisAbortRef.current?.abort()
+    pendingLocalRef.current = null
+    voiceSavingRef.current = false
+    setEngineNotice('')
     setStarted(false)
     setThinkingStage(null)
     setSpeaking(false)
@@ -237,6 +269,11 @@ export default function Architect() {
   }
 
   const startVoiceJournal = () => {
+    analysisRequestRef.current += 1
+    analysisAbortRef.current?.abort()
+    timersRef.current.forEach((timer) => window.clearTimeout(timer))
+    setThinkingStage(null)
+    voiceSavingRef.current = false
     setVoiceRecord(null)
     setVoiceCalibration('')
     setVoiceIntelligence('idle')
@@ -254,7 +291,11 @@ export default function Architect() {
 
   const saveVoiceJournal = (override?: string) => {
     const transcript = polishVoiceTranscript(override ?? voiceReviewText)
-    if (!transcript) return
+    if (!transcript || voiceSavingRef.current) return
+    voiceSavingRef.current = true
+    const requestId = ++analysisRequestRef.current
+    analysisAbortRef.current?.abort()
+    analysisAbortRef.current = new AbortController()
     const currentMemory = loadVoiceMemory(loadState<VoiceMemory | undefined>('voiceMemory', voiceMemory))
     const analysis = analyzeVoiceJournal(transcript, voice.metrics, currentMemory)
     const now = Date.now()
@@ -287,10 +328,7 @@ export default function Architect() {
       intelligence: 'local',
     }
     const voiceRecords = loadState<VoiceJournalRecord[]>('voiceJournal', [])
-    saveState('voiceJournal', [record, ...voiceRecords].slice(0, 180))
     const nextMemory = updateVoiceMemory(currentMemory, record)
-    saveState('voiceMemory', nextMemory)
-    setVoiceMemory(nextMemory)
 
     const journal = loadState<JournalEntry[]>('journal', [])
     const journalEntry: JournalEntry = {
@@ -309,8 +347,13 @@ export default function Architect() {
       rawFragment: voice.transcript || transcript,
       regulationPath: journey.steps.map((step) => step.title),
     }
-    saveState('journal', [journalEntry, ...journal].slice(0, 365))
-    saveState('dailyCheckIn', inferredCheckIn)
+    if (!saveStateBatch({ voiceJournal: [record, ...voiceRecords], voiceMemory: nextMemory, journal: [journalEntry, ...journal], dailyCheckIn: currentSnapshot.checkIn && currentSnapshot.checkIn.source !== 'voice' ? currentSnapshot.checkIn : inferredCheckIn })) {
+      voiceSavingRef.current = false
+      setVoiceAutoFinalize(false)
+      setEngineNotice('未能保存这段表达。文字仍在，请先复制备份后再试。')
+      return
+    }
+    setVoiceMemory(nextMemory)
 
     const voiceUserMessage: ChatMessage = { id: `u-${now}`, role: 'user', content: transcript, timestamp: now }
     const voiceCoachMessage: ChatMessage = { id: `a-${now + 1}`, role: 'assistant', content: formatCoachMessage(nextPlan), timestamp: now + 1 }
@@ -319,7 +362,7 @@ export default function Architect() {
     setCoachJourney(journey)
     setStarted(true)
     setVoiceRecord(record)
-    setVoiceIntelligence(aiEnhanced ? 'analyzing' : 'local')
+    setVoiceIntelligence(aiEnhanced && !nextPlan.isCrisis ? 'analyzing' : 'local')
     setVoiceAutoFinalize(false)
     setFeedbackStatus('')
     recomputeUserState()
@@ -327,15 +370,17 @@ export default function Architect() {
     voice.reset()
     navigator.vibrate?.([24, 36, 48])
 
-    if (!aiEnhanced) return
+    if (!aiEnhanced || nextPlan.isCrisis) return
 
     void requestHOSCoachAnalysis({
       text: transcript,
       source: 'voice',
       snapshot: { ...currentSnapshot, checkIn: inferredCheckIn },
+      signal: analysisAbortRef.current.signal,
       recentUserMessages: messages.filter((message) => message.role === 'user').slice(-3).map((message) => message.content),
     })
       .then((insight) => {
+        if (requestId !== analysisRequestRef.current) return
         const refinedPlan = refineCoachPlanWithAI(nextPlan, insight)
         const refinedAnalysis = {
           ...analysis,
@@ -356,9 +401,9 @@ export default function Architect() {
           intelligence: 'deepseek',
         }
         const currentRecords = loadState<VoiceJournalRecord[]>('voiceJournal', [])
-        saveState('voiceJournal', currentRecords.map((item) => item.id === refinedRecord.id ? refinedRecord : item))
         const currentJournal = loadState<JournalEntry[]>('journal', [])
-        saveState('journal', currentJournal.map((entry) => entry.voiceRecordId === refinedRecord.id
+        if (!currentRecords.some((item) => item.id === refinedRecord.id)) return
+        const saved = saveStateBatch({ voiceJournal: currentRecords.map((item) => item.id === refinedRecord.id ? refinedRecord : item), journal: currentJournal.map((entry) => entry.voiceRecordId === refinedRecord.id
           ? {
               ...entry,
               trigger: `语音日记 · ${refinedAnalysis.stateLabel}`,
@@ -367,7 +412,8 @@ export default function Architect() {
               organizedText: refinedOrganizedText,
               regulationPath: refinedJourney.steps.map((step) => step.title),
             }
-          : entry))
+          : entry) })
+        if (!saved) { setVoiceIntelligence('local'); setEngineNotice('本机记录已保存，云端补充未能写入。'); return }
         setVoiceRecord((current) => current?.id === refinedRecord.id ? refinedRecord : current)
         setCoachPlan(refinedPlan)
         setCoachJourney(refinedJourney)
@@ -375,13 +421,13 @@ export default function Architect() {
         recomputeUserState()
         window.dispatchEvent(new CustomEvent('hos:data-updated'))
       })
-      .catch(() => setVoiceIntelligence('local'))
+      .catch((error) => { if (requestId === analysisRequestRef.current) { setVoiceIntelligence('local'); setEngineNotice(coachErrorMessage(error)) } })
   }
   saveVoiceJournalRef.current = saveVoiceJournal
 
   useEffect(() => {
     if (voice.status !== 'review' || !voiceAutoFinalize) return undefined
-    const heard = polishVoiceTranscript(voiceReviewText || `${voice.transcript}${voice.interimTranscript}`)
+    const heard = polishVoiceTranscript(`${voice.transcript}${voice.interimTranscript}` || voiceReviewText)
     const timer = window.setTimeout(() => {
       if (heard) saveVoiceJournalRef.current(heard)
       else {
@@ -404,7 +450,8 @@ export default function Architect() {
   }
 
   const beginCoachPractice = () => {
-    const journey = voiceRecord?.journey ?? coachJourney
+    if (coachPlan.isCrisis) { navigate('/support-now'); return }
+    const journey = coachJourney
     if (journey) {
       activateRegulationJourney(journey)
       navigate(journey.steps[0].route)
@@ -415,6 +462,8 @@ export default function Architect() {
 
   const clearVoiceMemory = () => {
     if (!window.confirm('清除语音记录、声音基线与相关语音日志？此操作无法撤销。')) return
+    analysisRequestRef.current += 1
+    analysisAbortRef.current?.abort()
     saveState('voiceJournal', [])
     window.localStorage.removeItem('hos_voiceMemory')
     const checkIn = loadState<{ source?: string } | undefined>('dailyCheckIn', undefined)
@@ -434,10 +483,17 @@ export default function Architect() {
       <header className="coach-vnext-header">
         <div className="coach-vnext-brand">
           <span><BrainCircuit size={19} /></span>
-          <div><p>HOS ADAPTIVE COACH</p><h1>状态教练</h1><small>连续理解，不急着回答 · {aiEnhanced ? 'DeepSeek 增强' : '本机隐私模式'}</small></div>
+          <div><p>HOS ADAPTIVE COACH</p><h1>状态教练</h1><small>先听见你，再找到一个可开始的动作</small></div>
         </div>
         {started && <button onClick={resetSession} aria-label="开始新对话"><RefreshCw size={17} /></button>}
       </header>
+      <details className="coach-engine-status">
+        <summary><ShieldCheck size={15} />{aiEnhanced ? '云端通道已配置 · 可检查连接' : '本机陪伴模式 · 云端尚未连接'}</summary>
+        <p>{aiEnhanced ? '发送时会将本次文字、近期对话和状态摘要交给已配置的 AI 服务。原始录音不保存。云端失败会明确提示，并提供本机建议。' : '当前建议由本机规则生成，并非云端大模型回复。语音转写仍依赖浏览器能力；全部原有工具和档案照常使用。'}</p>
+        <button type="button" onClick={async () => { setConnectionStatus('正在检查…'); setConnectionStatus(await checkHOSAIConnection()) }}>检查 AI 连接</button>
+        {connectionStatus && <p role="status">{connectionStatus}</p>}
+      </details>
+      {engineNotice && <p className="coach-engine-notice" role="status">{engineNotice}</p>}
 
       {voice.status === 'idle' && !voiceRecord && !started && (
         <section className="voice-invitation">
@@ -451,7 +507,7 @@ export default function Architect() {
             <span><Mic size={28} /></span>
             <strong>按一下，直接说</strong>
           </button>
-          <div className="voice-invitation-privacy"><LockKeyhole size={13} /><span>原始录音不保存 · 转写与状态仅留在本机</span></div>
+          <div className="voice-invitation-privacy"><LockKeyhole size={13} /><span>原始录音不保存 · {aiEnhanced ? '文字与状态摘要将用于云端分析' : '文字分析和档案保存在本机'}</span></div>
           {voiceMemory.voiceCount > 0 && (
             <div className="voice-memory-peek"><AudioLines size={14} /><span>{voiceMemoryInsight(voiceMemory)}</span><button onClick={clearVoiceMemory}>管理</button></div>
           )}
@@ -507,7 +563,7 @@ export default function Architect() {
 
       {voiceRecord && (
         <section className="voice-readback">
-          <header><div><p>I HEARD YOU</p><h2>我听见了</h2></div><span>{voiceRecord.analysis.confidence}%<small>当前推测</small></span></header>
+          <header><div><p>I HEARD YOU</p><h2>我听见了</h2></div><span><Check size={19} /><small>请你校准</small></span></header>
           <div className={`companion-intelligence ${voiceIntelligence}`}>
             <BrainCircuit size={14} />
             <span>{voiceIntelligence === 'analyzing' ? '正在进行 DeepSeek 深层分析…' : voiceIntelligence === 'deepseek' ? 'DeepSeek 已完成深层理解与模块编排' : 'HOS 本机状态引擎已完成分析 · 私人记录不出设备'}</span>
@@ -570,6 +626,13 @@ export default function Architect() {
           <div>{userTrail.map((message) => <span key={message.id}>{message.content}</span>)}</div>
         </section>
       )}
+      {messages.length > 0 && <details className="coach-conversation">
+        <summary>回看这段对话 · {messages.filter((message) => message.role === 'user').length} 次表达</summary>
+        {messages.slice(-20).map((message) => <article className={message.role} key={message.id}>
+          <small>{message.role === 'user' ? '我' : '教练'} · {new Date(message.timestamp).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' })}</small>
+          <p>{message.content}</p>
+        </article>)}
+      </details>}
 
       {thinkingStage !== null && (
         <section className="coach-thinking-card" aria-live="polite">
@@ -577,6 +640,7 @@ export default function Architect() {
           <p>教练正在理解语境</p>
           <h2>{['识别状态信号…', '与今日记录对齐…', '把行动压缩到可开始…'][thinkingStage]}</h2>
           <div>{[0, 1, 2].map((index) => <i key={index} className={index <= thinkingStage ? 'active' : ''} />)}</div>
+          {aiEnhanced && <button type="button" onClick={() => pendingLocalRef.current?.()}>不等云端，先用本机建议</button>}
         </section>
       )}
 
@@ -584,13 +648,13 @@ export default function Architect() {
         <section ref={livePlanRef} className={`coach-live-plan ${coachPlan.isCrisis ? 'crisis' : ''}`}>
           <header>
             <div><p>CURRENT READ</p><h2>{coachPlan.stateLabel}</h2><span>核心需要：{coachPlan.coreNeed}</span></div>
-            <div className="coach-confidence"><strong>{coachPlan.confidence}</strong><small>匹配度</small></div>
+            <div className="coach-confidence"><BrainCircuit size={20} /><small>{engineSource === 'deepseek' || voiceIntelligence === 'deepseek' ? '云端理解' : '本机建议'}</small></div>
           </header>
 
           <div className="coach-signal-row">{coachPlan.signals.map((signal) => <span key={signal}>{signal}</span>)}</div>
 
           <article className="coach-hypothesis">
-            <p>我的当前理解</p>
+            <p>我的当前理解 · 可以随时纠正</p>
             <h3>{coachPlan.hypothesis}</h3>
             <blockquote>{coachPlan.reframe}</blockquote>
           </article>
@@ -615,7 +679,7 @@ export default function Architect() {
 
           <div className="coach-plan-actions">
             <button onClick={speakPlan}><Volume2 size={16} />{speaking ? '停止播放' : '听教练说'}</button>
-            <button onClick={beginCoachPractice}><Play size={16} />进入实践</button>
+            <button onClick={beginCoachPractice}><Play size={16} />{coachPlan.isCrisis ? '联系现实支持' : '进入实践'}</button>
           </div>
 
           {!coachPlan.isCrisis && (
@@ -635,13 +699,13 @@ export default function Architect() {
             aria-label="告诉教练你现在怎么了"
             value={input}
             onChange={(event) => setInput(event.target.value)}
-            onKeyDown={(event) => event.key === 'Enter' && sendMessage()}
+            onKeyDown={(event) => { if (event.key === 'Enter' && !event.nativeEvent.isComposing) sendMessage() }}
             placeholder={started ? '继续说，我会沿着上一轮理解…' : '或者，直接说此刻最卡的事…'}
           />
-          <VoiceInputButton value={input} onChange={setInput} label="用语音继续和教练说" />
+          <VoiceInputButton value={input} onChange={setInput} onComplete={(text) => sendMessage(text)} label="用语音继续和教练说" />
         </div>
         <button onClick={() => sendMessage()} disabled={!input.trim() || thinkingStage !== null} aria-label="发送"><Send size={17} /></button>
-        <div className="coach-privacy"><ShieldCheck size={12} /><span>对话与状态仅保存在当前设备</span></div>
+        <div className="coach-privacy"><ShieldCheck size={12} /><span>{aiEnhanced ? '文字与状态摘要用于云端分析 · 档案保存在本机' : '本机分析 · 档案只保存在当前设备'}</span></div>
       </footer>}
     </div>
   )

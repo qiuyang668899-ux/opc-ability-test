@@ -4,6 +4,7 @@ import { ArrowRight, Check, Route, X } from 'lucide-react'
 import {
   completeRegulationJourney,
   loadActiveRegulationJourney,
+  matchesGuidanceRoute,
   updateActiveRegulationJourney,
   type RegulationJourney,
 } from '../engines/stateOrchestrator'
@@ -23,7 +24,7 @@ export default function ActiveGuidance() {
   if (!journey) return null
   const step = journey.steps[journey.currentStep]
   if (!step) return null
-  const isOnStep = location.pathname === step.route || (step.route.startsWith('/reset/') && location.pathname.startsWith('/reset/'))
+  const isOnStep = matchesGuidanceRoute(step.route, location.pathname, location.search)
 
   const openStep = () => {
     setExpanded(false)
@@ -33,7 +34,7 @@ export default function ActiveGuidance() {
   const finishStep = () => {
     const nextIndex = journey.currentStep + 1
     if (nextIndex >= journey.steps.length) {
-      completeRegulationJourney(journey)
+      if (!completeRegulationJourney(journey)) return
       setJourney(null)
       return
     }

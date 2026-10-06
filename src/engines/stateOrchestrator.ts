@@ -1,6 +1,6 @@
 import type { CoachMode, CoachPlan } from './coachEngine'
 import type { VoiceStateAnalysis } from './voiceJournalEngine'
-import { loadState, saveState } from '../stores/useStore'
+import { loadState, saveState, saveStateBatch } from '../stores/useStore'
 import type { HOSAIInsight, HOSModuleId } from '../services/aiCoachService'
 
 export type RegulationStep = {
@@ -72,13 +72,16 @@ const moduleSteps: Record<HOSModuleId, RegulationStep> = {
 }
 
 function chooseSteps(plan: CoachPlan, insight?: HOSAIInsight) {
+  if (plan.isCrisis) return [{ id: 'real-support', title: '连接现实中的支持', reason: plan.hypothesis, action: '联系可信任的人或当地紧急援助', route: '/support-now', minutes: 0 }]
   const selected = insight?.recommendedModules.map((moduleId) => moduleSteps[moduleId]) ?? []
   const unique = selected.filter((step, index) => selected.findIndex((item) => item.id === step.id) === index)
   for (const step of journeySteps[plan.mode]) {
     if (unique.length >= 3) break
     if (!unique.some((item) => item.route === step.route && item.action === step.action)) unique.push(step)
   }
-  return unique.slice(0, 3)
+  const steps = unique.slice(0, 3)
+  if (plan.isTiny) steps[0] = { ...steps[0], title: '先做 30 秒保底动作', action: plan.actionStep, minutes: 0.5 }
+  return steps
 }
 
 function createJourney(
@@ -93,7 +96,7 @@ function createJourney(
     stateLabel: state.stateLabel,
     coreNeed: plan.coreNeed,
     rationale: insight?.rationale
-      ?? `根据你表达中的「${state.keywords.slice(0, 2).join('、') || '此刻状态'}」以及能量 ${state.energy}/5、清晰 ${state.clarity}/5、压力 ${state.pressure}/5，先处理最影响状态的环节，再进入行动。`,
+      ?? (plan.isCrisis ? '此刻先获得真实支持，不进入普通练习。' : `根据你刚才表达的「${state.keywords.slice(0, 2).join('、') || '此刻状态'}」，先试一个小步骤。这个顺序只是建议，可以按你的真实感受调整。`),
     currentStep: 0,
     steps,
   }
@@ -134,6 +137,14 @@ export function updateActiveRegulationJourney(journey: RegulationJourney | null)
 
 export function completeRegulationJourney(journey: RegulationJourney) {
   const history = loadState<RegulationJourney[]>('regulationJourneyHistory', [])
-  saveState('regulationJourneyHistory', [{ ...journey, currentStep: journey.steps.length }, ...history].slice(0, 90))
-  updateActiveRegulationJourney(null)
+  const saved = saveStateBatch({ regulationJourneyHistory: [{ ...journey, currentStep: journey.steps.length }, ...history.filter((item) => item.id !== journey.id)], activeRegulationJourney: null })
+  if (saved) window.dispatchEvent(new CustomEvent('hos:journey-updated'))
+  return saved
+}
+
+export function matchesGuidanceRoute(route: string, pathname: string, search: string) {
+  const [path, query = ''] = route.split('?')
+  if (path !== pathname) return false
+  const current = new URLSearchParams(search)
+  return [...new URLSearchParams(query)].every(([key, value]) => current.get(key) === value)
 }

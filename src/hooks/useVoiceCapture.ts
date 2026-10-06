@@ -15,6 +15,7 @@ interface RecognitionLike {
   start: () => void
   stop: () => void
   abort: () => void
+  onstart: (() => void) | null
   onresult: ((event: RecognitionEventLike) => void) | null
   onerror: ((event: RecognitionErrorLike) => void) | null
   onend: (() => void) | null
@@ -39,14 +40,9 @@ function shouldAvoidParallelMicrophoneCapture() {
 
 function mergeTranscript(previous: string, incoming: string) {
   const next = incoming.trim()
-  if (!next || previous.endsWith(next)) return previous
-  if (next.startsWith(previous)) return next
-
-  const maxOverlap = Math.min(previous.length, next.length)
-  for (let size = maxOverlap; size > 0; size -= 1) {
-    if (previous.slice(-size) === next.slice(0, size)) return `${previous}${next.slice(size)}`
-  }
-  return `${previous}${next}`
+  if (!next) return previous
+  const separator = /[a-z0-9]$/i.test(previous) && /^[a-z0-9]/i.test(next) ? ' ' : ''
+  return `${previous}${separator}${next}`
 }
 
 const emptyMetrics: VoiceAcousticMetrics = {
@@ -79,6 +75,7 @@ export function useVoiceCapture() {
   const samplesRef = useRef<number[]>([])
   const transcriptRef = useRef('')
   const interimRef = useRef('')
+  const generationRef = useRef(0)
 
   const recognitionAvailable = typeof window !== 'undefined' && Boolean(getRecognitionConstructor())
   const microphoneAvailable = typeof navigator !== 'undefined' && 'mediaDevices' in navigator && 'getUserMedia' in navigator.mediaDevices
@@ -112,6 +109,8 @@ export function useVoiceCapture() {
     setTranscript(transcriptRef.current)
     setInterimTranscript('')
     stoppingRef.current = false
+    generationRef.current += 1
+    try { recognitionRef.current?.abort() } catch { /* already ended */ }
     recognitionRef.current = null
     releaseStream()
     setStatus('review')
@@ -123,6 +122,7 @@ export function useVoiceCapture() {
   }, [finishReview])
 
   const cleanupMedia = useCallback(() => {
+    generationRef.current += 1
     activeRef.current = false
     stoppingRef.current = false
     if (finalizationTimerRef.current) window.clearTimeout(finalizationTimerRef.current)
@@ -146,7 +146,7 @@ export function useVoiceCapture() {
       durationSec: Number(durationSec.toFixed(1)),
       averageLevel: Math.round(average),
       levelVariability: Math.round(Math.sqrt(variance)),
-      peakLevel: Math.round(Math.max(...samples)),
+      peakLevel: Math.round(samples.reduce((peak, sample) => Math.max(peak, sample), 0)),
       pauseRatio: Number((samples.filter((sample) => sample < 13).length / samples.length).toFixed(2)),
       sampleCount: samples.length,
     }
@@ -155,12 +155,14 @@ export function useVoiceCapture() {
 
   const startOptionalSampling = useCallback(async () => {
     if (!microphoneAvailable || shouldAvoidParallelMicrophoneCapture()) return
-
+    const generation = generationRef.current
+    let openedStream: MediaStream | null = null
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
         audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: false },
       })
-      if (!activeRef.current) {
+      openedStream = stream
+      if (!activeRef.current || generation !== generationRef.current) {
         stream.getTracks().forEach((track) => track.stop())
         return
       }
@@ -177,7 +179,7 @@ export function useVoiceCapture() {
       audioContextRef.current = audioContext
 
       const analyze = () => {
-        if (!activeRef.current) return
+        if (!activeRef.current || generation !== generationRef.current) return
         analyser.getByteTimeDomainData(buffer)
         let squareSum = 0
         for (const item of buffer) {
@@ -186,12 +188,13 @@ export function useVoiceCapture() {
         }
         const rms = Math.sqrt(squareSum / buffer.length)
         const level = Math.min(100, rms * 390)
-        samplesRef.current.push(level)
+        if (samplesRef.current.length < 18_000) samplesRef.current.push(level)
         setLiveLevel(Math.round(level))
         animationRef.current = window.requestAnimationFrame(analyze)
       }
       analyze()
     } catch {
+      openedStream?.getTracks().forEach((track) => track.stop())
       // Speech recognition owns the microphone. Acoustic sampling is best-effort
       // and must never prevent a transcript from being captured.
     }
@@ -215,7 +218,9 @@ export function useVoiceCapture() {
   }, [finalizeMetrics, finishReview, scheduleFinishReview, stopSampling])
 
   const start = useCallback(async () => {
-    if (status === 'requesting' || status === 'listening' || status === 'finalizing') return
+    if (activeRef.current || stoppingRef.current) return
+    cleanupMedia()
+    const generation = generationRef.current
 
     setError('')
     setTranscript('')
@@ -226,7 +231,7 @@ export function useVoiceCapture() {
     interimRef.current = ''
     samplesRef.current = []
 
-    if (!recognitionAvailable) {
+    if (!getRecognitionConstructor()) {
       setError('当前内置浏览器没有提供自动转写能力。你仍可点输入框，使用手机键盘上的话筒说，说完即可整理保存。')
       setStatus('manual')
       return
@@ -240,25 +245,45 @@ export function useVoiceCapture() {
       recognition.continuous = !prefersChunkedRecognition()
       recognition.interimResults = true
       recognition.maxAlternatives = 1
+      let previousCycles = ''
+      let restartCount = 0
+      let lastResultAt = Date.now()
+      const isCurrent = () => generation === generationRef.current
+      const fallback = (message: string) => {
+        if (!isCurrent()) return
+        transcriptRef.current = mergeTranscript(transcriptRef.current, interimRef.current)
+        interimRef.current = ''
+        setTranscript(transcriptRef.current)
+        setInterimTranscript('')
+        finalizeMetrics()
+        cleanupMedia()
+        setError(message)
+        setStatus('manual')
+      }
+      recognition.onstart = () => { if (isCurrent()) setStatus('listening') }
       recognition.onresult = (event) => {
+        if (!isCurrent()) return
+        lastResultAt = Date.now()
+        restartCount = 0
         let finalText = ''
         let interimText = ''
-        for (let index = event.resultIndex; index < event.results.length; index += 1) {
+        // The results collection is a snapshot, not a delta. Rebuild this cycle
+        // so repeated phrases stay intact and revised final results aren't duplicated.
+        for (let index = 0; index < event.results.length; index += 1) {
           const result = event.results[index]
           if (!result) continue
           const heard = result[0]?.transcript ?? ''
-          if (result.isFinal === false) interimText += heard
-          else finalText += heard
+          if (result.isFinal === false) interimText = mergeTranscript(interimText, heard)
+          else finalText = mergeTranscript(finalText, heard)
         }
-        if (finalText) {
-          transcriptRef.current = mergeTranscript(transcriptRef.current, finalText)
-          setTranscript(transcriptRef.current)
-        }
+        transcriptRef.current = mergeTranscript(previousCycles, finalText)
+        setTranscript(transcriptRef.current)
         interimRef.current = interimText
         setInterimTranscript(interimText)
         if (stoppingRef.current) scheduleFinishReview(650)
       }
       recognition.onerror = (event) => {
+        if (!isCurrent()) return
         if (event.error === 'no-speech' || event.error === 'aborted') return
         const fatal = ['not-allowed', 'service-not-allowed', 'audio-capture', 'network'].includes(event.error)
         const message = event.error === 'not-allowed' || event.error === 'service-not-allowed'
@@ -268,20 +293,18 @@ export function useVoiceCapture() {
             : '当前内置浏览器的转写服务没有连接成功。已经听到的内容会保留，也可用手机键盘话筒继续说。'
         setError(message)
         if (fatal) {
-          activeRef.current = false
-          stoppingRef.current = false
-          stopSampling()
-          releaseStream()
-          recognitionRef.current = null
-          setStatus('manual')
+          fallback(message)
         }
       }
       recognition.onend = () => {
+        if (!isCurrent()) return
         if (stoppingRef.current) {
           scheduleFinishReview(900)
           return
         }
         if (activeRef.current) {
+          restartCount += 1
+          if (restartCount > 2) { fallback('自动转写暂时无法持续连接。已有文字已保留，请用键盘话筒继续输入。'); return }
           const completedChunk = interimRef.current.trim()
           if (completedChunk) {
             transcriptRef.current = mergeTranscript(transcriptRef.current, completedChunk)
@@ -289,9 +312,10 @@ export function useVoiceCapture() {
             setTranscript(transcriptRef.current)
             setInterimTranscript('')
           }
+          previousCycles = transcriptRef.current
           restartTimerRef.current = window.setTimeout(() => {
-            if (!activeRef.current) return
-            try { recognition.start() } catch { /* browser restart race */ }
+            if (!activeRef.current || !isCurrent()) return
+            try { recognition.start() } catch { fallback('自动转写已中断，已有文字仍在，可以用键盘话筒继续。') }
           }, 120)
         }
       }
@@ -303,8 +327,12 @@ export function useVoiceCapture() {
       // Start recognition while the user's tap still owns browser activation.
       // Awaiting getUserMedia first breaks speech start in several mobile webviews.
       recognition.start()
-      setStatus('listening')
-      timerRef.current = window.setInterval(() => setElapsedSec(Math.floor((Date.now() - startedAtRef.current) / 1000)), 250)
+      timerRef.current = window.setInterval(() => {
+        if (!isCurrent()) return
+        setElapsedSec(Math.floor((Date.now() - startedAtRef.current) / 1000))
+        if (Date.now() - lastResultAt > 20_000) fallback('20 秒内没有收到新的转写文字。为避免空等，已转为文字输入；已有内容仍在。')
+        else if (Date.now() - startedAtRef.current > 300_000) stop()
+      }, 250)
       void startOptionalSampling()
       navigator.vibrate?.(18)
     } catch (captureError) {
@@ -313,7 +341,7 @@ export function useVoiceCapture() {
       setError(namedError.name === 'NotAllowedError' ? '麦克风权限没有打开。请允许后再试；声音原始录音不会被保存。' : '暂时无法打开麦克风，请检查浏览器权限。')
       setStatus('error')
     }
-  }, [cleanupMedia, recognitionAvailable, releaseStream, scheduleFinishReview, startOptionalSampling, status, stopSampling])
+  }, [cleanupMedia, finalizeMetrics, scheduleFinishReview, startOptionalSampling, stop])
 
   const reset = useCallback(() => {
     cleanupMedia()

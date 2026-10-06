@@ -44,6 +44,7 @@ type AnalysisRequest = {
   source: AnalysisSource
   snapshot: CoachSnapshot
   recentUserMessages?: string[]
+  signal?: AbortSignal
 }
 
 function endpoint() {
@@ -55,6 +56,27 @@ function endpoint() {
 
 export function hasHOSAIEndpoint() {
   return Boolean(endpoint())
+}
+
+export function coachErrorMessage(error: unknown) {
+  return error instanceof Error && error.name === 'AbortError'
+    ? '云端等待已结束，已切换到本机建议。'
+    : error instanceof Error && /[\u4e00-\u9fff]/.test(error.message) ? error.message : '云端暂时不可用，已切换到本机建议。'
+}
+
+export async function checkHOSAIConnection() {
+  const target = endpoint()
+  if (!target) return '当前站点没有配置云端教练地址。本机建议、语音归档和练习仍可使用。'
+  const controller = new AbortController()
+  const timeout = window.setTimeout(() => controller.abort(), 6000)
+  try {
+    const response = await fetch(target, { method: 'GET', signal: controller.signal, cache: 'no-store' })
+    const value = await response.json()
+    return response.ok && value.ready === true
+      ? '服务端已配置。实际模型可用性以发送后的结果为准；本次检查没有发送日记内容。'
+      : '服务端尚未就绪，请检查部署配置。本次检查没有发送日记内容。'
+  } catch { return '未能连接到云端教练。本机功能可继续使用。' }
+  finally { window.clearTimeout(timeout) }
 }
 
 function contextFromSnapshot(snapshot: CoachSnapshot) {
@@ -97,6 +119,7 @@ function isInsight(value: unknown): value is HOSAIInsight {
     && ['stateLabel', 'coreNeed', 'response', 'hypothesis', 'bodyStep', 'actionStep', 'reflectionStep', 'reframe', 'question', 'commitment', 'rationale'].every((key) => typeof (insight as Record<string, unknown>)[key] === 'string')
     && typeof insight.confidence === 'number' && Number.isFinite(insight.confidence) && insight.confidence >= 0 && insight.confidence <= 100
     && Array.isArray(insight.recommendedModules)
+    && insight.recommendedModules.length > 0 && insight.recommendedModules.length <= 3
     && insight.recommendedModules.every((moduleId) => HOS_MODULE_IDS.includes(moduleId))
 }
 
@@ -105,11 +128,15 @@ export async function requestHOSCoachAnalysis({
   source,
   snapshot,
   recentUserMessages = [],
+  signal,
 }: AnalysisRequest): Promise<HOSAIInsight> {
   const target = endpoint()
-  if (!target) throw new Error('AI coach endpoint is not configured on this host')
+  if (!target) throw new Error('当前站点未配置云端教练，已使用本机建议。')
   const controller = new AbortController()
-  const timeout = window.setTimeout(() => controller.abort(), 22_000)
+  const abort = () => controller.abort()
+  signal?.addEventListener('abort', abort, { once: true })
+  if (signal?.aborted) controller.abort()
+  const timeout = window.setTimeout(abort, 12_000)
   try {
     const response = await fetch(target, {
       method: 'POST',
@@ -122,11 +149,12 @@ export async function requestHOSCoachAnalysis({
       }),
       signal: controller.signal,
     })
-    if (!response.ok) throw new Error(`AI coach unavailable (${response.status})`)
+    if (!response.ok) throw new Error(response.status === 429 ? '云端请求较多，请稍后再试；本机建议已就绪。' : response.status === 503 ? '云端服务尚未配置完成，已使用本机建议。' : '云端暂时无法完成分析，已使用本机建议。')
     const value: unknown = await response.json()
-    if (!isInsight(value)) throw new Error('AI coach returned an invalid response')
+    if (!isInsight(value)) throw new Error('云端返回内容不完整，已保留本机建议。')
     return value
   } finally {
     window.clearTimeout(timeout)
+    signal?.removeEventListener('abort', abort)
   }
 }

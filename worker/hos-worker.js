@@ -21,6 +21,8 @@ const SYSTEM_PROMPT = `你是 HOS 人类操作系统的状态教练与模块编�
 3. 只从给定模块中选择三个最合适的模块，按“先调状态、再澄清、后行动/巩固”的顺序编排；
 4. 回应要温暖、清楚、克制，不诊断疾病，不宣称读取了不存在的声学特征；
 5. 每一步必须足够小，能在用户当前能量下开始。
+6. 当前表达和用户纠正优先于历史记录；历史只是参考，不能把推测当诊断。对于缺少信息的情况先提出一个具体问题。不要用确定口吻推断内心、声线或人格。
+7. 优先回应用户提到的真实任务，不把应用默认任务替换成用户目标。不要声称意念、频率能改变物质或治疗疾病；传统修习作为文化与自我觉察呈现。
 
 可调用模块：
 ${Object.entries(MODULE_CATALOG).map(([id, description]) => `${id}: ${description}`).join('\n')}
@@ -56,7 +58,7 @@ function corsHeaders(request) {
   return {
     ...(allowedOrigin ? { 'Access-Control-Allow-Origin': allowedOrigin } : {}),
     'Access-Control-Allow-Headers': 'Content-Type',
-    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
     'Vary': 'Origin',
   }
 }
@@ -64,7 +66,7 @@ function corsHeaders(request) {
 function json(request, value, status = 200) {
   return new Response(JSON.stringify(value), {
     status,
-    headers: { 'Content-Type': 'application/json; charset=utf-8', ...corsHeaders(request) },
+    headers: { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store', ...corsHeaders(request) },
   })
 }
 
@@ -78,6 +80,7 @@ function parseModelJson(content) {
 }
 
 function sanitizeInsight(raw) {
+  if (!raw || !ALLOWED_MODES.has(raw.mode) || !['stateLabel', 'response', 'hypothesis', 'actionStep'].every((key) => typeof raw[key] === 'string' && raw[key].trim())) throw new Error('Incomplete model response')
   const mode = ALLOWED_MODES.has(raw?.mode) ? raw.mode : 'clarify'
   const recommendedModules = Array.isArray(raw?.recommendedModules)
     ? [...new Set(raw.recommendedModules.filter((id) => ALLOWED_MODULES.has(id)))].slice(0, 3)
@@ -123,7 +126,22 @@ async function handleCoach(request, env) {
 
   let payload
   try {
-    payload = await request.json()
+    // Enforce the actual body limit even when Content-Length is omitted.
+    const reader = request.body?.getReader()
+    if (!reader) return json(request, { error: 'Missing body' }, 400)
+    const chunks = []
+    let size = 0
+    while (true) {
+      const { done, value } = await reader.read()
+      if (done) break
+      size += value.byteLength
+      if (size > 24_000) { await reader.cancel(); return json(request, { error: 'Request is too large' }, 413) }
+      chunks.push(value)
+    }
+    const bytes = new Uint8Array(size)
+    let offset = 0
+    for (const chunk of chunks) { bytes.set(chunk, offset); offset += chunk.byteLength }
+    payload = JSON.parse(new TextDecoder().decode(bytes))
   } catch {
     return json(request, { error: 'Invalid JSON' }, 400)
   }
@@ -134,7 +152,7 @@ async function handleCoach(request, env) {
     source: payload?.source === 'voice' ? 'voice' : 'text',
     currentExpression: userText,
     stateContext: payload?.context ?? null,
-    recentUserMessages: Array.isArray(payload?.recentUserMessages) ? payload.recentUserMessages.slice(-4) : [],
+    recentUserMessages: Array.isArray(payload?.recentUserMessages) ? payload.recentUserMessages.filter((item) => typeof item === 'string').slice(-4).map((item) => item.slice(0, 800)) : [],
   }
   const response = await fetch('https://api.deepseek.com/chat/completions', {
     method: 'POST',
@@ -143,29 +161,27 @@ async function handleCoach(request, env) {
       'Authorization': `Bearer ${env.DEEPSEEK_API_KEY}`,
     },
     body: JSON.stringify({
-      model: env.DEEPSEEK_MODEL || 'deepseek-v4-pro',
+      model: env.DEEPSEEK_MODEL || 'deepseek-flash',
       messages: [
         { role: 'system', content: SYSTEM_PROMPT },
         { role: 'user', content: JSON.stringify(userPayload) },
       ],
-      thinking: { type: 'enabled' },
-      reasoning_effort: 'high',
+      thinking: { type: 'disabled' },
       response_format: { type: 'json_object' },
       max_tokens: 1400,
       stream: false,
     }),
+    signal: AbortSignal.timeout(10_000),
   })
   if (!response.ok) {
-    const detail = await response.text()
-    console.error('DeepSeek API error', response.status, detail.slice(0, 400))
-    return json(request, { error: 'AI analysis is temporarily unavailable' }, 502)
+    return json(request, { error: 'AI analysis is temporarily unavailable' }, response.status === 429 ? 429 : 502)
   }
   const completion = await response.json()
   try {
+    if (completion?.choices?.[0]?.finish_reason === 'length') throw new Error('Truncated response')
     const raw = parseModelJson(completion?.choices?.[0]?.message?.content)
     return json(request, sanitizeInsight(raw))
-  } catch (error) {
-    console.error('DeepSeek response parse error', error)
+  } catch {
     return json(request, { error: 'AI analysis could not be organized' }, 502)
   }
 }
@@ -173,6 +189,11 @@ async function handleCoach(request, env) {
 export default {
   async fetch(request, env) {
     const url = new URL(request.url)
+    if (url.pathname === '/api/hos-coach') {
+      const origin = request.headers.get('Origin')
+      if (origin && origin !== GITHUB_ORIGIN && origin !== url.origin) return json(request, { error: 'Origin is not allowed' }, 403)
+      if (request.method === 'GET') return json(request, { ready: Boolean(env.DEEPSEEK_API_KEY), engine: 'deepseek' }, env.DEEPSEEK_API_KEY ? 200 : 503)
+    }
     if (request.method === 'OPTIONS' && url.pathname === '/api/hos-coach') {
       return new Response(null, { status: 204, headers: corsHeaders(request) })
     }
@@ -180,11 +201,9 @@ export default {
       try {
         return await handleCoach(request, env)
       } catch (error) {
-        console.error('HOS coach worker error', error)
-        return json(request, { error: 'AI coach is temporarily unavailable' }, 500)
+        return json(request, { error: 'AI coach is temporarily unavailable' }, error?.name === 'TimeoutError' ? 504 : 500)
       }
     }
-    return env.ASSETS.fetch(request)
+    return env.ASSETS ? env.ASSETS.fetch(request) : json(request, { error: 'Not found' }, 404)
   },
 }
-

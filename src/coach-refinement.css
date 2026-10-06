@@ -1,0 +1,36 @@
+.coach-engine-status {
+  margin: 0 0 24px;
+  padding: 16px 18px;
+  border: 1px solid var(--color-hos-border);
+  border-radius: 20px;
+  background: var(--color-hos-surface);
+  color: var(--color-hos-text-dim);
+  font-size: 13px;
+  line-height: 1.8;
+}
+.coach-engine-status summary { display: flex; gap: 9px; align-items: center; cursor: pointer; min-height: 28px; }
+.coach-engine-status p { margin: 14px 0; }
+.coach-engine-status button, .coach-thinking-card button { min-height: 44px; border-radius: 14px; padding: 10px 16px; background: var(--color-hos-bg); border: 1px solid var(--color-hos-border); color: var(--color-hos-text); }
+.coach-engine-notice { padding: 14px 18px; margin-bottom: 20px; background: var(--color-hos-surface); border: 1px solid var(--color-hos-border); border-radius: 16px; line-height: 1.8; font-size: 13px; }
+.coach-confidence { gap: 8px; }
+.coach-vnext-brand small, .coach-presence.compact > div:last-child > span { font-size: 12px; line-height: 1.8; }
+.coach-live-plan { scroll-margin-top: 20px; }
+.coach-hypothesis h3 { font-size: 16px; line-height: 1.85; }
+.coach-protocol-stack strong, .companion-result blockquote, .companion-diary-preview p { font-size: 14px; line-height: 1.9; }
+.companion-diary-preview { padding: 20px; }
+.companion-journey > p, .companion-journey small, .companion-state-row, .companion-review-title p, .companion-privacy { font-size: 12px; line-height: 1.8; }
+.companion-journey article { padding: 16px; }
+.coach-signal-row span, .coach-live-plan > header span, .coach-feedback > span, .voice-evidence small { font-size: 12px; line-height: 1.65; }
+.coach-vnext-input input { font-size: 16px; }
+.coach-vnext-compose { position: static; margin-top: 4px; }
+.coach-conversation { margin: 24px 0; border: 1px solid var(--color-hos-border); border-radius: 20px; padding: 18px; }
+.coach-conversation summary { cursor: pointer; min-height: 32px; font-size: 14px; }
+.coach-conversation article { margin-top: 16px; padding: 16px; border-radius: 16px; background: var(--color-hos-surface); }
+.coach-conversation article.user { margin-left: 24px; background: var(--color-hos-bg); }
+.coach-conversation small { color: var(--color-hos-text-dim); }
+.coach-conversation p { white-space: pre-wrap; line-height: 1.9; font-size: 14px; overflow-wrap: anywhere; margin-top: 8px; }
+.immediate-support { display: flex; flex-direction: column; gap: 24px; line-height: 1.9; padding-top: 36px; }
+.immediate-support h1 { font-size: 30px; line-height: 1.45; font-weight: 650; }
+.immediate-support ol { list-style: decimal; padding-left: 24px; display: grid; gap: 18px; }
+.immediate-support button { display: flex; align-items: center; gap: 8px; min-height: 48px; padding: 12px 18px; border-radius: 16px; background: var(--color-hos-surface); }
+@media (prefers-reduced-motion: reduce) { .coach-thinking-orb, .companion-orb i, .voice-orb-button i { animation: none !important; } }

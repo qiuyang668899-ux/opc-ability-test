@@ -96,7 +96,8 @@ function speechRate(text: string, durationSec: number) {
 
 export function polishVoiceTranscript(value: string) {
   return value
-    .replace(/\s+/g, '')
+    .replace(/[\t ]+/g, ' ')
+    .replace(/([\u4e00-\u9fff]) +(?=[\u4e00-\u9fff])/g, '$1')
     .replace(/^(嗯+|呃+|额+|那个[，,]?|就是[，,]?)+/g, '')
     .replace(/^[，,、。\s]+/, '')
     .replace(/([，。！？])\1+/g, '$1')
@@ -110,7 +111,7 @@ export function organizeVoiceDiary(analysis: VoiceStateAnalysis, commitment: str
     `今天，我注意到自己正在经历「${analysis.stateLabel}」。`,
     `我说到的核心是：${analysis.summary}${/[。！？]$/.test(analysis.summary) ? '' : '。'}`,
     topics ? `这段表达主要围绕：${topics}。` : '',
-    `此刻可见的资源状态是：能量 ${analysis.energy}/5，清晰 ${analysis.clarity}/5，压力 ${analysis.pressure}/5。`,
+    `待我确认的状态线索：能量 ${analysis.energy}/5，清晰 ${analysis.clarity}/5，压力 ${analysis.pressure}/5。这是基于表达的推测，不是测量结果。`,
     `给自己的下一步：${commitment}。`,
     `原始表达被完整保留在下方，方便以后重新理解当时的自己。`,
   ].filter(Boolean).join('\n\n')

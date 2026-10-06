@@ -60,6 +60,7 @@ export interface CoachPlan {
   replyOptions: CoachReplyOption[]
   isCrisis?: boolean
   isTiny?: boolean
+  focus?: string
 }
 
 type CoachFeedbackSignal = { mode: string; result: 'helpful' | 'tiny'; createdAt: number }
@@ -146,23 +147,28 @@ function getProtocol(mode: CoachMode): HOSProtocol {
 }
 
 function scoreModes(input: string, snapshot: CoachSnapshot, previousMode?: CoachMode) {
-  const normalized = input.toLowerCase()
+  let normalized = input.toLowerCase()
+  // Explicit corrections outrank historical state. Do not count negated symptoms.
+  for (const word of Object.values(signalMap).flat()) {
+    normalized = normalized.replace(new RegExp(`(?:不是|没有|不再|并不|不需要|无需|不用|不想|不)(?:太|很|感到|觉得)?${word}`, 'g'), '')
+  }
   const scores = Object.fromEntries(Object.keys(signalMap).map((mode) => [mode, 0])) as Record<CoachMode, number>
 
   for (const [mode, words] of Object.entries(signalMap) as [CoachMode, string[]][]) {
     scores[mode] += words.filter((word) => normalized.includes(word)).length * 2
   }
-  if (snapshot.checkIn) {
+  const hasCurrentSignals = Object.values(scores).some((score) => score > 0)
+  if (!hasCurrentSignals && snapshot.checkIn) {
     if (snapshot.checkIn.pressure >= 4) scores.stabilize += 2.5
     if (snapshot.checkIn.energy <= 2) scores.recover += 2.25
     if (snapshot.checkIn.clarity <= 2) scores.clarify += 2
   }
-  if (snapshot.latestVoice) {
+  if (!hasCurrentSignals && snapshot.latestVoice?.date === new Date().toLocaleDateString('en-CA')) {
     if (snapshot.latestVoice.analysis.pressure >= 4) scores.stabilize += 1.75
     if (snapshot.latestVoice.analysis.energy <= 2) scores.recover += 1.5
     if (snapshot.latestVoice.analysis.clarity <= 2) scores.clarify += 1.5
   }
-  if (previousMode && input.length <= 32) scores[previousMode] += 1.5
+  if (!hasCurrentSignals && previousMode && input.length <= 32) scores[previousMode] += 1.5
   if (Object.values(scores).every((score) => score === 0)) scores[previousMode ?? 'clarify'] = 1
 
   const ranked = (Object.entries(scores) as [CoachMode, number][]).sort((left, right) => right[1] - left[1])
@@ -174,7 +180,7 @@ function scoreModes(input: string, snapshot: CoachSnapshot, previousMode?: Coach
 
 function buildSignals(mode: CoachMode, snapshot: CoachSnapshot, normalized: string, previousMode?: CoachMode) {
   const signals: string[] = []
-  if (signalMap[mode].some((word) => normalized.includes(word))) signals.push('表达中的关键信号')
+  if (signalMap[mode].some((word) => normalized.includes(word))) return ['以你这次的表达为准', ...(previousMode === mode ? ['延续上一轮目标'] : ['已更新建议方向'])]
   if (snapshot.checkIn?.pressure && snapshot.checkIn.pressure >= 4) signals.push(`今日压力 ${snapshot.checkIn.pressure}/5`)
   if (snapshot.checkIn?.energy && snapshot.checkIn.energy <= 2) signals.push(`今日能量 ${snapshot.checkIn.energy}/5`)
   if (snapshot.checkIn?.clarity && snapshot.checkIn.clarity <= 2) signals.push(`今日清晰 ${snapshot.checkIn.clarity}/5`)
@@ -186,20 +192,20 @@ function buildSignals(mode: CoachMode, snapshot: CoachSnapshot, normalized: stri
 
 function buildHypothesis(mode: CoachMode, snapshot: CoachSnapshot) {
   const intention = snapshot.checkIn?.intention?.trim()
-  if (mode === 'stabilize') return '我听到的不是「你不够强」，而是系统正在高唤醒中保护你。此刻先调节，比继续分析更有效。'
-  if (mode === 'execute') return '这更像是启动成本过高，不是能力不足。不等动力，只把动作缩小到身体愿意开始。'
-  if (mode === 'recover') return '你不需要用更多意志力补偿耗尽。系统现在需要的是减载，不是加速。'
-  if (mode === 'learn') return '问题可能不在学习时间，而在缺少一个「最小技能点 → 立即反馈」的训练回路。'
-  if (mode === 'reflect') return '情绪不是敌人，它正在保护一个边界或价值。先看见它，再决定如何表达。'
+  if (mode === 'stabilize') return '你可能正承受比较多的压力。我们可以先给身体一点余地，再一起看最需要处理的事。'
+  if (mode === 'execute') return '也许是这件事的起步成本太高。先试一个很小的动作，不需要等到完全有动力。'
+  if (mode === 'recover') return '你似乎需要一些恢复空间。先减少一点负担，看看是否更舒服，不急着加码。'
+  if (mode === 'learn') return '我们可以把学习缩到一个小技能点，练一次、看一次反馈，再决定下一轮怎么调整。'
+  if (mode === 'reflect') return '这段经历似乎触动了重要的感受或需要。先分开事实和感受，再选择是否表达。'
   return intention
-    ? `你现在缺的不是更多信息，而是一个边界。今天想守住「${intention}」，就先让其他事暂时退后。`
-    : '你现在缺的不是更多信息，而是一个清楚的边界和唯一下一步。'
+    ? `你今天提到过「${intention}」。它现在还重要吗？如果是，可以先给它留出一点空间。`
+    : '也许需要先分清哪些重要、哪些可以稍后。你可以告诉我，最想从哪一件事开始。'
 }
 
-function buildSteps(mode: CoachMode, snapshot: CoachSnapshot) {
-  const task = snapshot.nextTask?.title.zh ?? snapshot.activeDay.title.zh
+function buildSteps(mode: CoachMode, input: string) {
+  const task = input.match(/(?:写|完成|准备|整理|处理|做)([^，。！？\n]{2,24})/)?.[0]
   if (mode === 'stabilize') return { bodyStep: '脚底压住地面，做 3 次比吸气更长的呼气。', actionStep: '关闭一个非必要通知，暂停新的输入。', reflectionStep: '只写一句：我现在能控制的 1% 是什么？', commitment: '3 次慢呼气' }
-  if (mode === 'execute') return { bodyStep: '站起来或喝一口水，让身体先于情绪启动。', actionStep: `只打开「${task}」所需的第一个文件，不要求完成。`, reflectionStep: '两分钟后只判断：继续，还是再缩小一次？', commitment: '只做开头 2 分钟' }
+  if (mode === 'execute') return { bodyStep: '换一个舒服的坐姿，先不用强迫自己进入状态。', actionStep: task ? `针对「${task}」，只准备一件所需材料，再做两分钟。不要求完成。` : '说出你卡住的那项任务，只准备一件所需材料，做两分钟就可以停下。', reflectionStep: '两分钟后只判断：继续，还是再缩小一次？', commitment: '只做开头 2 分钟' }
   if (mode === 'recover') return { bodyStep: '松开下颌和肩膀，把屏幕亮度调低一档。', actionStep: '删掉今晚一件非必要任务，让恢复获得真实空间。', reflectionStep: '写下明天第一步，然后允许今天结束。', commitment: '删掉一件事' }
   if (mode === 'learn') return { bodyStep: '做 60 秒凝神呼吸，关掉与训练无关的界面。', actionStep: '把技能拆成 4 帧，只练最关键、最容易得到反馈的 1 帧。', reflectionStep: '结束时只记录一个下轮要修正的点。', commitment: '只练一帧 15 分钟' }
   if (mode === 'reflect') return { bodyStep: '暂停回复 90 秒，命名情绪在身体的位置。', actionStep: '把「你总是」改成「当……时，我感到……」。', reflectionStep: '在表达前写下：我真正想保护的边界是什么？', commitment: '暂停回复 90 秒' }
@@ -240,7 +246,7 @@ export function buildCoachSnapshot(): CoachSnapshot {
     checkIn,
     ritualKeyword: ritual?.keyword,
     ritualAction: ritual?.microAction,
-    latestVoice: voiceJournal[0],
+    latestVoice: voiceJournal.find((record) => record.date === today),
     recentPracticeOutcomes: learning.records.slice(0, 3),
     helpfulPractice: learning.best,
   }
@@ -258,27 +264,37 @@ export function createCoachPlan(input: string, snapshot: CoachSnapshot, previous
       actionStep: '立即联系当地紧急电话、可信任的人或专业心理危机支持。',
       reflectionStep: '现在不需要证明自己能承受，只需要让自己安全度过这一段。',
       commitment: '现在就联系一个人', reframe: '求助不是失败，是系统进入保护模式。',
-      question: '你身边现在有没有一个可以立刻联系的人？', replyOptions: [], route: `/reset/${protocol.routeProtocol}`,
+      question: '你身边现在有没有一个可以立刻联系的人？', replyOptions: [], route: '/support-now',
     }
   }
 
   const detected = scoreModes(input, snapshot, previousPlan?.mode)
   const mode = detected.mode
   const protocol = getProtocol(mode)
-  const steps = buildSteps(mode, snapshot)
+  const focus = input.match(/(?:写|完成|准备|整理|处理|做)([^，。！？\n]{2,24})/)?.[0] ?? previousPlan?.focus
+  const steps = buildSteps(mode, focus ?? input)
   const plan: CoachPlan = {
     mode,
+    focus,
     protocol,
     stateLabel: modeLabels[mode],
     confidence: detected.confidence,
     signals: buildSignals(mode, snapshot, detected.normalized, previousPlan?.mode),
     coreNeed: coreNeeds[mode],
-    hypothesis: buildHypothesis(mode, snapshot),
+    hypothesis: `你说「${input.trim().slice(0, 60)}${input.length > 60 ? '…' : ''}」。我的暂时理解是：${buildHypothesis(mode, snapshot)}`,
     ...steps,
     reframe: '这不是你的固定属性，而是一个正在运行、可以被重写的状态脚本。',
     question: buildQuestion(mode),
     replyOptions: replyOptions[mode],
     route: mode === 'learn' || mode === 'execute' ? '/flow' : `/reset/${protocol.routeProtocol}`,
+  }
+  if (mode === 'execute' && previousPlan?.mode === mode) {
+    plan.question = '如果只留两分钟，这件事最小的可见结果是什么？'
+    plan.replyOptions = [
+      { label: '写一个标题', value: `我准备${focus ?? '这件事'}，先写一个标题。` },
+      { label: '列三个要点', value: `我准备${focus ?? '这件事'}，先列三个要点。` },
+      { label: '还是太难', value: '还是太难，我需要先休息恢复。' },
+    ]
   }
   const learnedDifficulty = loadState<CoachFeedbackSignal[]>('coachFeedback', []).find((item) => item.mode === mode)
   if (snapshot.helpfulPractice && (mode === 'recover' || mode === 'learn')) {
