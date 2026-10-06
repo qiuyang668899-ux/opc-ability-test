@@ -31,7 +31,7 @@ import { buildCoachSnapshot, createCoachPlan, refineCoachPlanWithAI, type CoachP
 import { activateRegulationJourney, buildRegulationJourney } from '../engines/stateOrchestrator'
 import { loadState, recomputeUserState, saveState, saveStateBatch, type JournalEntry } from '../stores/useStore'
 import { openVoiceCompanion, registerVoiceCompanion, type VoiceCompanionRequest } from './voiceCompanionBus'
-import { hasHOSAIEndpoint, requestHOSCoachAnalysis } from '../services/aiCoachService'
+import { coachErrorMessage, hasHOSAIEndpoint, requestHOSCoachAnalysis } from '../services/aiCoachService'
 import { loadVoiceDraft, saveVoiceDraft, voiceDraftUpdate } from '../engines/voiceDraftStore'
 
 function todayKey() {
@@ -264,7 +264,7 @@ export default function VoiceCompanion() {
         recomputeUserState()
         window.dispatchEvent(new CustomEvent('hos:data-updated'))
       })
-      .catch(() => { if (version === requestVersion.current) { setIntelligenceState('local'); setSaveError('云端暂时未响应。日记已安全保存在本机，可以直接开始本机建议。') } })
+      .catch((error) => { if (version === requestVersion.current) { setIntelligenceState('local'); setSaveError(`日记已保存在本机。${coachErrorMessage(error)}`) } })
   }, [aiEnhanced, draft, request, resetVoice, voiceInterimTranscript, voiceMetrics, voiceTranscript])
 
   useEffect(() => {

@@ -136,7 +136,7 @@ export async function requestHOSCoachAnalysis({
   const abort = () => controller.abort()
   signal?.addEventListener('abort', abort, { once: true })
   if (signal?.aborted) controller.abort()
-  const timeout = window.setTimeout(abort, 12_000)
+  const timeout = window.setTimeout(abort, 30_000)
   try {
     const response = await fetch(target, {
       method: 'POST',
@@ -149,7 +149,17 @@ export async function requestHOSCoachAnalysis({
       }),
       signal: controller.signal,
     })
-    if (!response.ok) throw new Error(response.status === 429 ? '云端请求较多，请稍后再试；本机建议已就绪。' : response.status === 503 ? '云端服务尚未配置完成，已使用本机建议。' : '云端暂时无法完成分析，已使用本机建议。')
+    if (!response.ok) {
+      const failure = await response.json().catch(() => ({})) as { code?: string }
+      const notices: Record<string, string> = {
+        usage_limit: '已触发云端用量保护，请稍后再试；若今日额度用完，将于北京时间 08:00 恢复。本机建议和日志仍可使用。',
+        provider_balance: 'AI 服务余额不足，已切换本机建议。请应用维护者补充 DeepSeek 余额。',
+        provider_auth: 'AI 服务授权需要维护，已切换本机建议。',
+        provider_busy: 'DeepSeek 当前较忙，请稍后再试；本机建议已就绪。',
+        provider_timeout: '云端本次响应较慢，已保留记录并切换本机建议。',
+      }
+      throw new Error(notices[failure.code ?? ''] || (response.status === 429 ? '云端请求较多，请稍后再试；本机建议已就绪。' : '云端暂时无法完成分析，已使用本机建议。'))
+    }
     const value: unknown = await response.json()
     if (!isInsight(value)) throw new Error('云端返回内容不完整，已保留本机建议。')
     return value
