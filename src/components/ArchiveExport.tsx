@@ -8,7 +8,7 @@ export default function ArchiveExport() {
   const download = (format: 'json' | 'md') => {
     try {
       const date = new Date().toLocaleDateString('en-CA')
-      const data = Object.fromEntries(keys.map((key) => [key, loadState<unknown>(key, null)]))
+      const data: Record<string, unknown> = { ...Object.fromEntries(keys.map((key) => [key, loadState<unknown>(key, null)])), chat: loadState<unknown>('chat', []), voiceDrafts: loadState<unknown>('voiceDrafts', {}) }
       const journal = (data.journal ?? []) as JournalEntry[]
       const body = format === 'json' ? JSON.stringify({ application: 'HOS', version: 1, exportedAt: new Date().toISOString(), data }, null, 2)
         : ['# HOS · 我的个人日志', `导出日期：${date}。此文件含私人记录，请妥善保存。`, ...journal.map((entry) => `## ${new Date(entry.timestamp).toLocaleString('zh-CN')} · ${entry.trigger}\n\n${entry.organizedText || entry.newResponse}\n\n${entry.analysis || ''}\n\n### 原始表达\n\n${entry.rawFragment || entry.oldPattern}`)].join('\n\n---\n\n')

@@ -1,7 +1,8 @@
-import { lazy } from 'react'
+import { lazy, Suspense } from 'react'
 import { Routes, Route } from 'react-router-dom'
 import Layout from './components/Layout'
 import ActiveGuidance from './components/ActiveGuidance'
+import VoiceCompanion from './components/VoiceCompanion'
 
 const Home = lazy(() => import('./pages/Home'))
 const Architect = lazy(() => import('./pages/Architect'))
@@ -21,11 +22,12 @@ const Evolution = lazy(() => import('./pages/Evolution'))
 const DailyRitual = lazy(() => import('./pages/DailyRitual'))
 const Cultivation = lazy(() => import('./pages/Cultivation'))
 const QimenPractice = lazy(() => import('./pages/QimenPractice'))
+const ImmediateSupport = lazy(() => import('./pages/ImmediateSupport'))
 
 export default function App() {
   return (
     <>
-      <Routes>
+      <Suspense fallback={<div className="hos-page page-loading"><p>正在展开这一页…</p></div>}><Routes>
         <Route element={<Layout />}>
           <Route index element={<Home />} />
           <Route path="architect" element={<Architect />} />
@@ -41,12 +43,14 @@ export default function App() {
           <Route path="cultivation/qimen" element={<QimenPractice />} />
           <Route path="evolution" element={<Evolution />} />
           <Route path="support" element={<Support />} />
+          <Route path="support-now" element={<ImmediateSupport />} />
           <Route path="about" element={<About />} />
           <Route path="visual" element={<VisualDiag />} />
         </Route>
         <Route path="ritual" element={<DailyRitual />} />
         <Route path="reset/:protocol?" element={<SystemReset />} />
-      </Routes>
+      </Routes></Suspense>
+      <VoiceCompanion />
       <ActiveGuidance />
     </>
   )

@@ -113,7 +113,7 @@ export default function Home() {
   }
 
   const saveCheckIn = () => {
-    const next: DailyCheckIn = { date: todayKey(), energy, clarity, pressure, intention: intention.trim(), createdAt: Date.now() }
+    const next: DailyCheckIn = { date: todayKey(), energy, clarity, pressure, intention: intention.trim(), createdAt: Date.now(), source: 'manual' }
     if (!saveState('dailyCheckIn', next)) return
     const refreshed = buildHomeIntelligence()
     setIntelligence(refreshed)

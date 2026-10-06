@@ -29,6 +29,8 @@ jobs:
       - name: Install
         run: npm ci
       - name: Build
+        env:
+          VITE_HOS_AI_ENDPOINT: ${{ vars.VITE_HOS_AI_ENDPOINT }}
         run: npm run build
       - name: Upload Pages Artifact
         uses: actions/upload-pages-artifact@v3

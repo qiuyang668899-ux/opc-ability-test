@@ -2,7 +2,8 @@ import type { VoiceJournalRecord } from '../engines/voiceJournalEngine'
 
 export interface VoiceCompanionRequest {
   context: string
-  onComplete?: (transcript: string, record: VoiceJournalRecord) => void
+  mode?: 'journal' | 'dictation'
+  onComplete?: (transcript: string, record?: VoiceJournalRecord) => void
 }
 
 type VoiceCompanionOpener = (request: VoiceCompanionRequest) => void
