@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react';
+import { accountStorageKey } from '../services/accountSession';
 
 // Bilingual text type
 export interface BiText {
@@ -1061,7 +1062,7 @@ export function recomputeUserState(): UserState {
 // Local storage helpers
 export function loadState<T>(key: string, fallback: T): T {
   try {
-    const saved = localStorage.getItem(`hos_${key}`);
+    const saved = localStorage.getItem(accountStorageKey(key));
     return saved ? JSON.parse(saved) : fallback;
   } catch {
     return fallback;
@@ -1070,7 +1071,8 @@ export function loadState<T>(key: string, fallback: T): T {
 
 export function saveState<T>(key: string, value: T): boolean {
   try {
-    localStorage.setItem(`hos_${key}`, JSON.stringify(value));
+    localStorage.setItem(accountStorageKey(key), JSON.stringify(value));
+    window.dispatchEvent(new CustomEvent('hos:state-saved', { detail: { key } }));
     return true;
   } catch {
     window.dispatchEvent(new CustomEvent('hos:storage-error'));
@@ -1082,12 +1084,13 @@ export function saveState<T>(key: string, value: T): boolean {
 export function saveStateBatch(values: Record<string, unknown>): boolean {
   const previous: Record<string, string | null> = {};
   try {
-    for (const key of Object.keys(values)) previous[key] = localStorage.getItem(`hos_${key}`);
-    for (const [key, value] of Object.entries(values)) localStorage.setItem(`hos_${key}`, JSON.stringify(value));
+    for (const key of Object.keys(values)) previous[key] = localStorage.getItem(accountStorageKey(key));
+    for (const [key, value] of Object.entries(values)) localStorage.setItem(accountStorageKey(key), JSON.stringify(value));
+    window.dispatchEvent(new CustomEvent('hos:state-saved'));
     return true;
   } catch {
     for (const [key, value] of Object.entries(previous)) {
-      try { if (value === null) localStorage.removeItem(`hos_${key}`); else localStorage.setItem(`hos_${key}`, value); } catch { /* storage unavailable */ }
+      try { if (value === null) localStorage.removeItem(accountStorageKey(key)); else localStorage.setItem(accountStorageKey(key), value); } catch { /* storage unavailable */ }
     }
     window.dispatchEvent(new CustomEvent('hos:storage-error'));
     return false;

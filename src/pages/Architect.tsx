@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { accountStorageKey } from '../services/accountSession'
 import {
   AudioLines,
   ArrowRight,
@@ -465,9 +466,9 @@ export default function Architect() {
     analysisRequestRef.current += 1
     analysisAbortRef.current?.abort()
     saveState('voiceJournal', [])
-    window.localStorage.removeItem('hos_voiceMemory')
+    window.localStorage.removeItem(accountStorageKey('voiceMemory'))
     const checkIn = loadState<{ source?: string } | undefined>('dailyCheckIn', undefined)
-    if (checkIn?.source === 'voice') window.localStorage.removeItem('hos_dailyCheckIn')
+    if (checkIn?.source === 'voice') window.localStorage.removeItem(accountStorageKey('dailyCheckIn'))
     const journal = loadState<JournalEntry[]>('journal', []).filter((entry) => entry.source !== 'voice')
     saveState('journal', journal)
     const cleared = loadVoiceMemory()

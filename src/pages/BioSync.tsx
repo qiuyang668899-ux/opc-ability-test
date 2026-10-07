@@ -1,11 +1,11 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Activity, Zap, Heart, ChevronRight } from 'lucide-react'
-import { getCurrentBioPhase, loadState, defaultUserState } from '../stores/useStore'
+import { getCurrentBioPhase, loadState, defaultUserState, saveState } from '../stores/useStore'
 import { UI } from '../utils/i18n'
 
 function saveLocal<T>(key: string, value: T): void {
-  try { localStorage.setItem(`hos_${key}`, JSON.stringify(value)) } catch { void 0 }
+  saveState(key,value)
 }
 
 export default function BioSync() {

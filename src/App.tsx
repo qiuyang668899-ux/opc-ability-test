@@ -1,8 +1,11 @@
-import { lazy, Suspense } from 'react'
+import { lazy, Suspense, useEffect, useState } from 'react'
 import { Routes, Route } from 'react-router-dom'
 import Layout from './components/Layout'
 import ActiveGuidance from './components/ActiveGuidance'
 import VoiceCompanion from './components/VoiceCompanion'
+import CloudMemorySync from './components/CloudMemorySync'
+import { accountIdentity } from './services/accountSession'
+import { resetCloudStatus } from './services/cloudArchive'
 
 const Home = lazy(() => import('./pages/Home'))
 const Architect = lazy(() => import('./pages/Architect'))
@@ -23,10 +26,17 @@ const DailyRitual = lazy(() => import('./pages/DailyRitual'))
 const Cultivation = lazy(() => import('./pages/Cultivation'))
 const QimenPractice = lazy(() => import('./pages/QimenPractice'))
 const ImmediateSupport = lazy(() => import('./pages/ImmediateSupport'))
+const Account = lazy(() => import('./pages/Account'))
 
 export default function App() {
+  const [identity, setIdentity] = useState(() => accountIdentity()?.user.id || 'guest')
+  useEffect(() => {
+    const changed = () => { const next=accountIdentity()?.user.id || 'guest'; if(identity!==next) resetCloudStatus();setIdentity(next) }
+    window.addEventListener('hos:account-changed', changed)
+    return () => window.removeEventListener('hos:account-changed', changed)
+  }, [identity])
   return (
-    <>
+    <div key={identity}>
       <Suspense fallback={<div className="hos-page page-loading"><p>正在展开这一页…</p></div>}><Routes>
         <Route element={<Layout />}>
           <Route index element={<Home />} />
@@ -45,6 +55,7 @@ export default function App() {
           <Route path="support" element={<Support />} />
           <Route path="support-now" element={<ImmediateSupport />} />
           <Route path="about" element={<About />} />
+          <Route path="account" element={<Account />} />
           <Route path="visual" element={<VisualDiag />} />
         </Route>
         <Route path="ritual" element={<DailyRitual />} />
@@ -52,6 +63,7 @@ export default function App() {
       </Routes></Suspense>
       <VoiceCompanion />
       <ActiveGuidance />
-    </>
+      <CloudMemorySync />
+    </div>
   )
 }

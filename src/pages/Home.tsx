@@ -21,6 +21,7 @@ import {
   Sparkles,
   Target,
   Waves,
+  UserRound,
 } from 'lucide-react'
 import { buildHomeIntelligence, type SmartAction } from '../engines/homeIntelligence'
 import { buildDailyLoop } from '../engines/dailyLoopEngine'
@@ -139,7 +140,7 @@ export default function Home() {
           <h1>{intelligence.greeting}</h1>
           <span>{intelligence.moment}</span>
         </div>
-        <button onClick={() => navigate('/about')} className="apple-icon-button" aria-label="了解 HOS"><Info size={18} /></button>
+        <div style={{display:'flex',gap:8}}><button onClick={() => navigate('/account')} className="apple-icon-button" aria-label="我的账户"><UserRound size={18} /></button><button onClick={() => navigate('/about')} className="apple-icon-button" aria-label="了解 HOS"><Info size={18} /></button></div>
       </header>
 
       <section className="home-intelligence-section voice-moment-section">
