@@ -8,6 +8,8 @@ import { openVoiceCompanion } from '../components/voiceCompanionBus'
 import { buildPersonalTrajectory } from '../engines/personalInsightEngine'
 import PracticeLearningCard from '../components/PracticeLearningCard'
 import ArchiveExport from '../components/ArchiveExport'
+import { Link } from 'react-router-dom'
+import { cloudEnabled } from '../services/cloudArchive'
 
 function analyzeEntry(entry: JournalEntry): string {
   const distortion = entry.distortion || '未指定'
@@ -82,7 +84,7 @@ export default function Journal() {
         <div className="flex items-center gap-3.5 min-w-0">
           <span className="journal-mark"><BookOpen size={21} /></span>
           <div>
-            <p className="section-kicker">PERSONAL MEMORY · LOCAL ONLY</p>
+            <p className="section-kicker">PERSONAL MEMORY</p>
             <h1>个人日志档案</h1>
             <p>状态、表达与成长轨迹</p>
           </div>
@@ -97,7 +99,8 @@ export default function Journal() {
       </header>
 
       <section className="journal-archive-hero">
-        <header><div><p>YOUR LIVING ARCHIVE</p><h2>系统从真实记录中了解你</h2></div><span><ShieldCheck size={13} />仅本机</span></header>
+        <header><div><p>YOUR LIVING ARCHIVE</p><h2>系统从真实记录中了解你</h2></div><span><ShieldCheck size={13} />{cloudEnabled() ? '云同步已开启' : '仅本机'}</span></header>
+        <Link to="/account" className="account-text-link">账户与云端记忆 <ArrowRight size={14}/></Link>
         <p>{voiceMemoryInsight(voiceMemory)}</p>
         <div className="journal-archive-stats">
           <article><strong>{entries.length}</strong><span>全部记录</span></article>

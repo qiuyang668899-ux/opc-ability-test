@@ -17,6 +17,7 @@ import {
   RotateCcw,
   ShieldCheck,
   WandSparkles,
+  UserRound,
 } from 'lucide-react'
 
 type ToolItem = {
@@ -32,6 +33,7 @@ const groups: { title: string; desc: string; items: ToolItem[] }[] = [
     title: '今日入口',
     desc: '先完成一次状态转换，再决定今天需要什么',
     items: [
+      { title: '我的账户', desc: '手机号登录、个人记忆、会员与订单', path: '/account', icon: UserRound, tone: 'sage' },
       { title: '每日校准仪式', desc: '呼吸、声音、关键词与微行动的 3 分钟沉浸体验', path: '/ritual', icon: WandSparkles, tone: 'peach' },
       { title: '个人进化中枢', desc: '五维状态、今日路径与 21 天成长闭环', path: '/evolution', icon: Sparkles, tone: 'lavender' },
     ],

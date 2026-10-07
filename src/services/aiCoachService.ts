@@ -1,4 +1,6 @@
 import type { CoachSnapshot } from '../engines/coachEngine'
+import { accountHeaders, expireAccountSession } from './accountSession'
+import { loadState } from '../stores/useStore'
 
 export const HOS_MODULE_IDS = [
   'reset_pressure',
@@ -81,6 +83,7 @@ export async function checkHOSAIConnection() {
 
 function contextFromSnapshot(snapshot: CoachSnapshot) {
   return {
+    personalPreferences: loadState<unknown>('personalPreferences', null),
     checkIn: snapshot.checkIn
       ? {
           energy: snapshot.checkIn.energy,
@@ -140,7 +143,7 @@ export async function requestHOSCoachAnalysis({
   try {
     const response = await fetch(target, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', ...accountHeaders() },
       body: JSON.stringify({
         text: text.slice(0, 4000),
         source,
@@ -150,6 +153,7 @@ export async function requestHOSCoachAnalysis({
       signal: controller.signal,
     })
     if (!response.ok) {
+      if (response.status===401) expireAccountSession()
       const failure = await response.json().catch(() => ({})) as { code?: string }
       const notices: Record<string, string> = {
         usage_limit: '已触发云端用量保护，请稍后再试；若今日额度用完，将于北京时间 08:00 恢复。本机建议和日志仍可使用。',
@@ -157,6 +161,8 @@ export async function requestHOSCoachAnalysis({
         provider_auth: 'AI 服务授权需要维护，已切换本机建议。',
         provider_busy: 'DeepSeek 当前较忙，请稍后再试；本机建议已就绪。',
         provider_timeout: '云端本次响应较慢，已保留记录并切换本机建议。',
+        account_allowance: '今日账号 AI 额度已用完，明日恢复；也可到“我的”查看服务包。本机功能仍可使用。',
+        session_expired: '账号登录已过期，请到“我的”重新登录。本次记录仍保留在当前设备。',
       }
       throw new Error(notices[failure.code ?? ''] || (response.status === 429 ? '云端请求较多，请稍后再试；本机建议已就绪。' : '云端暂时无法完成分析，已使用本机建议。'))
     }
