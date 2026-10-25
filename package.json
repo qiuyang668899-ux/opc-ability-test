@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build && node scripts/build-sites-output.mjs",
+    "verify": "node scripts/verify-practice-timer.mjs && node scripts/verify-qimen-practice.mjs && node scripts/verify-coach-quality.mjs && node scripts/verify-account-session.mjs && node scripts/verify-cloud-lifecycle.mjs",
     "lint": "eslint .",
     "preview": "vite preview"
   },

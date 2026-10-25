@@ -1,4 +1,4 @@
-import { accountHeaders, expireAccountSession, setAccountSession, type HOSAccountSession } from './accountSession'
+import { accountHeaders, accountIdentity, accountSession, accountSessionMatches, expireAccountSession, setAccountSession, type HOSAccountSession } from './accountSession'
 
 export type Product = { id: string; name: string; kind: string; units: number; detail: string; amountFen: number | null; purchasable: boolean }
 export type AccountConfig = { login: boolean; cloud: boolean; payments: boolean; referrals: boolean; policyVersion: string; operator: string; supportEmail: string; dataRegion: string; loginMessage: string; paymentMessage: string; products: Product[]; paymentChannels?: string[] }
@@ -12,11 +12,12 @@ function baseURL() {
 }
 export async function accountAPI<T>(path: string, method = 'GET', data?: unknown): Promise<T> {
   const controller = new AbortController(); const timer = window.setTimeout(() => controller.abort(), 18000)
+  const headers = accountHeaders()
   try {
-    const response = await fetch(`${baseURL()}${path}`, { method, headers: { ...accountHeaders(), ...(data !== undefined ? { 'Content-Type': 'application/json' } : {}) }, body: data === undefined ? undefined : JSON.stringify(data), signal: controller.signal, cache: 'no-store' })
+    const response = await fetch(`${baseURL()}${path}`, { method, headers: { ...headers, ...(data !== undefined ? { 'Content-Type': 'application/json' } : {}) }, body: data === undefined ? undefined : JSON.stringify(data), signal: controller.signal, cache: 'no-store' })
     const result = await response.json().catch(() => ({}))
     if (!response.ok) {
-      if (response.status === 401) expireAccountSession()
+      if (response.status === 401 && headers['X-HOS-Session']) expireAccountSession(headers['X-HOS-Session'])
       throw new AccountError(result.message || '暂时未能完成，请稍后重试。', response.status, result.code || 'unavailable')
     }
     return result as T
@@ -32,6 +33,12 @@ export async function signIn(data: unknown) {
   return result
 }
 export async function signOut() {
-  await accountAPI('/api/account/logout', 'POST')
-  setAccountSession(null)
+  const session = accountIdentity()
+  if (!session) return
+  try {
+    if (accountSession()) await accountAPI('/api/account/logout', 'POST')
+  } finally {
+    // End the requested local session even offline, without clearing a replacement login.
+    if (accountSessionMatches(session)) setAccountSession(null)
+  }
 }

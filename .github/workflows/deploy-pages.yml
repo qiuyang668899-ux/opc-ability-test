@@ -28,6 +28,8 @@ jobs:
           cache: npm
       - name: Install
         run: npm ci
+      - name: Verify account isolation and core practices
+        run: npm run verify
       - name: Build
         env:
           VITE_HOS_AI_ENDPOINT: ${{ vars.VITE_HOS_AI_ENDPOINT }}

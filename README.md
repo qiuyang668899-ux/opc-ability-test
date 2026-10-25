@@ -33,10 +33,12 @@ GitHub Pages 只托管静态网页，不会运行 `worker/hos-worker.js`。没�
 ## 回归检查
 
 ```bash
-node scripts/verify-practice-timer.mjs
-node scripts/verify-qimen-practice.mjs
-node scripts/verify-coach-quality.mjs
+npm run verify
 npm run build
 ```
+
+验证包含练习计时、奇门日课、教练反馈、账户切换及云端档案生命周期。发布流程会先执行这些检查。
+
+账户请求只会使发出请求的登录令牌过期；旧请求和退出操作不会影响之后的新登录。云端档案读写按顺序执行，暂停同步、退出或更换会话会使尚未发送的操作失效，并忽略晚到的档案结果。已经发送到服务端的请求无法由本机撤回。账户数据在登录过期后仍保留原账号存储空间，只有明确退出才切换到访客空间。
 
 接口参数参考 [DeepSeek 官方对话补全文档](https://api-docs.deepseek.com/api/create-chat-completion/)。

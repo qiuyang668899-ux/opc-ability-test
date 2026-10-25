@@ -10,9 +10,13 @@ export function accountSession(): HOSAccountSession | null {
   const value = accountIdentity()
   return value && value.expiresAt > Date.now() ? value : null
 }
-export function expireAccountSession() {
+export function accountSessionMatches(expected: HOSAccountSession | null) {
+  const current = accountIdentity()
+  return expected === null ? current === null : current?.token === expected.token && current.user.id === expected.user.id
+}
+export function expireAccountSession(expectedToken: string) {
   const value = accountIdentity()
-  if (value) setAccountSession({ ...value, expiresAt: 0 })
+  if (value?.token === expectedToken) setAccountSession({ ...value, expiresAt: 0 })
 }
 export function setAccountSession(value: HOSAccountSession | null) {
   if (value) sessionStorage.setItem(SESSION_KEY, JSON.stringify(value))

@@ -140,10 +140,11 @@ export async function requestHOSCoachAnalysis({
   signal?.addEventListener('abort', abort, { once: true })
   if (signal?.aborted) controller.abort()
   const timeout = window.setTimeout(abort, 30_000)
+  const headers = accountHeaders()
   try {
     const response = await fetch(target, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', ...accountHeaders() },
+      headers: { 'Content-Type': 'application/json', ...headers },
       body: JSON.stringify({
         text: text.slice(0, 4000),
         source,
@@ -153,7 +154,7 @@ export async function requestHOSCoachAnalysis({
       signal: controller.signal,
     })
     if (!response.ok) {
-      if (response.status===401) expireAccountSession()
+      if (response.status === 401 && headers['X-HOS-Session']) expireAccountSession(headers['X-HOS-Session'])
       const failure = await response.json().catch(() => ({})) as { code?: string }
       const notices: Record<string, string> = {
         usage_limit: '已触发云端用量保护，请稍后再试；若今日额度用完，将于北京时间 08:00 恢复。本机建议和日志仍可使用。',
