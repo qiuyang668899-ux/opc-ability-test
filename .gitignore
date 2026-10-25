@@ -30,3 +30,7 @@ dist-ssr
 .playwright-cli/
 output/
 .claude/
+
+# Recreated from pinned MediaPipe dependency
+public/vision/wasm/
+public/vision/vision_bundle.js

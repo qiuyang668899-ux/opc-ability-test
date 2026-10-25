@@ -9,7 +9,7 @@ export default function GrowthNudge() {
   const [kind,setKind] = useState<ReminderSettings['kind'] | null>(null)
   useEffect(() => {
     const check = () => {
-      if (document.visibilityState !== 'visible' || ['/reset','/ritual','/cultivation','/flow','/visual'].some(p=>location.pathname.startsWith(p)) || document.querySelector('[role=dialog]')) return
+      if (document.visibilityState !== 'visible' || ['/perception','/reset','/ritual','/cultivation','/flow','/visual'].some(p=>location.pathname.startsWith(p)) || document.querySelector('[role=dialog]')) return
       const s = loadState<ReminderSettings>('growthReminder', defaultReminder)
       if (reminderDue(s) && saveState('growthReminder', { ...s, lastAt: Date.now() })) setKind(s.kind)
     }

@@ -6,11 +6,14 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build && node scripts/build-sites-output.mjs",
-    "verify": "node scripts/verify-practice-timer.mjs && node scripts/verify-qimen-practice.mjs && node scripts/verify-coach-quality.mjs && node scripts/verify-account-session.mjs && node scripts/verify-cloud-lifecycle.mjs && node scripts/verify-growth-review.mjs && node scripts/verify-wearable-intervention.mjs",
+    "verify": "node scripts/verify-practice-timer.mjs && node scripts/verify-qimen-practice.mjs && node scripts/verify-coach-quality.mjs && node scripts/verify-account-session.mjs && node scripts/verify-cloud-lifecycle.mjs && node scripts/verify-growth-review.mjs && node scripts/verify-wearable-intervention.mjs && node scripts/verify-perception-coach.mjs",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "predev": "node scripts/prepare-vision-assets.mjs",
+    "prebuild": "node scripts/prepare-vision-assets.mjs"
   },
   "dependencies": {
+    "@mediapipe/tasks-vision": "1.1.1",
     "lucide-react": "^1.7.0",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",

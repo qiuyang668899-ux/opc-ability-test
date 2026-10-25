@@ -2,7 +2,7 @@ import { Download, ShieldCheck } from 'lucide-react'
 import { useState } from 'react'
 import { loadState, type JournalEntry } from '../stores/useStore'
 
-const keys = ['growthDraft', 'growthReviews', 'growthExperiments', 'growthEvidence', 'growthPhotos', 'growthProgram', 'growthReminder', 'journal', 'voiceJournal', 'voiceDraft', 'voiceMemory', 'dailyCheckIn', 'practiceOutcomes', 'cultivationPracticeRecords', 'qimenRecords', 'qimenDrafts', 'qimenTimers', 'mindMatterPracticeRecords', 'mindMatterActiveSession', 'flowSessions', 'regulationJourneyHistory', 'activeRegulationJourney', 'classicPracticeNotes', 'classicFavorites', 'classicPracticeCompletions', 'classicReadingProgress', 'completeReadingProgress', 'cultivationReadingProgress', 'activation', 'coachFeedback', 'ritualRecords', 'ritualProfile', 'evolutionFeedback'] as const
+const keys = ['perceptionSessions', 'growthDraft', 'growthReviews', 'growthExperiments', 'growthEvidence', 'growthPhotos', 'growthProgram', 'growthReminder', 'journal', 'voiceJournal', 'voiceDraft', 'voiceMemory', 'dailyCheckIn', 'practiceOutcomes', 'cultivationPracticeRecords', 'qimenRecords', 'qimenDrafts', 'qimenTimers', 'mindMatterPracticeRecords', 'mindMatterActiveSession', 'flowSessions', 'regulationJourneyHistory', 'activeRegulationJourney', 'classicPracticeNotes', 'classicFavorites', 'classicPracticeCompletions', 'classicReadingProgress', 'completeReadingProgress', 'cultivationReadingProgress', 'activation', 'coachFeedback', 'ritualRecords', 'ritualProfile', 'evolutionFeedback'] as const
 export default function ArchiveExport() {
   const [message, setMessage] = useState('')
   const download = (format: 'json' | 'md') => {

@@ -9,6 +9,7 @@ import CloudMemorySync from './components/CloudMemorySync'
 import { accountIdentity } from './services/accountSession'
 import { resetCloudStatus } from './services/cloudArchive'
 
+const PerceptionCoach = lazy(() => import('./pages/PerceptionCoach'))
 const GrowthReview = lazy(() => import('./pages/GrowthReview'))
 const Home = lazy(() => import('./pages/Home'))
 const Architect = lazy(() => import('./pages/Architect'))
@@ -44,6 +45,7 @@ export default function App() {
         <Route element={<Layout />}>
           <Route index element={<Home />} />
           <Route path="growth" element={<GrowthReview />} />
+          <Route path="perception" element={<PerceptionCoach />} />
           <Route path="architect" element={<Architect />} />
           <Route path="journal" element={<Journal />} />
           <Route path="biosync" element={<BioSync />} />

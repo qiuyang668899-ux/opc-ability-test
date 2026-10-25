@@ -43,6 +43,7 @@ const groups: { title: string; desc: string; items: ToolItem[] }[] = [
     title: '看见当下',
     desc: '从身体、表情和内在感受开始觉察',
     items: [
+      { title: '实时感知教练', desc: '本机摄像头校准、姿态变化提醒与行动反馈', path: '/perception', icon: Camera, tone: 'sage' },
       { title: '视觉状态诊断', desc: '摄像头预览、状态觉察与对应练习建议', path: '/visual', icon: Camera, tone: 'peach' },
       { title: '生物节律', desc: '结合时间与能量安排工作、恢复和睡眠', path: '/biosync', icon: Activity, tone: 'sage' },
       { title: 'AI 成长教练', desc: '把模糊感受整理成清晰的下一步', path: '/architect', icon: BrainCircuit, tone: 'lavender' },

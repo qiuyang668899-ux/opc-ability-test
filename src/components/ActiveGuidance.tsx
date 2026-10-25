@@ -21,7 +21,7 @@ export default function ActiveGuidance() {
     return () => window.removeEventListener('hos:journey-updated', refresh)
   }, [])
 
-  if (!journey) return null
+  if (!journey || location.pathname === '/perception') return null
   const step = journey.steps[journey.currentStep]
   if (!step) return null
   const isOnStep = matchesGuidanceRoute(step.route, location.pathname, location.search)

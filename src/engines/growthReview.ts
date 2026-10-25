@@ -1,3 +1,4 @@
+import { perceptionWeek } from './perceptionCoach'
 import { loadState, saveStateBatch, type FlowSession, type JournalEntry } from '../stores/useStore'
 
 export const GROWTH_DIMENSIONS = [
@@ -33,7 +34,7 @@ export function weeklyContext(week: string) {
   const journals = loadState<JournalEntry[]>('journal', []).filter(x => x.timestamp >= start && x.timestamp < end && !x.id.startsWith('growth-'))
   const flow = loadState<FlowSession[]>('flowSessions', []).filter(x => x.timestamp >= start && x.timestamp < end && typeof x.actualSeconds === 'number' && x.actualSeconds > 0)
   const evidence = loadState<DailyEvidence[]>('growthEvidence', []).filter(x => x.date >= week && x.date < addDays(week, 7))
-  return { journals, flowMinutes: Math.round(flow.reduce((sum, x) => sum + (x.actualSeconds || 0), 0) / 60), evidence }
+  return { perception: perceptionWeek(start, end), journals, flowMinutes: Math.round(flow.reduce((sum, x) => sum + (x.actualSeconds || 0), 0) / 60), evidence }
 }
 export function localReport(input: ReviewInput): GrowthReport {
   const d = GROWTH_DIMENSIONS.find(x => x.id === input.dimension)!

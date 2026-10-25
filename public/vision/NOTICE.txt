@@ -1,0 +1,12 @@
+HOS local posture observation
+
+Runtime: Google MediaPipe Tasks Vision, @mediapipe/tasks-vision 1.1.1, Apache-2.0.
+Runtime files are copied verbatim from the pinned npm dependency during build.
+Model: Google Pose Landmarker Lite float16, version 1, Apache-2.0.
+https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task
+Model card: https://storage.googleapis.com/mediapipe-assets/Model%20Card%20BlazePose%20GHUM%203D.pdf
+Documentation: https://developers.google.com/edge/mediapipe/solutions/vision/pose_landmarker/web_js
+
+HOS uses these outputs only as uncertain, relative pose cues in a user-started session.
+No medical, identity, emotion, productivity or surveillance classification is performed.
+The camera stream and inference run locally. Only session duration and user feedback are saved.
