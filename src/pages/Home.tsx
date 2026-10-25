@@ -152,6 +152,8 @@ export default function Home() {
         </button>
       </section>
 
+      <button className="growth-entry" onClick={() => navigate('/growth')}><span><small>每周一次 · 成长复盘</small><strong>这一周，留下了什么？</strong><em>说说经历，找到一个下周值得尝试的小实验。</em></span><ArrowRight size={21}/></button>
+
       <section className="intelligence-hero">
         <div className="intelligence-material" aria-hidden="true"><i /><i /></div>
         <header>

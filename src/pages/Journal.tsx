@@ -97,6 +97,7 @@ export default function Journal() {
           <Plus size={19} />
         </button>
       </header>
+      <Link className="growth-entry" to="/growth"><span><small>从记录到行动</small><strong>把这一周，变成成长实验。</strong><em>回顾经历，留下一个可验证的下一步。</em></span><ArrowRight size={19}/></Link>
 
       <section className="journal-archive-hero">
         <header><div><p>YOUR LIVING ARCHIVE</p><h2>系统从真实记录中了解你</h2></div><span><ShieldCheck size={13} />{cloudEnabled() ? '云同步已开启' : '仅本机'}</span></header>

@@ -47,6 +47,7 @@ type AnalysisRequest = {
   snapshot: CoachSnapshot
   recentUserMessages?: string[]
   signal?: AbortSignal
+  context?: Record<string, unknown>
 }
 
 function endpoint() {
@@ -132,6 +133,7 @@ export async function requestHOSCoachAnalysis({
   snapshot,
   recentUserMessages = [],
   signal,
+  context,
 }: AnalysisRequest): Promise<HOSAIInsight> {
   const target = endpoint()
   if (!target) throw new Error('当前站点未配置云端教练，已使用本机建议。')
@@ -148,7 +150,7 @@ export async function requestHOSCoachAnalysis({
       body: JSON.stringify({
         text: text.slice(0, 4000),
         source,
-        context: contextFromSnapshot(snapshot),
+        context: context ?? contextFromSnapshot(snapshot),
         recentUserMessages: recentUserMessages.slice(-4).map((message) => message.slice(0, 800)),
       }),
       signal: controller.signal,

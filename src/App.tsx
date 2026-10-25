@@ -2,11 +2,14 @@ import { lazy, Suspense, useEffect, useState } from 'react'
 import { Routes, Route } from 'react-router-dom'
 import Layout from './components/Layout'
 import ActiveGuidance from './components/ActiveGuidance'
+import GrowthNudge from './components/GrowthNudge'
+import './pages/GrowthReview.css'
 import VoiceCompanion from './components/VoiceCompanion'
 import CloudMemorySync from './components/CloudMemorySync'
 import { accountIdentity } from './services/accountSession'
 import { resetCloudStatus } from './services/cloudArchive'
 
+const GrowthReview = lazy(() => import('./pages/GrowthReview'))
 const Home = lazy(() => import('./pages/Home'))
 const Architect = lazy(() => import('./pages/Architect'))
 const Journal = lazy(() => import('./pages/Journal'))
@@ -40,6 +43,7 @@ export default function App() {
       <Suspense fallback={<div className="hos-page page-loading"><p>正在展开这一页…</p></div>}><Routes>
         <Route element={<Layout />}>
           <Route index element={<Home />} />
+          <Route path="growth" element={<GrowthReview />} />
           <Route path="architect" element={<Architect />} />
           <Route path="journal" element={<Journal />} />
           <Route path="biosync" element={<BioSync />} />
@@ -63,6 +67,7 @@ export default function App() {
       </Routes></Suspense>
       <VoiceCompanion />
       <ActiveGuidance />
+      <GrowthNudge />
       <CloudMemorySync />
     </div>
   )
