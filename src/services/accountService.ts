@@ -1,9 +1,9 @@
 import { accountHeaders, accountIdentity, accountSession, accountSessionMatches, expireAccountSession, setAccountSession, type HOSAccountSession } from './accountSession'
 
 export type Product = { id: string; name: string; kind: string; units: number; detail: string; amountFen: number | null; purchasable: boolean }
-export type AccountConfig = { login: boolean; cloud: boolean; payments: boolean; referrals: boolean; policyVersion: string; operator: string; supportEmail: string; dataRegion: string; loginMessage: string; paymentMessage: string; products: Product[]; paymentChannels?: string[] }
+export type AccountConfig = { login: boolean; cloud: boolean; payments: boolean; referrals: boolean; policyVersion: string; operator: string; supportEmail: string; dataRegion: string; loginMessage: string; paymentMessage: string; products: Product[]; paymentChannels?: string[]; alipayIntegration?: { product: string; state: string; sandboxIsLivePayment: false } }
 export type Benefits = { credits: number; memberUntil: number; member: boolean; dailyAllowance: number }
-export type Order = { id: string; product_id: string; amount_fen: number; status: string; created_at: number; paid_at?: number; refund_reason?: string }
+export type Order = { id: string; product_id: string; amount_fen: number; status: string; created_at: number; paid_at?: number; refund_reason?: string; provider?: string; expires_at?: number }
 export class AccountError extends Error { status: number; code: string; constructor(message: string, status: number, code: string) { super(message); this.status = status; this.code = code } }
 function baseURL() {
   const endpoint = String(import.meta.env.VITE_HOS_AI_ENDPOINT || '').trim()
